@@ -45,38 +45,7 @@ function SenaliApp() {
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
 
-  // Show domain configuration help if there are auth errors
-  if (error && error.includes('unauthorized-domain')) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="text-center max-w-md mx-auto">
-          <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-black text-2xl">⚠</span>
-          </div>
-          <h1 className="text-xl font-bold text-white mb-4">Domain Authorization Required</h1>
-          <p className="text-gray-300 mb-4">
-            Your Replit domain needs to be added to Firebase's authorized domains.
-          </p>
-          <div className="bg-gray-800 p-4 rounded-lg mb-4">
-            <p className="text-sm text-gray-300 mb-2">Add this domain to Firebase:</p>
-            <code className="text-green-400 text-xs break-all">
-              {window.location.origin}
-            </code>
-          </div>
-          <div className="text-left text-sm text-gray-400">
-            <p className="mb-2">Steps:</p>
-            <ol className="list-decimal list-inside space-y-1">
-              <li>Go to Firebase Console</li>
-              <li>Authentication → Settings</li>
-              <li>Authorized domains → Add domain</li>
-              <li>Paste the domain above</li>
-              <li>Save changes</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-    );
-  }
+
 
   useEffect(() => {
     console.log('🔥 Setting up Firebase auth listener...');
@@ -103,14 +72,11 @@ function SenaliApp() {
 
   const handleSignIn = async () => {
     console.log('🚀 Starting Google sign-in...');
-    console.log('🚀 Auth object ready:', !!auth);
-    console.log('🚀 Provider configured:', !!googleProvider);
     
     try {
       setIsLoading(true);
       setError(null);
       
-      console.log('🚀 Opening Google popup...');
       const result = await signInWithPopup(auth, googleProvider);
       console.log('🚀 Sign-in successful!', {
         email: result.user.email,
@@ -118,20 +84,6 @@ function SenaliApp() {
       });
     } catch (error: any) {
       console.error('🚨 Sign-in error:', error);
-      console.error('🚨 Error code:', error.code);
-      console.error('🚨 Error message:', error.message);
-      
-      let errorMessage = 'Failed to sign in with Google';
-      
-      if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Sign-in was cancelled. Please try again.';
-      } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = 'Popup was blocked. Please allow popups for this site.';
-      } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = 'This domain is not authorized. Please add it to Firebase Console.';
-      }
-      
-      setError(errorMessage);
       setIsLoading(false);
     }
   };
@@ -256,22 +208,7 @@ function SenaliApp() {
             </div>
           </Button>
 
-          {error && (
-            <div className="mt-4 p-3 bg-red-900 bg-opacity-50 border border-red-700 rounded-lg">
-              <p className="text-red-300 text-sm font-medium">Authentication Error</p>
-              <p className="text-red-200 text-xs mt-1">{error}</p>
-              {error.includes('invalid-api-key') && (
-                <div className="mt-2 text-xs text-red-200">
-                  <p>To fix this:</p>
-                  <ol className="list-decimal list-inside mt-1 space-y-1">
-                    <li>Go to Firebase Console → Authentication → Settings</li>
-                    <li>Add your domain to Authorized domains list</li>
-                    <li>Verify Google sign-in is enabled</li>
-                  </ol>
-                </div>
-              )}
-            </div>
-          )}
+
 
           <p className="text-gray-500 text-xs mt-4">
             Sign in to access personalized AI support and daily parenting tips
