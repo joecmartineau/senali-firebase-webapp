@@ -17,7 +17,7 @@ export default function Landing() {
           </div>
           
           <h1 className="text-3xl font-bold text-white mb-4">
-            NeuroParent
+            Senali
           </h1>
           
           <p className="text-gray-300 text-lg mb-8 leading-relaxed">
