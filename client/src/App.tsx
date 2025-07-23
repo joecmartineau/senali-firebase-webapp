@@ -1,27 +1,36 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, MessageCircle, Lightbulb, Heart } from "lucide-react";
-import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { useState } from "react";
+
+// Direct Firebase imports to debug the issue
+import { signInWithPopup, GoogleAuthProvider, getAuth } from 'firebase/auth';
+import { auth, googleProvider } from '@/lib/firebase';
 
 // Simple landing page component with Firebase auth
 function SimpleLanding() {
-  const { signInWithGoogle, isLoading, error, user } = useFirebaseAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
 
-  console.log('SimpleLanding render:', { signInWithGoogle: !!signInWithGoogle, isLoading, error: !!error, user: !!user });
+  console.log('SimpleLanding render with direct Firebase');
 
   const handleSignIn = async () => {
-    console.log('handleSignIn called, signInWithGoogle:', !!signInWithGoogle);
-    if (signInWithGoogle) {
-      try {
-        console.log('Calling signInWithGoogle...');
-        await signInWithGoogle();
-      } catch (error) {
-        console.error('Sign in failed:', error);
-      }
-    } else {
-      console.log('signInWithGoogle not available, showing alert');
-      alert('Google sign-in will be enabled once Firebase configuration is fixed!');
+    console.log('Direct Firebase sign in attempt');
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log('Auth object:', auth);
+      console.log('Provider object:', googleProvider);
+      
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('Sign in successful:', result.user);
+      setUser(result.user);
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      setError(error.message);
+      setIsLoading(false);
     }
   };
 
