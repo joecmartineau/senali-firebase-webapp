@@ -93,7 +93,7 @@ export default function InstallPrompt() {
             <div className="flex items-center gap-2">
               <Smartphone className="h-5 w-5 text-neuro-primary" />
               <CardTitle className="text-sm text-neuro-text-primary">
-                Install NeuroParent
+                Install Senali
               </CardTitle>
             </div>
             <Button

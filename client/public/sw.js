@@ -1,5 +1,5 @@
-const CACHE_NAME = 'neuroparent-v2.0';
-const API_CACHE_NAME = 'neuroparent-api-v1';
+const CACHE_NAME = 'senali-v2.0';
+const API_CACHE_NAME = 'senali-api-v1';
 
 // Core files to cache for offline functionality
 const urlsToCache = [
@@ -143,7 +143,7 @@ self.addEventListener('push', event => {
     };
     
     event.waitUntil(
-      self.registration.showNotification(data.title || 'NeuroParent', options)
+      self.registration.showNotification(data.title || 'Senali', options)
     );
   }
 });

@@ -39,7 +39,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
 
         {/* App Name */}
         <h1 className="text-3xl font-bold text-neuro-text-primary mb-2 animate-in slide-in-from-bottom-4 duration-700 delay-300">
-          NeuroParent
+          Senali
         </h1>
         
         {/* Tagline */}
