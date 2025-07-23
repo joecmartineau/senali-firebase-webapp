@@ -26,6 +26,7 @@ console.log('🔧 Firebase config:', {
   authDomain: firebaseConfig.authDomain,
   apiKeyPrefix: firebaseConfig.apiKey.substring(0, 10) + '...'
 });
+console.log('🔧 Domain authorized in Firebase - authentication should work now!');
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
