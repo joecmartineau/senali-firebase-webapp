@@ -16,11 +16,9 @@ const firebaseConfig = {
 
 console.log('Firebase initializing...', {
   projectId: firebaseConfig.projectId,
-  hasApiKey: !!firebaseConfig.apiKey,
-  envVars: {
-    hasEnvApiKey: !!import.meta.env.VITE_FIREBASE_API_KEY,
-    hasEnvProjectId: !!import.meta.env.VITE_FIREBASE_PROJECT_ID
-  }
+  apiKey: firebaseConfig.apiKey.substring(0, 10) + '...',
+  authDomain: firebaseConfig.authDomain,
+  appId: firebaseConfig.appId
 });
 
 // Validate required config
@@ -28,6 +26,8 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
   console.error('Firebase config incomplete:', firebaseConfig);
   throw new Error('Firebase configuration is incomplete');
 }
+
+console.log('Firebase config validation passed');
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

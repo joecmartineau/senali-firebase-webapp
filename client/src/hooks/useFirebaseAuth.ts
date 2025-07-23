@@ -105,16 +105,26 @@ export function useFirebaseAuth() {
       setError(null);
       
       console.log('Starting Google sign in...');
+      console.log('Auth object:', auth);
+      console.log('Google provider:', googleProvider);
+      
       const result = await signInWithPopup(auth, googleProvider);
       console.log('Google sign in successful:', result.user);
       
       // User profile will be set by onAuthStateChanged
     } catch (error) {
       const authError = error as AuthError;
-      console.error('Google sign in error:', authError);
+      console.error('Google sign in error details:', {
+        code: authError.code,
+        message: authError.message,
+        customData: authError.customData
+      });
       
       let errorMessage = 'Failed to sign in with Google';
       switch (authError.code) {
+        case 'auth/invalid-api-key':
+          errorMessage = 'Firebase API key is invalid. Please check Firebase Console configuration.';
+          break;
         case 'auth/popup-closed-by-user':
           errorMessage = 'Sign-in was cancelled. Please try again.';
           break;
@@ -128,7 +138,10 @@ export function useFirebaseAuth() {
           errorMessage = 'Too many failed attempts. Please try again later.';
           break;
         case 'auth/operation-not-allowed':
-          errorMessage = 'Google sign-in is not enabled. Please contact support.';
+          errorMessage = 'Google sign-in is not enabled in Firebase Console.';
+          break;
+        case 'auth/unauthorized-domain':
+          errorMessage = 'This domain is not authorized. Please add it to Firebase Console.';
           break;
         default:
           errorMessage = authError.message || 'Failed to sign in with Google';
