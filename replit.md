@@ -143,7 +143,11 @@ This is a full-stack TypeScript application built with a modern web architecture
 - **API Routes**: Firebase-compatible backend endpoints
   - `/api/chat`: OpenAI chat integration with Firebase frontend
   - `/api/tips/generate`: Personalized tip generation
-- **Configuration**: Requires Firebase project keys (Project: 67286745357)
+- **Configuration**: Firebase project configured (Project ID: senali-235fb, Project Number: 67286745357)
+  - API Key: GOOGLE_API_KEY (configured)
+  - Auth Domain: senali-235fb.firebaseapp.com
+  - Storage Bucket: senali-235fb.firebasestorage.app
+  - App ID: 1:67286745357:web:ec18d40025c29e2583b044
 
 ### Recent Updates (2025-01-23)
 - **Mobile Optimization**: Enhanced PWA configuration for iOS and Android deployment
