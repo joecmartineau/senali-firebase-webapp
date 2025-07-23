@@ -1,35 +1,77 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, MessageCircle, Lightbulb, Heart } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-// Direct Firebase imports to debug the issue
-import { signInWithPopup, GoogleAuthProvider, getAuth } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
-
-// Simple landing page component with Firebase auth
+// Simple landing page component with dynamic Firebase loading
 function SimpleLanding() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [firebaseReady, setFirebaseReady] = useState(false);
 
-  console.log('SimpleLanding render with direct Firebase');
+  useEffect(() => {
+    // Load Firebase dynamically
+    const loadFirebase = async () => {
+      try {
+        console.log('Loading Firebase...');
+        const { auth, googleProvider } = await import('@/lib/firebase');
+        console.log('Firebase loaded successfully');
+        setFirebaseReady(true);
+        
+        // Set up auth state listener
+        const { onAuthStateChanged } = await import('firebase/auth');
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            console.log('User signed in:', user);
+            setUser(user);
+          } else {
+            console.log('User signed out');
+            setUser(null);
+          }
+          setIsLoading(false);
+        });
+      } catch (error) {
+        console.error('Firebase loading error:', error);
+        setError('Failed to initialize authentication');
+        setFirebaseReady(false);
+      }
+    };
+
+    loadFirebase();
+  }, []);
 
   const handleSignIn = async () => {
-    console.log('Direct Firebase sign in attempt');
+    if (!firebaseReady) {
+      alert('Authentication is still loading. Please wait a moment and try again.');
+      return;
+    }
+
+    console.log('Attempting Firebase sign in...');
     try {
       setIsLoading(true);
       setError(null);
       
-      console.log('Auth object:', auth);
-      console.log('Provider object:', googleProvider);
+      const { auth, googleProvider } = await import('@/lib/firebase');
+      const { signInWithPopup } = await import('firebase/auth');
       
+      console.log('Starting Google sign in...');
       const result = await signInWithPopup(auth, googleProvider);
       console.log('Sign in successful:', result.user);
-      setUser(result.user);
+      // User will be set by onAuthStateChanged listener
     } catch (error: any) {
       console.error('Sign in error:', error);
-      setError(error.message);
+      let errorMessage = 'Failed to sign in with Google';
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Sign-in was cancelled. Please try again.';
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = 'Popup was blocked. Please allow popups for this site.';
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = 'This domain is not authorized. Please add it to Firebase Console.';
+      }
+      
+      setError(errorMessage);
       setIsLoading(false);
     }
   };
