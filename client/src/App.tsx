@@ -8,7 +8,7 @@ import { ChatInterface } from "@/components/chat/chat-interface";
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'firebase/auth';
 
-// Firebase configuration
+// Firebase configuration - using Firebase authDomain for stable authentication
 const firebaseConfig = {
   apiKey: "AIzaSyA306aIofubqZ6sHP2ID0X7Zs49El6JrKU",
   authDomain: "senali-235fb.firebaseapp.com",
@@ -48,12 +48,12 @@ console.log('🔧 Firebase Auth initialized');
 const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
-// Configure for mobile-friendly authentication
+// Configure for stable Firebase domain authentication
 googleProvider.setCustomParameters({
   prompt: 'select_account',
-  hd: '', // Allow any domain
+  redirect_uri: `https://${firebaseConfig.authDomain}/__/auth/handler`
 });
-console.log('🔧 Google Auth Provider configured for mobile');
+console.log('🔧 Google Auth Provider configured with Firebase authDomain');
 
 function SenaliApp() {
   const [isLoading, setIsLoading] = useState(true);
