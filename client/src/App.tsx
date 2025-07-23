@@ -6,7 +6,7 @@ import { ChatInterface } from "@/components/chat/chat-interface";
 
 // Initialize Firebase directly to avoid import issues
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'firebase/auth';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -18,6 +18,10 @@ const firebaseConfig = {
   appId: "1:67286745357:web:ec18d40025c29e2583b044",
   measurementId: "G-GE6PL1J1Q7"
 };
+
+// Override redirect URL to use HTTP instead of HTTPS for Replit
+const currentDomain = window.location.origin;
+console.log('🔧 Current domain for redirect:', currentDomain);
 
 console.log('🔧 Starting Firebase initialization...');
 console.log('🔧 Current domain:', window.location.origin);
@@ -38,7 +42,12 @@ console.log('🔧 Firebase Auth initialized');
 const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
-console.log('🔧 Google Auth Provider configured with scopes');
+// Set custom parameters to handle Replit domains properly
+googleProvider.setCustomParameters({
+  redirect_uri: currentDomain,
+  prompt: 'select_account'
+});
+console.log('🔧 Google Auth Provider configured with redirect:', currentDomain);
 
 function SenaliApp() {
   const [isLoading, setIsLoading] = useState(true);
@@ -86,15 +95,31 @@ function SenaliApp() {
   }, []);
 
   const handleSignIn = async () => {
-    console.log('🚀 Starting Google sign-in with redirect...');
+    console.log('🚀 Starting Google sign-in...');
     
     try {
       setIsLoading(true);
       setError(null);
       
-      // Use redirect instead of popup for mobile compatibility
-      await signInWithRedirect(auth, googleProvider);
-      console.log('🚀 Redirect initiated...');
+      // Try popup first, fallback to redirect if popup is blocked
+      try {
+        console.log('🚀 Attempting popup sign-in...');
+        const result = await signInWithPopup(auth, googleProvider);
+        console.log('🚀 Popup sign-in successful!', {
+          email: result.user.email,
+          displayName: result.user.displayName
+        });
+      } catch (popupError: any) {
+        console.log('🚀 Popup failed, trying redirect...', popupError.code);
+        
+        if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
+          // Fallback to redirect
+          await signInWithRedirect(auth, googleProvider);
+          console.log('🚀 Redirect initiated...');
+        } else {
+          throw popupError;
+        }
+      }
     } catch (error: any) {
       console.error('🚨 Sign-in error:', error);
       console.error('🚨 Error code:', error.code);
