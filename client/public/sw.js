@@ -1,5 +1,5 @@
-const CACHE_NAME = 'senali-v5.0-emergency-clean';
-const API_CACHE_NAME = 'senali-api-v2-clean';
+const CACHE_NAME = 'senali-v6.0-domain-fixed';
+const API_CACHE_NAME = 'senali-api-v3-fresh';
 
 // Core files to cache for offline functionality
 const urlsToCache = [

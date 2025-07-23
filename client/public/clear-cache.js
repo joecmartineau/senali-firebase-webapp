@@ -15,5 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     sessionStorage.clear();
   }
   
-  console.log('All caches cleared - page should be fresh');
+  // Add timestamp to force refresh
+  console.log('Cache cleared at:', new Date().toISOString());
+  console.log('Domain fix applied - ready for Firebase auth');
 });
