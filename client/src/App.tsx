@@ -68,6 +68,9 @@ function SenaliApp() {
       authDomain: firebaseConfig.authDomain
     });
     
+    // Clear any cached authentication errors
+    console.log('🔄 App updated with GPT-3.5-turbo and cache cleared');
+    
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       console.log('🔥 Auth state changed:', !!firebaseUser);
       if (firebaseUser) {
