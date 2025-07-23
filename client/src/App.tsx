@@ -1,63 +1,109 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { FirebaseAuthProvider } from "@/components/auth/firebase-auth-provider";
-import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
-import NotFound from "@/pages/not-found";
-import Home from "@/pages/home";
-import Landing from "@/pages/landing";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Brain, MessageCircle, Lightbulb, Heart } from "lucide-react";
 
-function Router() {
-  try {
-    const { user, isLoading, error } = useFirebaseAuth();
-    
-    console.log('Router render:', { user: !!user, isLoading, error });
+// Simple landing page component built directly in App.tsx
+function SimpleLanding() {
+  const handleSignIn = () => {
+    alert('Google sign-in will be enabled once Firebase configuration is fixed!');
+  };
 
-    if (error) {
-      console.error('Firebase auth error in router:', error);
-      // Show landing page even with auth errors
-      return <Landing />;
-    }
+  return (
+    <div className="min-h-screen bg-black">
+      <div className="px-4 py-12">
+        <div className="max-w-md mx-auto text-center">
+          <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Brain className="h-10 w-10 text-black" />
+          </div>
+          
+          <h1 className="text-3xl font-bold text-white mb-4">
+            Senali
+          </h1>
+          
+          <p className="text-gray-300 text-lg mb-8 leading-relaxed">
+            AI-powered support for parents of neurodivergent children. Get personalized guidance, daily tips, and a supportive community.
+          </p>
 
-    if (isLoading) {
-      return (
-        <div className="min-h-screen bg-black flex items-center justify-center">
-          <div className="text-white text-lg">Loading...</div>
+          {/* Features */}
+          <div className="space-y-4 mb-8">
+            <Card className="bg-gray-900 border-gray-700">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                    <MessageCircle className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-white">AI Chat Support</h3>
+                    <p className="text-sm text-gray-300">
+                      Get instant guidance for ADHD, autism, and other neurodivergent needs
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900 border-gray-700">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                    <Lightbulb className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-white">Daily Tips</h3>
+                    <p className="text-sm text-gray-300">
+                      Personalized parenting strategies delivered every day
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900 border-gray-700">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                    <Heart className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-white">Community Support</h3>
+                    <p className="text-sm text-gray-300">
+                      Connect with other parents on similar journeys
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sign In Button */}
+          <Button 
+            onClick={handleSignIn}
+            className="w-full bg-green-500 hover:bg-green-600 text-black font-semibold h-12 rounded-xl"
+          >
+            <div className="flex items-center justify-center space-x-3">
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              <span className="font-medium">Continue with Google</span>
+            </div>
+          </Button>
+
+          <p className="text-gray-500 text-xs mt-4">
+            Sign in to access personalized AI support and daily parenting tips
+          </p>
         </div>
-      );
-    }
-
-    return (
-      <Switch>
-        {!user ? (
-          <Route path="/" component={Landing} />
-        ) : (
-          <Route path="/" component={Home} />
-        )}
-        <Route component={NotFound} />
-      </Switch>
-    );
-  } catch (error) {
-    console.error('Router error:', error);
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-lg">Loading Senali...</div>
       </div>
-    );
-  }
+    </div>
+  );
 }
 
 function App() {
   console.log('App component rendering...');
   
-  // Temporary: Show landing page directly to debug white screen
-  return (
-    <div className="min-h-screen bg-black">
-      <Landing />
-    </div>
-  );
+  return <SimpleLanding />;
 }
 
 export default App;
