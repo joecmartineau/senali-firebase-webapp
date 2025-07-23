@@ -48,12 +48,11 @@ console.log('🔧 Firebase Auth initialized');
 const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
-// Configure for stable Firebase domain authentication
+// Simple configuration - let Firebase handle the redirect
 googleProvider.setCustomParameters({
-  prompt: 'select_account',
-  redirect_uri: `https://${firebaseConfig.authDomain}/__/auth/handler`
+  prompt: 'select_account'
 });
-console.log('🔧 Google Auth Provider configured with Firebase authDomain');
+console.log('🔧 Google Auth Provider configured');
 
 function SenaliApp() {
   const [isLoading, setIsLoading] = useState(true);
@@ -116,10 +115,10 @@ function SenaliApp() {
       console.error('🚨 Error code:', error.code);
       console.error('🚨 Error message:', error.message);
       
-      // Show user-friendly error messages with domain info
+      // Show user-friendly error messages with wildcard domain solution
       let friendlyMessage = 'Sign-in failed. ';
       if (error.code === 'auth/unauthorized-domain') {
-        friendlyMessage += `\n\nCurrent domain: ${window.location.hostname}\n\nPlease add this domain to Firebase Console:\nAuthentication → Settings → Authorized domains`;
+        friendlyMessage += `\n\nTo fix this permanently, add wildcard domain to Firebase:\n*.riker.prod.repl.run\n\nCurrent domain: ${window.location.hostname}`;
       } else if (error.code === 'auth/operation-not-allowed') {
         friendlyMessage += 'Google sign-in not enabled in Firebase.';
       } else {
