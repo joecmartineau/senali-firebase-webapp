@@ -4,6 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { FirebaseAuthProvider } from "@/components/auth/firebase-auth-provider";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import SplashScreen from "@/components/layout/splash-screen";
 import NotFound from "@/pages/not-found";
@@ -45,14 +46,16 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        {showSplash ? (
-          <SplashScreen onComplete={handleSplashComplete} />
-        ) : (
-          <Router />
-        )}
-      </TooltipProvider>
+      <FirebaseAuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          {showSplash ? (
+            <SplashScreen onComplete={handleSplashComplete} />
+          ) : (
+            <Router />
+          )}
+        </TooltipProvider>
+      </FirebaseAuthProvider>
     </QueryClientProvider>
   );
 }
