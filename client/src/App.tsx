@@ -11,19 +11,39 @@ function SimpleLanding() {
   const [firebaseReady, setFirebaseReady] = useState(false);
 
   useEffect(() => {
-    // Load Firebase dynamically
+    // Load Firebase dynamically with detailed error tracking
     const loadFirebase = async () => {
       try {
-        console.log('Loading Firebase...');
-        const { auth, googleProvider } = await import('@/lib/firebase');
+        console.log('=== FIREBASE LOADING START ===');
+        console.log('Attempting to import Firebase...');
+        
+        // Try importing Firebase modules step by step
+        const firebaseApp = await import('firebase/app');
+        console.log('Firebase app imported:', !!firebaseApp);
+        
+        const firebaseAuth = await import('firebase/auth');
+        console.log('Firebase auth imported:', !!firebaseAuth);
+        
+        const firebaseModule = await import('@/lib/firebase');
+        console.log('Firebase config module imported:', !!firebaseModule);
+        console.log('Available exports:', Object.keys(firebaseModule));
+        
+        const { auth, googleProvider } = firebaseModule;
+        console.log('Auth object:', !!auth);
+        console.log('Google provider:', !!googleProvider);
+        
+        if (!auth || !googleProvider) {
+          throw new Error('Firebase auth or provider not properly initialized');
+        }
+        
         console.log('Firebase loaded successfully');
         setFirebaseReady(true);
         
         // Set up auth state listener
-        const { onAuthStateChanged } = await import('firebase/auth');
-        onAuthStateChanged(auth, (user) => {
+        firebaseAuth.onAuthStateChanged(auth, (user) => {
+          console.log('Auth state changed:', !!user);
           if (user) {
-            console.log('User signed in:', user);
+            console.log('User signed in:', user.email);
             setUser(user);
           } else {
             console.log('User signed out');
@@ -31,10 +51,15 @@ function SimpleLanding() {
           }
           setIsLoading(false);
         });
-      } catch (error) {
-        console.error('Firebase loading error:', error);
-        setError('Failed to initialize authentication');
+        
+        console.log('=== FIREBASE LOADING COMPLETE ===');
+      } catch (error: any) {
+        console.error('=== FIREBASE LOADING ERROR ===');
+        console.error('Error details:', error);
+        console.error('Error stack:', error?.stack);
+        setError(`Failed to initialize authentication: ${error.message}`);
         setFirebaseReady(false);
+        setIsLoading(false);
       }
     };
 
