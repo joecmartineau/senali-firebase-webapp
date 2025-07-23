@@ -27,19 +27,34 @@ export function useFirebaseAuth() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        console.log('Firebase user authenticated:', firebaseUser);
-        const userProfile = await getUserProfile(firebaseUser);
-        setUser(userProfile);
-      } else {
-        console.log('No Firebase user');
-        setUser(null);
-      }
-      setIsLoading(false);
-    });
+    try {
+      console.log('Setting up Firebase auth listener...');
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        try {
+          if (firebaseUser) {
+            console.log('Firebase user authenticated:', firebaseUser);
+            const userProfile = await getUserProfile(firebaseUser);
+            setUser(userProfile);
+          } else {
+            console.log('No Firebase user');
+            setUser(null);
+          }
+        } catch (profileError) {
+          console.error('Error getting user profile:', profileError);
+          setError('Failed to load user profile');
+          setUser(null);
+        } finally {
+          setIsLoading(false);
+        }
+      });
 
-    return unsubscribe;
+      return unsubscribe;
+    } catch (authError) {
+      console.error('Error setting up auth listener:', authError);
+      setError('Authentication setup failed');
+      setIsLoading(false);
+      return () => {};
+    }
   }, []);
 
   const createOrUpdateUserProfile = async (firebaseUser: User): Promise<void> => {

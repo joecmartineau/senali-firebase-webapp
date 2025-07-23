@@ -10,38 +10,53 @@ import Home from "@/pages/home";
 import Landing from "@/pages/landing";
 
 function Router() {
-  const { user, isLoading } = useFirebaseAuth();
+  try {
+    const { user, isLoading, error } = useFirebaseAuth();
+    
+    console.log('Router render:', { user: !!user, isLoading, error });
 
-  if (isLoading) {
+    if (error) {
+      console.error('Firebase auth error in router:', error);
+      // Show landing page even with auth errors
+      return <Landing />;
+    }
+
+    if (isLoading) {
+      return (
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <div className="text-white text-lg">Loading...</div>
+        </div>
+      );
+    }
+
+    return (
+      <Switch>
+        {!user ? (
+          <Route path="/" component={Landing} />
+        ) : (
+          <Route path="/" component={Home} />
+        )}
+        <Route component={NotFound} />
+      </Switch>
+    );
+  } catch (error) {
+    console.error('Router error:', error);
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-lg">Loading...</div>
+        <div className="text-white text-lg">Loading Senali...</div>
       </div>
     );
   }
-
-  return (
-    <Switch>
-      {!user ? (
-        <Route path="/" component={Landing} />
-      ) : (
-        <Route path="/" component={Home} />
-      )}
-      <Route component={NotFound} />
-    </Switch>
-  );
 }
 
 function App() {
+  console.log('App component rendering...');
+  
+  // Temporary: Show landing page directly to debug white screen
   return (
-    <QueryClientProvider client={queryClient}>
-      <FirebaseAuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </FirebaseAuthProvider>
-    </QueryClientProvider>
+    <div className="min-h-screen bg-black">
+      <Landing />
+    </div>
   );
 }
 
