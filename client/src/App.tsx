@@ -27,46 +27,51 @@ console.log('🔧 Firebase config:', {
   apiKeyPrefix: firebaseConfig.apiKey.substring(0, 10) + '...'
 });
 
-let app, auth, googleProvider;
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+console.log('🔧 Firebase app initialized successfully');
 
-try {
-  // Initialize Firebase
-  app = initializeApp(firebaseConfig);
-  console.log('🔧 Firebase app initialized successfully');
+const auth = getAuth(app);
+console.log('🔧 Firebase Auth initialized');
 
-  auth = getAuth(app);
-  console.log('🔧 Firebase Auth initialized');
-
-  googleProvider = new GoogleAuthProvider();
-  googleProvider.addScope('email');
-  googleProvider.addScope('profile');
-  console.log('🔧 Google Auth Provider configured with scopes');
-} catch (error) {
-  console.error('🚨 Firebase initialization error:', error);
-  throw error;
-}
+const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
+console.log('🔧 Google Auth Provider configured with scopes');
 
 function SenaliApp() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
 
-  // Check if Firebase is properly initialized
-  if (!auth || !googleProvider) {
-    console.error('🚨 Firebase not properly initialized');
+  // Show domain configuration help if there are auth errors
+  if (error && error.includes('unauthorized-domain')) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-white text-2xl">⚠</span>
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
+          <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-black text-2xl">⚠</span>
           </div>
-          <h1 className="text-xl font-bold text-white mb-4">Firebase Configuration Error</h1>
+          <h1 className="text-xl font-bold text-white mb-4">Domain Authorization Required</h1>
           <p className="text-gray-300 mb-4">
-            There's an issue with Firebase initialization. Please check the console for details.
+            Your Replit domain needs to be added to Firebase's authorized domains.
           </p>
-          <p className="text-sm text-gray-400">
-            Current domain: {window.location.origin}
-          </p>
+          <div className="bg-gray-800 p-4 rounded-lg mb-4">
+            <p className="text-sm text-gray-300 mb-2">Add this domain to Firebase:</p>
+            <code className="text-green-400 text-xs break-all">
+              {window.location.origin}
+            </code>
+          </div>
+          <div className="text-left text-sm text-gray-400">
+            <p className="mb-2">Steps:</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Go to Firebase Console</li>
+              <li>Authentication → Settings</li>
+              <li>Authorized domains → Add domain</li>
+              <li>Paste the domain above</li>
+              <li>Save changes</li>
+            </ol>
+          </div>
         </div>
       </div>
     );
