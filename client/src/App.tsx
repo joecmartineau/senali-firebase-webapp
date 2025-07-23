@@ -33,9 +33,21 @@ function SenaliApp() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    console.log('Setting up Firebase auth listener...');
+    console.log('🔥 Setting up Firebase auth listener...');
+    console.log('🔥 Firebase config loaded:', {
+      projectId: firebaseConfig.projectId,
+      authDomain: firebaseConfig.authDomain
+    });
+    
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log('Auth state changed:', !!firebaseUser);
+      console.log('🔥 Auth state changed:', !!firebaseUser);
+      if (firebaseUser) {
+        console.log('🔥 User details:', {
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          uid: firebaseUser.uid
+        });
+      }
       setUser(firebaseUser);
       setIsLoading(false);
     });
@@ -44,15 +56,25 @@ function SenaliApp() {
   }, []);
 
   const handleSignIn = async () => {
-    console.log('Starting Google sign-in...');
+    console.log('🚀 Starting Google sign-in...');
+    console.log('🚀 Auth object ready:', !!auth);
+    console.log('🚀 Provider configured:', !!googleProvider);
+    
     try {
       setIsLoading(true);
       setError(null);
       
+      console.log('🚀 Opening Google popup...');
       const result = await signInWithPopup(auth, googleProvider);
-      console.log('Sign-in successful:', result.user);
+      console.log('🚀 Sign-in successful!', {
+        email: result.user.email,
+        displayName: result.user.displayName
+      });
     } catch (error: any) {
-      console.error('Sign-in error:', error);
+      console.error('🚨 Sign-in error:', error);
+      console.error('🚨 Error code:', error.code);
+      console.error('🚨 Error message:', error.message);
+      
       let errorMessage = 'Failed to sign in with Google';
       
       if (error.code === 'auth/popup-closed-by-user') {
