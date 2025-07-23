@@ -3,15 +3,25 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Brain, MessageCircle, Lightbulb, Heart } from "lucide-react";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
+import { debugFirebaseConfig } from "@/utils/firebase-debug";
 
 export default function Landing() {
   const { signInWithGoogle, isLoading, error } = useFirebaseAuth();
   const { toast } = useToast();
 
+  useEffect(() => {
+    debugFirebaseConfig();
+  }, []);
+
   const handleSignIn = async () => {
+    console.log('Sign in button clicked');
     try {
+      console.log('Attempting Google sign in...');
       await signInWithGoogle();
+      console.log('Sign in successful');
     } catch (error) {
+      console.error('Sign in error:', error);
       toast({
         title: "Sign In Failed",
         description: error instanceof Error ? error.message : "Failed to sign in with Google",

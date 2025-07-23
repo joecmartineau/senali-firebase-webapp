@@ -26,7 +26,9 @@ class AuthService {
   // Sign in with Google
   async signInWithGoogle(): Promise<UserProfile | null> {
     try {
+      console.log('Starting signInWithPopup...');
       const result = await signInWithPopup(auth, googleProvider);
+      console.log('signInWithPopup completed:', result);
       const user = result.user;
       
       // Create or update user profile in Firestore
@@ -137,6 +139,12 @@ class AuthService {
 
   // Handle authentication errors
   private handleAuthError(error: AuthError): Error {
+    console.error('Firebase Auth Error Details:', {
+      code: error.code,
+      message: error.message,
+      customData: error.customData
+    });
+    
     switch (error.code) {
       case 'auth/popup-closed-by-user':
         return new Error('Sign-in was cancelled. Please try again.');
@@ -146,8 +154,14 @@ class AuthService {
         return new Error('Network error. Please check your internet connection.');
       case 'auth/too-many-requests':
         return new Error('Too many failed attempts. Please try again later.');
+      case 'auth/configuration-not-found':
+        return new Error('Google sign-in is not configured. Please contact support.');
+      case 'auth/operation-not-allowed':
+        return new Error('Google sign-in is not enabled. Please contact support.');
+      case 'auth/invalid-api-key':
+        return new Error('Invalid Firebase configuration. Please contact support.');
       default:
-        return new Error('Authentication failed. Please try again.');
+        return new Error(`Authentication failed: ${error.message || 'Please try again.'}`);
     }
   }
 }
