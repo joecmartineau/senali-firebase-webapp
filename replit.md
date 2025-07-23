@@ -44,7 +44,7 @@ This is a full-stack TypeScript application built with a modern web architecture
 - **Authorization**: Protected routes with isAuthenticated middleware
 
 ### AI Integration
-- **Provider**: OpenAI GPT-4o model
+- **Provider**: OpenAI GPT-3.5-turbo model
 - **Specialization**: Custom system prompt for neurodivergent parenting support
 - **Features**: 
   - Contextual chat conversations with message history

@@ -72,7 +72,7 @@ Remember: You are not a replacement for professional medical or therapeutic advi
 
       res.json({
         response: completion,
-        model: 'gpt-4o',
+        model: 'gpt-3.5-turbo',
         processingTime
       });
 

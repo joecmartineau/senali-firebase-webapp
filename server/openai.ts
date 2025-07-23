@@ -4,7 +4,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
 });
 
-export async function generateChatResponse(userMessage: string, messageHistory: Array<{role: string, content: string}>): Promise<string> {
+export async function generateChatResponse(userMessage: string, messageHistory: Array<{role: 'user' | 'assistant', content: string}>): Promise<string> {
   const systemPrompt = `You are a specialized AI assistant for parents of neurodivergent children, including those with ADHD, autism, ADD, ODD (Oppositional Defiant Disorder), and other neurological differences.
 
 Your expertise includes:
@@ -30,12 +30,12 @@ Guidelines:
 Remember: You're providing general guidance, not medical or therapeutic advice. Encourage parents to consult professionals for specific concerns.`;
 
   try {
-    // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+    // Using GPT-3.5-turbo as requested by user
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: systemPrompt },
-        ...messageHistory.slice(-10), // Keep last 10 messages for context
+        ...messageHistory.slice(-10).map(msg => ({ role: msg.role as 'user' | 'assistant', content: msg.content })), // Keep last 10 messages for context
         { role: "user", content: userMessage }
       ],
       max_tokens: 1000,
@@ -69,9 +69,9 @@ Return your response as JSON with this exact format:
 }`;
 
   try {
-    // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+    // Using GPT-3.5-turbo as requested by user
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: "Generate a helpful daily tip for neurodivergent parenting." }
