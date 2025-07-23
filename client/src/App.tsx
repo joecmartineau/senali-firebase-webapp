@@ -84,6 +84,11 @@ function SenaliApp() {
       });
     } catch (error: any) {
       console.error('🚨 Sign-in error:', error);
+      console.error('🚨 Error code:', error.code);
+      console.error('🚨 Error message:', error.message);
+      
+      // Show a simple alert with the actual error
+      alert(`Sign-in failed: ${error.message || 'Unknown error'}`);
       setIsLoading(false);
     }
   };
