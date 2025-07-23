@@ -6,7 +6,7 @@ import { ChatInterface } from "@/components/chat/chat-interface";
 
 // Initialize Firebase directly to avoid import issues
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 
 // Firebase configuration - using Firebase authDomain for stable authentication
 const firebaseConfig = {
@@ -68,21 +68,6 @@ function SenaliApp() {
       authDomain: firebaseConfig.authDomain
     });
     
-    // Check for redirect result first
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          console.log('🔥 Redirect sign-in successful!', {
-            email: result.user.email,
-            displayName: result.user.displayName
-          });
-        }
-      })
-      .catch((error) => {
-        console.error('🚨 Redirect error:', error);
-        alert(`Sign-in failed: ${error.message}`);
-      });
-    
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       console.log('🔥 Auth state changed:', !!firebaseUser);
       if (firebaseUser) {
@@ -100,25 +85,30 @@ function SenaliApp() {
   }, []);
 
   const handleSignIn = async () => {
-    console.log('🚀 Starting Google sign-in with redirect (mobile optimized)...');
+    console.log('🚀 Starting Google sign-in with popup...');
     
     try {
       setIsLoading(true);
       setError(null);
       
-      // Use redirect directly for mobile environments
-      console.log('🚀 Initiating redirect to Google...');
-      await signInWithRedirect(auth, googleProvider);
+      // Try popup authentication - works if domain is authorized
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('🚀 Sign-in successful!', {
+        email: result.user.email,
+        displayName: result.user.displayName
+      });
       
     } catch (error: any) {
       console.error('🚨 Sign-in error:', error);
       console.error('🚨 Error code:', error.code);
       console.error('🚨 Error message:', error.message);
       
-      // Show user-friendly error messages with wildcard domain solution
+      // Show current domain for manual addition
       let friendlyMessage = 'Sign-in failed. ';
       if (error.code === 'auth/unauthorized-domain') {
-        friendlyMessage += `\n\nTo fix this permanently, add wildcard domain to Firebase:\n*.riker.prod.repl.run\n\nCurrent domain: ${window.location.hostname}`;
+        friendlyMessage += `\n\nPlease add this domain to Firebase authorized domains:\n${window.location.hostname}`;
+      } else if (error.code === 'auth/popup-blocked') {
+        friendlyMessage += 'Popup was blocked. Please allow popups for this site.';
       } else if (error.code === 'auth/operation-not-allowed') {
         friendlyMessage += 'Google sign-in not enabled in Firebase.';
       } else {
