@@ -21,7 +21,7 @@ const WelcomeScreen = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         {/* App Name */}
-        <Text style={styles.appName}>NeuroParent</Text>
+        <Text style={styles.appName}>Senali</Text>
         
         {/* Headline */}
         <Text style={styles.headline}>Guidance for Your Journey</Text>
