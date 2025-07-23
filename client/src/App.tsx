@@ -6,16 +6,9 @@ import { useState } from "react";
 
 // Simple landing page component with Firebase auth
 function SimpleLanding() {
-  const [isAuthEnabled, setIsAuthEnabled] = useState(false);
-  const { signInWithGoogle, isLoading, error, user } = isAuthEnabled ? useFirebaseAuth() : { signInWithGoogle: null, isLoading: false, error: null, user: null };
+  const { signInWithGoogle, isLoading, error, user } = useFirebaseAuth();
 
   const handleSignIn = async () => {
-    if (!isAuthEnabled) {
-      // Try to enable Firebase auth
-      setIsAuthEnabled(true);
-      return;
-    }
-    
     if (signInWithGoogle) {
       try {
         await signInWithGoogle();
