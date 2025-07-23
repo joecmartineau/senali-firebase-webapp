@@ -6,7 +6,7 @@ import { ChatInterface } from "@/components/chat/chat-interface";
 
 // Initialize Firebase directly to avoid import issues
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'firebase/auth';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -54,6 +54,21 @@ function SenaliApp() {
       authDomain: firebaseConfig.authDomain
     });
     
+    // Check for redirect result first
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          console.log('🔥 Redirect sign-in successful!', {
+            email: result.user.email,
+            displayName: result.user.displayName
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('🚨 Redirect error:', error);
+        alert(`Sign-in failed: ${error.message}`);
+      });
+    
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       console.log('🔥 Auth state changed:', !!firebaseUser);
       if (firebaseUser) {
@@ -71,23 +86,20 @@ function SenaliApp() {
   }, []);
 
   const handleSignIn = async () => {
-    console.log('🚀 Starting Google sign-in...');
+    console.log('🚀 Starting Google sign-in with redirect...');
     
     try {
       setIsLoading(true);
       setError(null);
       
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log('🚀 Sign-in successful!', {
-        email: result.user.email,
-        displayName: result.user.displayName
-      });
+      // Use redirect instead of popup for mobile compatibility
+      await signInWithRedirect(auth, googleProvider);
+      console.log('🚀 Redirect initiated...');
     } catch (error: any) {
       console.error('🚨 Sign-in error:', error);
       console.error('🚨 Error code:', error.code);
       console.error('🚨 Error message:', error.message);
       
-      // Show a simple alert with the actual error
       alert(`Sign-in failed: ${error.message || 'Unknown error'}`);
       setIsLoading(false);
     }
