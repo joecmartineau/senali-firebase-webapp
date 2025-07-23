@@ -19,18 +19,58 @@ const firebaseConfig = {
   measurementId: "G-GE6PL1J1Q7"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
+console.log('🔧 Starting Firebase initialization...');
+console.log('🔧 Current domain:', window.location.origin);
+console.log('🔧 Firebase config:', {
+  projectId: firebaseConfig.projectId,
+  authDomain: firebaseConfig.authDomain,
+  apiKeyPrefix: firebaseConfig.apiKey.substring(0, 10) + '...'
+});
 
-googleProvider.addScope('email');
-googleProvider.addScope('profile');
+let app, auth, googleProvider;
+
+try {
+  // Initialize Firebase
+  app = initializeApp(firebaseConfig);
+  console.log('🔧 Firebase app initialized successfully');
+
+  auth = getAuth(app);
+  console.log('🔧 Firebase Auth initialized');
+
+  googleProvider = new GoogleAuthProvider();
+  googleProvider.addScope('email');
+  googleProvider.addScope('profile');
+  console.log('🔧 Google Auth Provider configured with scopes');
+} catch (error) {
+  console.error('🚨 Firebase initialization error:', error);
+  throw error;
+}
 
 function SenaliApp() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+
+  // Check if Firebase is properly initialized
+  if (!auth || !googleProvider) {
+    console.error('🚨 Firebase not properly initialized');
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-white text-2xl">⚠</span>
+          </div>
+          <h1 className="text-xl font-bold text-white mb-4">Firebase Configuration Error</h1>
+          <p className="text-gray-300 mb-4">
+            There's an issue with Firebase initialization. Please check the console for details.
+          </p>
+          <p className="text-sm text-gray-400">
+            Current domain: {window.location.origin}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     console.log('🔥 Setting up Firebase auth listener...');
