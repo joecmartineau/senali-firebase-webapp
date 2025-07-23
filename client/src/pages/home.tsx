@@ -13,22 +13,22 @@ import TipsView from "@/components/tips/tips-view";
 
 export default function Home() {
   const { toast } = useToast();
-  const { isAuthenticated, isLoading, signOut } = useFirebaseAuth();
+  const { user, isLoading, signOut } = useFirebaseAuth();
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<string>("chat");
 
   // Redirect to home if not authenticated
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !user) {
       toast({
         title: "Unauthorized",
         description: "You are logged out. Logging in again...",
         variant: "destructive",
       });
-      // Will be handled by Firebase auth state change
+      // Will be handled by auth state change
       return;
     }
-  }, [isAuthenticated, isLoading, toast]);
+  }, [user, isLoading, toast]);
 
   if (isLoading) {
     return (
@@ -41,7 +41,7 @@ export default function Home() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return null; // Will redirect in useEffect
   }
 

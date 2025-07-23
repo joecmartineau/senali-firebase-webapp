@@ -1,7 +1,4 @@
-// Simplified Firebase configuration for demo
-console.log('Initializing Firebase in demo mode');
-
-// Mock Firebase services for demo purposes
+// Demo mode - Firebase services disabled
 export const auth = null;
 export const db = null;
 export const googleProvider = null;

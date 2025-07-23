@@ -4,16 +4,13 @@ import { Brain, MessageCircle, Lightbulb, Heart } from "lucide-react";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { debugFirebaseConfig } from "@/utils/firebase-debug";
-import { DemoModeBanner } from "@/components/demo/demo-mode-banner";
-import { useFirebase } from "@/lib/firebase";
 
 export default function Landing() {
   const { signInWithGoogle, isLoading, error } = useFirebaseAuth();
   const { toast } = useToast();
 
   useEffect(() => {
-    debugFirebaseConfig();
+    console.log('Senali app loaded in demo mode');
   }, []);
 
   const handleSignIn = async () => {
