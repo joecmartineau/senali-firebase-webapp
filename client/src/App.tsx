@@ -8,13 +8,20 @@ import { useState } from "react";
 function SimpleLanding() {
   const { signInWithGoogle, isLoading, error, user } = useFirebaseAuth();
 
+  console.log('SimpleLanding render:', { signInWithGoogle: !!signInWithGoogle, isLoading, error: !!error, user: !!user });
+
   const handleSignIn = async () => {
+    console.log('handleSignIn called, signInWithGoogle:', !!signInWithGoogle);
     if (signInWithGoogle) {
       try {
+        console.log('Calling signInWithGoogle...');
         await signInWithGoogle();
       } catch (error) {
         console.error('Sign in failed:', error);
       }
+    } else {
+      console.log('signInWithGoogle not available, showing alert');
+      alert('Google sign-in will be enabled once Firebase configuration is fixed!');
     }
   };
 
