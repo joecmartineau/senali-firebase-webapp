@@ -1,12 +1,20 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { UserProfile, authService } from '@/services/authService';
+import { createContext, useContext, useState, ReactNode } from 'react';
+
+interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  preferences?: {
+    childrenAges?: number[];
+    primaryConcerns?: string[];
+    communicationStyle?: 'detailed' | 'concise';
+  };
+}
 
 interface AuthContextType {
   user: UserProfile | null;
-  firebaseUser: User | null;
+  firebaseUser: any | null;
   isLoading: boolean;
   error: string | null;
   signInWithGoogle: () => Promise<void>;
@@ -16,55 +24,44 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export function FirebaseAuthProvider({ children }: { children: React.ReactNode }) {
+export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setFirebaseUser(firebaseUser);
-      
-      if (firebaseUser) {
-        try {
-          const userProfile = await authService.getUserProfile(firebaseUser.uid);
-          setUser(userProfile);
-        } catch (error) {
-          console.error('Error loading user profile:', error);
-          setError('Failed to load user profile');
-        }
-      } else {
-        setUser(null);
-      }
-      
-      setIsLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
 
   const signInWithGoogle = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const userProfile = await authService.signInWithGoogle();
-      setUser(userProfile);
+      
+      // Simulate demo login
+      setTimeout(() => {
+        const demoUser: UserProfile = {
+          uid: 'demo-user-123',
+          email: 'demo@senali.app',
+          displayName: 'Demo Parent',
+          photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+          preferences: {
+            childrenAges: [8, 12],
+            primaryConcerns: ['ADHD', 'Focus', 'Social Skills'],
+            communicationStyle: 'detailed'
+          }
+        };
+        setUser(demoUser);
+        setIsLoading(false);
+      }, 1000);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to sign in';
       setError(errorMessage);
-      throw error;
-    } finally {
       setIsLoading(false);
+      throw error;
     }
   };
 
   const signOut = async () => {
     try {
       setError(null);
-      await authService.signOut();
       setUser(null);
-      setFirebaseUser(null);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to sign out';
       setError(errorMessage);
@@ -77,7 +74,6 @@ export function FirebaseAuthProvider({ children }: { children: React.ReactNode }
     
     try {
       setError(null);
-      await authService.updateUserPreferences(user.uid, preferences);
       setUser(prev => prev ? {
         ...prev,
         preferences: { ...prev.preferences, ...preferences }
@@ -91,7 +87,7 @@ export function FirebaseAuthProvider({ children }: { children: React.ReactNode }
 
   const value: AuthContextType = {
     user,
-    firebaseUser,
+    firebaseUser: null,
     isLoading,
     error,
     signInWithGoogle,

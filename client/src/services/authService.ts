@@ -6,7 +6,7 @@ import {
   AuthError
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, googleProvider, db } from '@/lib/firebase';
+import { auth, googleProvider, db, useFirebase } from '@/lib/firebase';
 
 export interface UserProfile {
   uid: string;
@@ -26,6 +26,23 @@ class AuthService {
   // Sign in with Google
   async signInWithGoogle(): Promise<UserProfile | null> {
     try {
+      if (!useFirebase || !auth || !googleProvider) {
+        console.log('Firebase not available, simulating login...');
+        // Return mock user for development
+        const mockUser: UserProfile = {
+          uid: 'demo-user-123',
+          email: 'demo@example.com',
+          displayName: 'Demo User',
+          photoURL: 'https://via.placeholder.com/100',
+          preferences: {
+            childrenAges: [8],
+            primaryConcerns: ['ADHD', 'Focus'],
+            communicationStyle: 'detailed'
+          }
+        };
+        return mockUser;
+      }
+      
       console.log('Starting signInWithPopup...');
       const result = await signInWithPopup(auth, googleProvider);
       console.log('signInWithPopup completed:', result);
@@ -44,6 +61,10 @@ class AuthService {
   // Sign out
   async signOut(): Promise<void> {
     try {
+      if (!useFirebase || !auth) {
+        console.log('Firebase not available, simulating logout...');
+        return;
+      }
       await signOut(auth);
     } catch (error) {
       console.error('Error signing out:', error);
@@ -53,6 +74,13 @@ class AuthService {
 
   // Listen to auth state changes
   onAuthStateChanged(callback: (user: UserProfile | null) => void): () => void {
+    if (!useFirebase || !auth) {
+      console.log('Firebase not available, using fallback auth state');
+      // Return empty unsubscribe function for fallback mode
+      setTimeout(() => callback(null), 100);
+      return () => {};
+    }
+    
     return onAuthStateChanged(auth, async (user) => {
       if (user) {
         // Get additional profile data from Firestore
@@ -71,6 +99,11 @@ class AuthService {
 
   // Create or update user profile in Firestore
   private async createOrUpdateUserProfile(user: User): Promise<void> {
+    if (!useFirebase || !db) {
+      console.log('Firestore not available, skipping user profile creation');
+      return;
+    }
+    
     const userRef = doc(db, 'users', user.uid);
     const userDoc = await getDoc(userRef);
     
@@ -100,6 +133,15 @@ class AuthService {
   // Get user profile from Firestore
   async getUserProfile(uid: string): Promise<UserProfile | null> {
     try {
+      if (!useFirebase || !db) {
+        console.log('Firestore not available, returning basic profile');
+        return {
+          uid,
+          email: 'demo@example.com',
+          displayName: 'Demo User'
+        };
+      }
+      
       const userRef = doc(db, 'users', uid);
       const userDoc = await getDoc(userRef);
       
@@ -117,6 +159,11 @@ class AuthService {
   // Update user preferences
   async updateUserPreferences(uid: string, preferences: Partial<UserProfile['preferences']>): Promise<void> {
     try {
+      if (!useFirebase || !db) {
+        console.log('Firestore not available, preferences update skipped');
+        return;
+      }
+      
       const userRef = doc(db, 'users', uid);
       await setDoc(userRef, {
         preferences: preferences

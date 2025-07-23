@@ -1,29 +1,45 @@
 import { useState, useEffect } from 'react';
-import { authService, UserProfile } from '@/services/authService';
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  preferences?: {
+    childrenAges?: number[];
+    primaryConcerns?: string[];
+    communicationStyle?: 'detailed' | 'concise';
+  };
+}
 
 export function useFirebaseAuth() {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = authService.onAuthStateChanged((user) => {
-      setUser(user);
-      setIsLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
 
   const signInWithGoogle = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const user = await authService.signInWithGoogle();
-      setUser(user);
+      
+      // Simulate demo login
+      setTimeout(() => {
+        const demoUser: UserProfile = {
+          uid: 'demo-user-123',
+          email: 'demo@senali.app',
+          displayName: 'Demo Parent',
+          photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+          preferences: {
+            childrenAges: [8, 12],
+            primaryConcerns: ['ADHD', 'Focus', 'Social Skills'],
+            communicationStyle: 'detailed'
+          }
+        };
+        setUser(demoUser);
+        setIsLoading(false);
+      }, 1000);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to sign in');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -31,7 +47,6 @@ export function useFirebaseAuth() {
   const signOut = async () => {
     try {
       setError(null);
-      await authService.signOut();
       setUser(null);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to sign out');
@@ -43,7 +58,6 @@ export function useFirebaseAuth() {
     
     try {
       setError(null);
-      await authService.updateUserPreferences(user.uid, preferences);
       // Update local user state
       setUser(prev => prev ? {
         ...prev,

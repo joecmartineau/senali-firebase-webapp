@@ -12,11 +12,11 @@ import Home from "@/pages/home";
 import Landing from "@/pages/landing";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useFirebaseAuth();
+  const { user, isLoading } = useFirebaseAuth();
 
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
+      {isLoading || !user ? (
         <Route path="/" component={Landing} />
       ) : (
         <>
