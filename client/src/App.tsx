@@ -25,12 +25,18 @@ console.log('🔧 Current domain for redirect:', currentDomain);
 
 console.log('🔧 Starting Firebase initialization...');
 console.log('🔧 Current domain:', window.location.origin);
+console.log('🔧 Current hostname:', window.location.hostname);
+console.log('🔧 Current protocol:', window.location.protocol);
 console.log('🔧 Firebase config:', {
   projectId: firebaseConfig.projectId,
   authDomain: firebaseConfig.authDomain,
   apiKeyPrefix: firebaseConfig.apiKey.substring(0, 10) + '...'
 });
-console.log('🔧 Domain authorized in Firebase - authentication should work now!');
+
+// Test domain accessibility
+fetch(window.location.origin + '/test', { method: 'HEAD' })
+  .then(() => console.log('✅ Domain is accessible'))
+  .catch(() => console.log('❌ Domain accessibility test failed'));
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -42,12 +48,12 @@ console.log('🔧 Firebase Auth initialized');
 const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
-// Set custom parameters to handle Replit domains properly
+// Configure for mobile-friendly authentication
 googleProvider.setCustomParameters({
-  redirect_uri: currentDomain,
-  prompt: 'select_account'
+  prompt: 'select_account',
+  hd: '', // Allow any domain
 });
-console.log('🔧 Google Auth Provider configured with redirect:', currentDomain);
+console.log('🔧 Google Auth Provider configured for mobile');
 
 function SenaliApp() {
   const [isLoading, setIsLoading] = useState(true);
@@ -95,37 +101,32 @@ function SenaliApp() {
   }, []);
 
   const handleSignIn = async () => {
-    console.log('🚀 Starting Google sign-in...');
+    console.log('🚀 Starting Google sign-in with redirect (mobile optimized)...');
     
     try {
       setIsLoading(true);
       setError(null);
       
-      // Try popup first, fallback to redirect if popup is blocked
-      try {
-        console.log('🚀 Attempting popup sign-in...');
-        const result = await signInWithPopup(auth, googleProvider);
-        console.log('🚀 Popup sign-in successful!', {
-          email: result.user.email,
-          displayName: result.user.displayName
-        });
-      } catch (popupError: any) {
-        console.log('🚀 Popup failed, trying redirect...', popupError.code);
-        
-        if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
-          // Fallback to redirect
-          await signInWithRedirect(auth, googleProvider);
-          console.log('🚀 Redirect initiated...');
-        } else {
-          throw popupError;
-        }
-      }
+      // Use redirect directly for mobile environments
+      console.log('🚀 Initiating redirect to Google...');
+      await signInWithRedirect(auth, googleProvider);
+      
     } catch (error: any) {
       console.error('🚨 Sign-in error:', error);
       console.error('🚨 Error code:', error.code);
       console.error('🚨 Error message:', error.message);
       
-      alert(`Sign-in failed: ${error.message || 'Unknown error'}`);
+      // Show user-friendly error messages
+      let friendlyMessage = 'Sign-in failed. ';
+      if (error.code === 'auth/unauthorized-domain') {
+        friendlyMessage += 'Domain not authorized in Firebase.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        friendlyMessage += 'Google sign-in not enabled.';
+      } else {
+        friendlyMessage += error.message || 'Please try again.';
+      }
+      
+      alert(friendlyMessage);
       setIsLoading(false);
     }
   };
