@@ -8,7 +8,7 @@ import { ChatInterface } from "@/components/chat/chat-interface";
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 
-// Firebase configuration - using Firebase authDomain for stable authentication
+// Firebase configuration - optimized for Firebase hosting deployment
 const firebaseConfig = {
   apiKey: "AIzaSyA306aIofubqZ6sHP2ID0X7Zs49El6JrKU",
   authDomain: "senali-235fb.firebaseapp.com",
@@ -103,14 +103,14 @@ function SenaliApp() {
       console.error('🚨 Error code:', error.code);
       console.error('🚨 Error message:', error.message);
       
-      // Show current domain for manual addition
+      // Handle authentication errors for Firebase hosting
       let friendlyMessage = 'Sign-in failed. ';
       if (error.code === 'auth/unauthorized-domain') {
-        friendlyMessage += `\n\nPlease add this domain to Firebase authorized domains:\n${window.location.hostname}`;
+        friendlyMessage += 'Authentication domain not authorized. This should work automatically when deployed to Firebase hosting.';
       } else if (error.code === 'auth/popup-blocked') {
         friendlyMessage += 'Popup was blocked. Please allow popups for this site.';
       } else if (error.code === 'auth/operation-not-allowed') {
-        friendlyMessage += 'Google sign-in not enabled in Firebase.';
+        friendlyMessage += 'Google sign-in not enabled in Firebase Console.';
       } else {
         friendlyMessage += error.message || 'Please try again.';
       }
