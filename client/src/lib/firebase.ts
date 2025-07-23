@@ -14,7 +14,7 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-GE6PL1J1Q7"
 };
 
-console.log('Firebase config:', {
+console.log('Firebase initializing...', {
   projectId: firebaseConfig.projectId,
   hasApiKey: !!firebaseConfig.apiKey,
   envVars: {
@@ -22,6 +22,12 @@ console.log('Firebase config:', {
     hasEnvProjectId: !!import.meta.env.VITE_FIREBASE_PROJECT_ID
   }
 });
+
+// Validate required config
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  console.error('Firebase config incomplete:', firebaseConfig);
+  throw new Error('Firebase configuration is incomplete');
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

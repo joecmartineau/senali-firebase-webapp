@@ -2,6 +2,28 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
+console.log("Senali app starting...");
+
+try {
+  const rootElement = document.getElementById("root");
+  if (!rootElement) {
+    throw new Error("Root element not found");
+  }
+
+  console.log("Root element found, creating React app...");
+  const root = createRoot(rootElement);
+  root.render(<App />);
+  console.log("React app rendered successfully");
+} catch (error) {
+  console.error("Failed to start app:", error);
+  document.body.innerHTML = `
+    <div style="padding: 20px; color: red; font-family: monospace;">
+      <h1>Error starting Senali app</h1>
+      <pre>${error}</pre>
+    </div>
+  `;
+}
+
 // Register service worker for PWA functionality
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -14,5 +36,3 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
-
-createRoot(document.getElementById("root")!).render(<App />);
