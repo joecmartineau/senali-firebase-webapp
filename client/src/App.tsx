@@ -116,12 +116,12 @@ function SenaliApp() {
       console.error('🚨 Error code:', error.code);
       console.error('🚨 Error message:', error.message);
       
-      // Show user-friendly error messages
+      // Show user-friendly error messages with domain info
       let friendlyMessage = 'Sign-in failed. ';
       if (error.code === 'auth/unauthorized-domain') {
-        friendlyMessage += 'Domain not authorized in Firebase.';
+        friendlyMessage += `\n\nCurrent domain: ${window.location.hostname}\n\nPlease add this domain to Firebase Console:\nAuthentication → Settings → Authorized domains`;
       } else if (error.code === 'auth/operation-not-allowed') {
-        friendlyMessage += 'Google sign-in not enabled.';
+        friendlyMessage += 'Google sign-in not enabled in Firebase.';
       } else {
         friendlyMessage += error.message || 'Please try again.';
       }
