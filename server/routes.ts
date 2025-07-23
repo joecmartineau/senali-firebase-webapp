@@ -22,7 +22,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Chat routes
+  // Firebase-compatible Chat API route
+  app.post('/api/chat', async (req, res) => {
+    try {
+      const { message, context = [] } = req.body;
+
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: 'Message is required' });
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: 'OpenAI API key not configured' });
+      }
+
+      // System prompt for neurodivergent parenting support
+      const SYSTEM_PROMPT = `You are Senali, a specialized AI assistant dedicated to supporting parents of neurodivergent children, including those with ADHD, autism, ADD, ODD, and other neurological differences.
+
+Your role is to provide:
+- Evidence-based parenting strategies and behavioral management techniques
+- Emotional support and validation for parenting challenges
+- Practical daily tips and actionable advice
+- Resources and information about neurodivergent conditions
+- Compassionate guidance without judgment
+
+Key principles:
+- Always respond with empathy and understanding
+- Provide specific, actionable advice when possible
+- Acknowledge that every child is unique
+- Encourage professional support when appropriate
+- Use simple, clear language that's easy to understand
+- Focus on strengths-based approaches
+- Validate parental feelings and experiences
+
+Remember: You are not a replacement for professional medical or therapeutic advice, but a supportive companion in the parenting journey.`;
+
+      // Build conversation context
+      const messages = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...context.slice(-10), // Limit context to last 10 messages
+        { role: 'user', content: message }
+      ];
+
+      const startTime = Date.now();
+
+      // Get response from OpenAI
+      const completion = await generateChatResponse(message, context.slice(-5));
+
+      const processingTime = Date.now() - startTime;
+
+      res.json({
+        response: completion,
+        model: 'gpt-4o',
+        processingTime
+      });
+
+    } catch (error) {
+      console.error('Chat API error:', error);
+      res.status(500).json({ 
+        error: 'Failed to process chat message',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Legacy Chat routes (keeping for compatibility)
   app.post('/api/chat/message', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -99,7 +162,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/tips/generate', isAuthenticated, async (req: any, res) => {
+  // Firebase-compatible Tips generation API route
+  app.post('/api/tips/generate', async (req, res) => {
+    try {
+      const { userId, preferences = {} } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: 'OpenAI API key not configured' });
+      }
+
+      // Generate tip using existing function but return Firebase-compatible format
+      const generatedTip = await generateDailyTip();
+      
+      // Format for Firebase frontend
+      const tipData = {
+        title: generatedTip.title,
+        content: generatedTip.content,
+        category: generatedTip.category || 'general',
+        targetAge: getAgeRange(preferences.childAge),
+        difficulty: 'beginner',
+        estimatedTime: '5-15 minutes',
+        tags: ['parenting', 'neurodivergent', generatedTip.category].filter(Boolean)
+      };
+
+      res.json(tipData);
+
+    } catch (error) {
+      console.error('Tip generation error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate tip',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Legacy tips route (keeping for compatibility)  
+  app.post('/api/tips/generate-legacy', isAuthenticated, async (req: any, res) => {
     try {
       const generatedTip = await generateDailyTip();
       const tip = await storage.createDailyTip(generatedTip);
@@ -153,4 +255,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Helper function to determine age range from child age
+function getAgeRange(age?: number): string {
+  if (!age) return 'all ages';
+  if (age <= 3) return '0-3';
+  if (age <= 6) return '3-6';
+  if (age <= 12) return '7-12';
+  if (age <= 18) return '13-18';
+  return 'adult';
 }
