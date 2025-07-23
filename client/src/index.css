@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 0%);
+  --foreground: hsl(0, 0%, 100%);
+  --muted: hsl(0, 0%, 15%);
+  --muted-foreground: hsl(0, 0%, 70%);
+  --popover: hsl(0, 0%, 5%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --card: hsl(0, 0%, 8%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --border: hsl(0, 0%, 20%);
+  --input: hsl(0, 0%, 15%);
+  --primary: hsl(120, 100%, 50%);
+  --primary-foreground: hsl(0, 0%, 0%);
+  --secondary: hsl(0, 0%, 15%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --accent: hsl(0, 0%, 15%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --ring: hsl(120, 100%, 50%);
+  --radius: 0.5rem;
+  
+  /* Custom colors for the neuro-parent app */
+  --neuro-primary: hsl(120, 100%, 50%);
+  --neuro-secondary: hsl(120, 80%, 40%);
+  --neuro-accent: hsl(120, 60%, 35%);
+  --neuro-surface: hsl(0, 0%, 8%);
+  --neuro-background: hsl(0, 0%, 0%);
+  --neuro-text-primary: hsl(0, 0%, 100%);
+  --neuro-text-secondary: hsl(0, 0%, 70%);
+}
+
+.dark {
+  --background: hsl(0, 0%, 0%);
+  --foreground: hsl(0, 0%, 100%);
+  --muted: hsl(0, 0%, 15%);
+  --muted-foreground: hsl(0, 0%, 70%);
+  --popover: hsl(0, 0%, 5%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --card: hsl(0, 0%, 8%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --border: hsl(0, 0%, 20%);
+  --input: hsl(0, 0%, 15%);
+  --primary: hsl(120, 100%, 50%);
+  --primary-foreground: hsl(0, 0%, 0%);
+  --secondary: hsl(0, 0%, 15%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --accent: hsl(0, 0%, 15%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --ring: hsl(120, 100%, 50%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .bg-neuro-primary {
+    background-color: var(--neuro-primary);
+  }
+  
+  .text-neuro-primary {
+    color: var(--neuro-primary);
+  }
+  
+  .bg-neuro-secondary {
+    background-color: var(--neuro-secondary);
+  }
+  
+  .bg-neuro-accent {
+    background-color: var(--neuro-accent);
+  }
+  
+  .bg-neuro-surface {
+    background-color: var(--neuro-surface);
+  }
+  
+  .bg-neuro-background {
+    background-color: var(--neuro-background);
+  }
+  
+  .text-neuro-text-primary {
+    color: var(--neuro-text-primary);
+  }
+  
+  .text-neuro-text-secondary {
+    color: var(--neuro-text-secondary);
+  }
+}
+
+/* Custom animations and interactions */
+.message-bubble {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.floating-input {
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+}
+
+.tip-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tip-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.nav-item.active {
+  color: var(--neuro-primary);
+}
+
+.nav-item {
+  transition: color 0.2s ease;
+}
