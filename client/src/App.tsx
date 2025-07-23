@@ -2,90 +2,57 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, MessageCircle, Lightbulb, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
+import { ChatInterface } from "@/components/chat/chat-interface";
 
-// Simple landing page component with dynamic Firebase loading
-function SimpleLanding() {
-  const [isLoading, setIsLoading] = useState(false);
+// Initialize Firebase directly to avoid import issues
+import { initializeApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyA306aIofubqZ6sHP2ID0X7Zs49El6JrKU",
+  authDomain: "senali-235fb.firebaseapp.com",
+  projectId: "senali-235fb",
+  storageBucket: "senali-235fb.firebasestorage.app",
+  messagingSenderId: "67286745357",
+  appId: "1:67286745357:web:ec18d40025c29e2583b044",
+  measurementId: "G-GE6PL1J1Q7"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
+
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
+
+function SenaliApp() {
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
-  const [firebaseReady, setFirebaseReady] = useState(false);
 
   useEffect(() => {
-    // Load Firebase dynamically with detailed error tracking
-    const loadFirebase = async () => {
-      try {
-        console.log('=== FIREBASE LOADING START ===');
-        console.log('Attempting to import Firebase...');
-        
-        // Try importing Firebase modules step by step
-        const firebaseApp = await import('firebase/app');
-        console.log('Firebase app imported:', !!firebaseApp);
-        
-        const firebaseAuth = await import('firebase/auth');
-        console.log('Firebase auth imported:', !!firebaseAuth);
-        
-        const firebaseModule = await import('@/lib/firebase');
-        console.log('Firebase config module imported:', !!firebaseModule);
-        console.log('Available exports:', Object.keys(firebaseModule));
-        
-        const { auth, googleProvider } = firebaseModule;
-        console.log('Auth object:', !!auth);
-        console.log('Google provider:', !!googleProvider);
-        
-        if (!auth || !googleProvider) {
-          throw new Error('Firebase auth or provider not properly initialized');
-        }
-        
-        console.log('Firebase loaded successfully');
-        setFirebaseReady(true);
-        
-        // Set up auth state listener
-        firebaseAuth.onAuthStateChanged(auth, (user) => {
-          console.log('Auth state changed:', !!user);
-          if (user) {
-            console.log('User signed in:', user.email);
-            setUser(user);
-          } else {
-            console.log('User signed out');
-            setUser(null);
-          }
-          setIsLoading(false);
-        });
-        
-        console.log('=== FIREBASE LOADING COMPLETE ===');
-      } catch (error: any) {
-        console.error('=== FIREBASE LOADING ERROR ===');
-        console.error('Error details:', error);
-        console.error('Error stack:', error?.stack);
-        setError(`Failed to initialize authentication: ${error.message}`);
-        setFirebaseReady(false);
-        setIsLoading(false);
-      }
-    };
+    console.log('Setting up Firebase auth listener...');
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      console.log('Auth state changed:', !!firebaseUser);
+      setUser(firebaseUser);
+      setIsLoading(false);
+    });
 
-    loadFirebase();
+    return unsubscribe;
   }, []);
 
   const handleSignIn = async () => {
-    if (!firebaseReady) {
-      alert('Authentication is still loading. Please wait a moment and try again.');
-      return;
-    }
-
-    console.log('Attempting Firebase sign in...');
+    console.log('Starting Google sign-in...');
     try {
       setIsLoading(true);
       setError(null);
       
-      const { auth, googleProvider } = await import('@/lib/firebase');
-      const { signInWithPopup } = await import('firebase/auth');
-      
-      console.log('Starting Google sign in...');
       const result = await signInWithPopup(auth, googleProvider);
-      console.log('Sign in successful:', result.user);
-      // User will be set by onAuthStateChanged listener
+      console.log('Sign-in successful:', result.user);
     } catch (error: any) {
-      console.error('Sign in error:', error);
+      console.error('Sign-in error:', error);
       let errorMessage = 'Failed to sign in with Google';
       
       if (error.code === 'auth/popup-closed-by-user') {
@@ -101,21 +68,35 @@ function SimpleLanding() {
     }
   };
 
-  // If user is logged in, show success
-  if (user) {
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      console.log('User signed out');
+    } catch (error) {
+      console.error('Sign-out error:', error);
+    }
+  };
+
+  // Show loading state
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Brain className="h-10 w-10 text-black" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-4">Welcome to Senali!</h1>
-          <p className="text-gray-300 mb-4">Hi {user.displayName || user.email}!</p>
-          <p className="text-gray-400 text-sm">Firebase authentication is working correctly.</p>
+          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white">Loading Senali...</p>
         </div>
       </div>
     );
   }
+
+  // Show chat interface if user is signed in
+  if (user) {
+    return <ChatInterface user={user} onSignOut={handleSignOut} />;
+  }
+
+  // Show landing page if not signed in
+
+  // Landing page content
 
   return (
     <div className="min-h-screen bg-black">
@@ -235,12 +216,7 @@ function SimpleLanding() {
 
 function App() {
   console.log('App component rendering...');
-  
-  return (
-    <div className="min-h-screen bg-black">
-      <SimpleLanding />
-    </div>
-  );
+  return <SenaliApp />;
 }
 
 export default App;
