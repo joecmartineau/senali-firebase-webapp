@@ -15,8 +15,8 @@ export default function BottomNavigation({ activeTab, onTabChange }: BottomNavig
   ];
 
   return (
-    <nav className="bg-gray-900 border-t border-gray-700 px-4 py-2">
-      <div className="flex justify-around">
+    <nav className="bg-neuro-surface border-t border-neuro-primary/20 safe-area-inset-bottom">
+      <div className="flex justify-around px-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -26,14 +26,23 @@ export default function BottomNavigation({ activeTab, onTabChange }: BottomNavig
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                "flex flex-col items-center py-2 px-4 transition-colors",
+                "flex flex-col items-center py-3 px-4 transition-all duration-200 touch-manipulation",
+                "min-h-[64px] min-w-[64px] rounded-lg",
                 isActive 
-                  ? "text-green-500" 
-                  : "text-gray-400 hover:text-green-500"
+                  ? "text-neuro-primary bg-neuro-primary/10 transform scale-105" 
+                  : "text-neuro-text-secondary hover:text-neuro-primary hover:bg-neuro-primary/5"
               )}
             >
-              <Icon className="h-6 w-6 mb-1" />
-              <span className="text-xs font-medium">{tab.label}</span>
+              <Icon className={cn(
+                "h-6 w-6 mb-1 transition-transform",
+                isActive && "scale-110"
+              )} />
+              <span className={cn(
+                "text-xs font-medium transition-colors",
+                isActive && "font-semibold"
+              )}>
+                {tab.label}
+              </span>
             </button>
           );
         })}
