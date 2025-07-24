@@ -7,7 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Users, CreditCard, Plus, Minus, Search, Shield } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '../../hooks/use-toast';
+import { useAuth } from '../../hooks/useAuth';
+import { apiRequest } from '../../lib/api';
 
 interface User {
   uid: string;
@@ -18,20 +20,14 @@ interface User {
   lastActive: string;
 }
 
-interface AdminPanelProps {
-  currentUser: any;
-}
-
-export function AdminPanel({ currentUser }: AdminPanelProps) {
+export function AdminPanel() {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [creditAmount, setCreditAmount] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-
-  // Check if current user is admin
-  const isAdmin = currentUser?.email === 'joecmartineau@gmail.com';
+  const { user, isAdmin } = useAuth();
 
   useEffect(() => {
     if (isAdmin) {
@@ -42,23 +38,9 @@ export function AdminPanel({ currentUser }: AdminPanelProps) {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/test-admin-users', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        setUsers(userData);
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to load users",
-          variant: "destructive",
-        });
-      }
+      const response = await apiRequest('GET', '/api/admin/users');
+      const userData = await response.json();
+      setUsers(userData);
     } catch (error) {
       console.error('Error loading users:', error);
       toast({
@@ -73,38 +55,24 @@ export function AdminPanel({ currentUser }: AdminPanelProps) {
 
   const updateUserCredits = async (userId: string, creditChange: number) => {
     try {
-      const response = await fetch('/api/admin/update-credits', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          creditChange,
-        }),
+      const response = await apiRequest('POST', '/api/admin/update-credits', {
+        userId,
+        creditChange,
       });
 
-      if (response.ok) {
-        const updatedUser = await response.json();
-        setUsers(prev => prev.map(user => 
-          user.uid === userId ? { ...user, credits: updatedUser.credits } : user
-        ));
-        
-        if (selectedUser?.uid === userId) {
-          setSelectedUser(prev => prev ? { ...prev, credits: updatedUser.credits } : null);
-        }
-
-        toast({
-          title: "Success",
-          description: `Credits updated for ${updatedUser.displayName || updatedUser.email}`,
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to update credits",
-          variant: "destructive",
-        });
+      const updatedUser = await response.json();
+      setUsers(prev => prev.map(user => 
+        user.uid === userId ? { ...user, credits: updatedUser.credits } : user
+      ));
+      
+      if (selectedUser?.uid === userId) {
+        setSelectedUser(prev => prev ? { ...prev, credits: updatedUser.credits } : null);
       }
+
+      toast({
+        title: "Success",
+        description: `Credits updated for ${updatedUser.displayName || updatedUser.email}`,
+      });
     } catch (error) {
       console.error('Error updating credits:', error);
       toast({

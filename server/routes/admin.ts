@@ -2,33 +2,14 @@ import express from 'express';
 import { db } from '../db';
 import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
-import { isAuthenticated } from '../replitAuth';
+import { verifyFirebaseToken, requireAdmin } from '../middleware/firebase-auth';
 
 const router = express.Router();
 
-// Middleware to check if user is admin
-const requireAdmin = (req: any, res: any, next: any) => {
-  console.log('Admin check - req.user:', req.user);
-  console.log('Admin check - user email:', req.user?.email);
-  console.log('Admin check - user claims:', req.user?.claims);
-  
-  const userEmail = req.user?.email || req.user?.claims?.email;
-  
-  // Temporary bypass for testing - remove after authentication is working
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Development mode - allowing admin access');
-    next();
-    return;
-  }
-  
-  if (!req.user || userEmail !== 'joecmartineau@gmail.com') {
-    return res.status(403).json({ error: 'Admin access required', userEmail });
-  }
-  next();
-};
+// Admin middleware is now imported from firebase-auth.ts
 
-// Get all users with their subscription info (temporarily bypassing auth for testing)
-router.get('/users', requireAdmin, async (req, res) => {
+// Get all users with their subscription info
+router.get('/users', verifyFirebaseToken, requireAdmin, async (req, res) => {
   try {
     const allUsers = await db
       .select({
@@ -56,8 +37,8 @@ router.get('/users', requireAdmin, async (req, res) => {
   }
 });
 
-// Update user credits (temporarily bypassing auth for testing)
-router.post('/update-credits', requireAdmin, async (req, res) => {
+// Update user credits
+router.post('/update-credits', verifyFirebaseToken, requireAdmin, async (req, res) => {
   try {
     const { userId, creditChange } = req.body;
 
@@ -100,8 +81,8 @@ router.post('/update-credits', requireAdmin, async (req, res) => {
   }
 });
 
-// Get user statistics (temporarily bypassing auth for testing)
-router.get('/stats', requireAdmin, async (req, res) => {
+// Get user statistics
+router.get('/stats', verifyFirebaseToken, requireAdmin, async (req, res) => {
   try {
     const totalUsers = await db.select().from(users);
     const premiumUsers = totalUsers.filter(user => user.subscription === 'premium');

@@ -10,16 +10,14 @@ export function useToast() {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const toast = ({ title, description, variant = 'default' }: Toast) => {
-    // For now, just use browser alert - can be enhanced later with proper toast UI
-    const message = description ? `${title}: ${description}` : title;
-    if (variant === 'destructive') {
-      console.error('Error:', message);
-      alert(`Error: ${message}`);
-    } else {
-      console.log('Success:', message);
-      alert(message);
-    }
+    const newToast = { title, description, variant };
+    setToasts(prev => [...prev, newToast]);
+    
+    // Auto-remove toast after 3 seconds
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t !== newToast));
+    }, 3000);
   };
 
-  return { toast };
+  return { toast, toasts };
 }

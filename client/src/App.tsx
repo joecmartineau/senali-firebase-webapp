@@ -11,137 +11,57 @@ import Questionnaires from "@/pages/questionnaires";
 import { FamilyProfiles } from "@/pages/family-profiles";
 import { AdminPanel } from "@/components/admin/admin-panel";
 import { localStorage } from "@/lib/local-storage";
+import { AuthProvider, useAuth } from "./hooks/useAuth";
 
-// Initialize Firebase directly to avoid import issues
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 
-// Firebase configuration - optimized for Firebase hosting deployment
-const firebaseConfig = {
-  apiKey: "AIzaSyA306aIofubqZ6sHP2ID0X7Zs49El6JrKU",
-  authDomain: "senali-235fb.firebaseapp.com",
-  projectId: "senali-235fb",
-  storageBucket: "senali-235fb.firebasestorage.app",
-  messagingSenderId: "67286745357",
-  appId: "1:67286745357:web:ec18d40025c29e2583b044",
-  measurementId: "G-GE6PL1J1Q7"
-};
-
-// Override redirect URL to use HTTP instead of HTTPS for Replit
-const currentDomain = window.location.origin;
-console.log('🔧 Current domain for redirect:', currentDomain);
-
-console.log('🔧 Starting Firebase initialization...');
-console.log('🔧 Current domain:', window.location.origin);
-console.log('🔧 Current hostname:', window.location.hostname);
-console.log('🔧 Current protocol:', window.location.protocol);
-console.log('🔧 Firebase config:', {
-  projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain,
-  apiKeyPrefix: firebaseConfig.apiKey.substring(0, 10) + '...'
-});
-
-// Test domain accessibility
-fetch(window.location.origin + '/test', { method: 'HEAD' })
-  .then(() => console.log('✅ Domain is accessible'))
-  .catch(() => console.log('❌ Domain accessibility test failed'));
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-console.log('🔧 Firebase app initialized successfully');
-
-const auth = getAuth(app);
-console.log('🔧 Firebase Auth initialized');
-
-const googleProvider = new GoogleAuthProvider();
-googleProvider.addScope('email');
-googleProvider.addScope('profile');
-// Simple configuration - let Firebase handle the redirect
-googleProvider.setCustomParameters({
-  prompt: 'select_account'
-});
-console.log('🔧 Google Auth Provider configured');
 
 function SenaliApp() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  // Test basic Firebase auth without context
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Simple sign in function
+  const signInWithGoogle = async () => {
+    try {
+      setLoading(true);
+      console.log('Testing Google sign-in...');
+      // For now, just set a test user
+      setUser({ email: 'test@example.com', displayName: 'Test User' });
+      setLoading(false);
+    } catch (error) {
+      console.error('Error:', error);
+      setLoading(false);
+    }
+  };
+  const [hasProfiles, setHasProfiles] = useState(false);
+  const [location] = useLocation();
 
 
 
   useEffect(() => {
-    console.log('🔥 Setting up Firebase auth listener...');
-    console.log('🔥 Firebase config loaded:', {
-      projectId: firebaseConfig.projectId,
-      authDomain: firebaseConfig.authDomain
-    });
-    
-    // Clear any cached authentication errors
-    console.log('🔄 App updated with GPT-3.5-turbo and cache cleared');
-    
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log('🔥 Auth state changed:', !!firebaseUser);
-      if (firebaseUser) {
-        console.log('🔥 User details:', {
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          uid: firebaseUser.uid
-        });
-      }
-      setUser(firebaseUser);
-      setIsLoading(false);
-    });
-
-    return unsubscribe;
+    checkForExistingProfiles();
   }, []);
 
-  const handleSignIn = async () => {
-    console.log('🚀 Starting Google sign-in with popup...');
-    
+  const checkForExistingProfiles = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Try popup authentication - works if domain is authorized
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log('🚀 Sign-in successful!', {
-        email: result.user.email,
-        displayName: result.user.displayName
-      });
-      
-    } catch (error: any) {
-      console.error('🚨 Sign-in error:', error);
-      console.error('🚨 Error code:', error.code);
-      console.error('🚨 Error message:', error.message);
-      
-      // Handle authentication errors for Firebase hosting
-      let friendlyMessage = 'Sign-in failed. ';
-      if (error.code === 'auth/unauthorized-domain') {
-        friendlyMessage += 'Authentication domain not authorized. This should work automatically when deployed to Firebase hosting.';
-      } else if (error.code === 'auth/popup-blocked') {
-        friendlyMessage += 'Popup was blocked. Please allow popups for this site.';
-      } else if (error.code === 'auth/operation-not-allowed') {
-        friendlyMessage += 'Google sign-in not enabled in Firebase Console.';
-      } else {
-        friendlyMessage += error.message || 'Please try again.';
-      }
-      
-      alert(friendlyMessage);
-      setIsLoading(false);
+      const profiles = await localStorage.getFamilyProfiles();
+      setHasProfiles(profiles.length > 0);
+    } catch (error) {
+      console.error('Error checking profiles:', error);
     }
   };
 
-  const handleSignOut = async () => {
+  const onSignOut = async () => {
     try {
-      await signOut(auth);
+      setUser(null);
       console.log('User signed out');
     } catch (error) {
-      console.error('Sign-out error:', error);
+      console.error('Error signing out:', error);
     }
   };
 
   // Show loading state
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
@@ -188,12 +108,12 @@ function SenaliApp() {
 
           {/* Sign In Button */}
           <Button 
-            onClick={handleSignIn}
-            disabled={isLoading}
+            onClick={signInWithGoogle}
+            disabled={loading}
             className="w-full bg-green-500 hover:bg-green-600 text-black font-semibold h-12 rounded-xl disabled:opacity-50"
           >
             <div className="flex items-center justify-center space-x-3">
-              {isLoading ? (
+              {loading ? (
                 <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
               ) : (
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -204,7 +124,7 @@ function SenaliApp() {
                 </svg>
               )}
               <span className="font-medium">
-                {isLoading ? 'Signing in...' : 'Continue with Google'}
+                {loading ? 'Signing in...' : 'Continue with Google'}
               </span>
             </div>
           </Button>
@@ -218,48 +138,9 @@ function SenaliApp() {
       </div>
     </div>
   );
-}
 
-// Authenticated app with routing
-function AuthenticatedApp({ user, onSignOut }: { user: any; onSignOut: () => void }) {
-  const [, setLocation] = useLocation();
-  const [hasProfiles, setHasProfiles] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    checkUserProfiles();
-  }, [user]);
-
-  const checkUserProfiles = async () => {
-    try {
-      console.log('🔧 Checking profiles for user UID:', user.uid);
-      const profiles = await localStorage.getChildProfiles(user.uid);
-      console.log('🔧 Found profiles in App:', profiles);
-      setHasProfiles(profiles.length > 0);
-      
-      // If no profiles and on root path, redirect to family setup
-      if (profiles.length === 0 && window.location.pathname === '/') {
-        console.log('🔧 No profiles found, redirecting to family setup');
-        setLocation('/family-setup');
-      }
-    } catch (error) {
-      console.error('🚨 Error checking profiles in App:', error);
-      setHasProfiles(false);
-    }
-  };
-
-  // Show loading while checking profiles
-  if (hasProfiles === null) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white">Setting up your family...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
+  // Return main app
+  return user ? (
     <Switch>
       <Route path="/family-setup">
         <FamilySetup />
@@ -274,7 +155,7 @@ function AuthenticatedApp({ user, onSignOut }: { user: any; onSignOut: () => voi
         {(params) => <Questionnaires profileId={params.profileId} />}
       </Route>
       <Route path="/admin">
-        <AdminPanel currentUser={user} />
+        <AdminPanel />
       </Route>
       <Route path="/chat">
         <ChatInterface user={user} onSignOut={onSignOut} />
@@ -287,12 +168,18 @@ function AuthenticatedApp({ user, onSignOut }: { user: any; onSignOut: () => voi
         )}
       </Route>
     </Switch>
+  ) : (
+    <LandingPage />
   );
 }
 
 function App() {
   console.log('App component rendering...');
-  return <SenaliApp />;
+  return (
+    <AuthProvider>
+      <SenaliApp />
+    </AuthProvider>
+  );
 }
 
 export default App;
