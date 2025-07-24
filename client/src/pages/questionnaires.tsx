@@ -99,8 +99,7 @@ export default function Questionnaires({ profileId }: QuestionnairesProps) {
     return (
       <ProfileQuestionnaire 
         profile={selectedProfile}
-        onComplete={handleProfileUpdate}
-        onBack={() => {
+        onClose={() => {
           if (profileId) {
             // If came from specific profile link, go back to family profiles
             setLocation('/family-profiles');

@@ -52,7 +52,7 @@ export function ProfileQuestionnaire({ profile, onClose }: ProfileQuestionnaireP
     // Save to profile immediately
     setLoading(true);
     try {
-      const updatedSymptoms = { ...profile.symptoms };
+      const updatedSymptoms = { ...profile.symptoms } as Record<string, boolean | undefined>;
       Object.entries(newResponses).forEach(([key, value]) => {
         if (value === 'yes') updatedSymptoms[key] = true;
         else if (value === 'no') updatedSymptoms[key] = false;
