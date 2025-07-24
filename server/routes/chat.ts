@@ -44,7 +44,7 @@ Remember: You're here to listen, understand, and gently help people talk about t
 
 router.post('/chat', async (req, res) => {
   try {
-    const { message, history = [] } = req.body;
+    const { message, childContext = '' } = req.body;
     const userId = (req.user as any)?.id; // Get user ID from session
 
     if (!message || typeof message !== 'string') {
@@ -74,26 +74,10 @@ router.post('/chat', async (req, res) => {
         content: msg.content
       }));
 
-    // Process message for profile and symptom updates
-    try {
-      const { assessmentProcessor } = await import('../services/assessment-processor');
-      await assessmentProcessor.processMessage(userId, message);
-      console.log('📊 Profile and symptom data processed for user:', userId);
-    } catch (error) {
-      console.error('Assessment processing error:', error);
-      // Don't fail the chat if assessment processing fails
-    }
-
-    // Get child context for personalized responses
-    let childContext = '';
-    try {
-      const { assessmentProcessor } = await import('../services/assessment-processor');
-      childContext = await assessmentProcessor.getChildContext(userId);
-      console.log(`👶 Loaded child context for personalized responses`);
-    } catch (error) {
-      console.error('Error loading child context:', error);
-    }
-
+    // Note: Assessment processing now happens on the client side with local storage
+    // The server no longer processes or stores sensitive family data
+    
+    // Child context is now passed from client (stored locally for privacy)
     // Build system prompt with child context
     const systemPromptWithContext = childContext ? 
       `${SYSTEM_PROMPT}\n\n${childContext}` : 

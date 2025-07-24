@@ -12,7 +12,7 @@ Preferred communication style: Simple, everyday language at 7th grade reading le
 
 ## System Architecture
 
-This is a full-stack TypeScript application built with a modern web architecture:
+This is a full-stack TypeScript application built with a privacy-first, local storage architecture:
 
 ### Frontend Architecture
 - **Framework**: React 18 with Vite as the build tool
@@ -21,19 +21,23 @@ This is a full-stack TypeScript application built with a modern web architecture
 - **Routing**: Wouter for lightweight client-side routing
 - **State Management**: TanStack Query (React Query) for server state management
 - **Type Safety**: TypeScript throughout with strict configuration
+- **Local Storage**: IndexedDB for persistent client-side data storage
+- **Assessment Processing**: Client-side profile and symptom tracking
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js framework
 - **Language**: TypeScript with ES modules
-- **API Design**: RESTful API endpoints under `/api` prefix
+- **API Design**: RESTful API endpoints under `/api` prefix (minimal data handling)
 - **Authentication**: Replit Auth integration with OpenID Connect
-- **Session Management**: Express sessions with PostgreSQL storage
+- **Session Management**: Express sessions (no sensitive data storage)
+- **AI Integration**: OpenAI API for chat responses only
 
-### Database Architecture
-- **Database**: PostgreSQL (configured for Neon serverless)
-- **ORM**: Drizzle ORM with Drizzle Kit for migrations
-- **Schema**: Type-safe database operations with Zod validation
-- **Connection**: Neon serverless with WebSocket support for serverless environments
+### Data Architecture (Privacy-First Local Storage)
+- **Storage Location**: All user data stored locally on device using IndexedDB
+- **Data Types**: Chat messages, child profiles, symptom checklists, user preferences
+- **Privacy Benefits**: No sensitive family data transmitted to or stored on servers
+- **Data Control**: Users have complete control with export/clear functionality
+- **Persistence**: Data persists across browser sessions and device restarts
 
 ## Key Components
 
@@ -65,12 +69,13 @@ This is a full-stack TypeScript application built with a modern web architecture
 - **Persistence**: Tips stored with timestamps and user interaction tracking
 - **Display**: Card-based UI with sharing and regeneration capabilities
 
-## Data Flow
+## Data Flow (Local-First Architecture)
 
-1. **User Authentication**: Replit Auth → Session Creation → User Profile Storage
-2. **Chat Interaction**: User Input → Message Storage → OpenAI API → AI Response → Message Storage → UI Update
-3. **Daily Tips**: Scheduled/Manual Generation → OpenAI API → Tip Storage → User Display → Feedback Collection
-4. **State Management**: React Query manages server state with automatic caching and synchronization
+1. **User Authentication**: Replit Auth → Session Creation (no personal data stored on server)
+2. **Chat Interaction**: User Input → Local Storage → Context Extraction → OpenAI API → AI Response → Local Storage → UI Update
+3. **Profile Management**: Conversation Analysis → Local Assessment Processor → IndexedDB → Persistent Local Storage
+4. **Symptom Tracking**: Real-time Conversation Processing → Dynamic Symptom Updates → Local IndexedDB Storage
+5. **Data Control**: Local Export/Import → JSON Files → User-Controlled Data Portability
 
 ## External Dependencies
 
@@ -150,6 +155,16 @@ This is a full-stack TypeScript application built with a modern web architecture
   - Auth Domain: senali-235fb.firebaseapp.com
   - Storage Bucket: senali-235fb.firebasestorage.app
   - App ID: 1:67286745357:web:ec18d40025c29e2583b044
+
+### Major Architecture Change: Local Device Storage (2025-01-24)
+- **Complete Migration to Local Storage**: Migrated entire data architecture from PostgreSQL database to local device storage using IndexedDB
+  - **Privacy-First Approach**: All sensitive family information, child profiles, symptom tracking, and chat history now stored locally on user's device
+  - **Client-Side Processing**: Created comprehensive local storage system with `LocalStorage` class for IndexedDB operations
+  - **Local Assessment Processor**: Moved all profile and symptom tracking logic to client-side `LocalAssessmentProcessor`
+  - **Enhanced Data Control**: Users can export their data as JSON files and clear all data locally
+  - **Persistent Memory**: Chat history, child profiles, and symptom checklists persist across sessions without external storage
+  - **Server Role Reduction**: Server now only provides AI responses - no longer stores or processes sensitive user data
+  - **Data Portability**: Export/import functionality allows users complete control over their information
 
 ### Major Role Change (2025-01-24)
 - **Senali Role Transformation**: Complete shift from neurodivergent parenting specialist to therapist/friend companion

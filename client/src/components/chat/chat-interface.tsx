@@ -3,15 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User, LogOut } from "lucide-react";
+import { Send, Bot, User, LogOut, Download, Trash2 } from "lucide-react";
 import { InfinityIcon } from "@/components/ui/infinity-icon";
+import { localChatService } from "@/services/local-chat-service";
+import type { Message } from "@/lib/local-storage";
 
-interface Message {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: Date;
-}
+// Message interface now imported from local-storage
 
 interface ChatInterfaceProps {
   user: any;
@@ -26,46 +23,22 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load conversation history when component mounts
+  // Load conversation history from local storage when component mounts
   useEffect(() => {
     const loadHistory = async () => {
       try {
-        const response = await fetch('/api/chat/history');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.messages && data.messages.length > 0) {
-            // Convert timestamp strings back to Date objects
-            const historyMessages = data.messages.map((msg: any) => ({
-              ...msg,
-              timestamp: new Date(msg.timestamp)
-            }));
-            setMessages(historyMessages);
-          } else {
-            // No history, show welcome message
-            setMessages([{
-              id: 'welcome',
-              content: "Hi there! I'm Senali, and I'm here to listen and support you. What's been on your mind lately?",
-              role: 'assistant',
-              timestamp: new Date()
-            }]);
-          }
-        } else {
-          // Fallback to welcome message if history fails to load
-          setMessages([{
-            id: 'welcome',
-            content: "Hi there! I'm Senali, and I'm here to listen and support you. What's been on your mind lately?",
-            role: 'assistant',
-            timestamp: new Date()
-          }]);
-        }
+        await localChatService.init();
+        const historyMessages = await localChatService.loadConversationHistory();
+        setMessages(historyMessages);
       } catch (error) {
-        console.error('Failed to load chat history:', error);
+        console.error('Failed to load local chat history:', error);
         // Fallback to welcome message
         setMessages([{
           id: 'welcome',
           content: "Hi there! I'm Senali, and I'm here to listen and support you. What's been on your mind lately?",
           role: 'assistant',
-          timestamp: new Date()
+          timestamp: new Date(),
+          userId: 'user-1'
         }]);
       } finally {
         setIsLoadingHistory(false);
@@ -104,55 +77,62 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: input.trim(),
-      role: 'user',
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
+    const messageContent = input.trim();
     setInput('');
     setIsLoading(true);
 
     try {
-      // Call AI chat API
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: input.trim()
-          // No need to send history - server will get it from database
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get AI response');
-      }
-
-      const data = await response.json();
+      // Use local chat service for everything
+      const { userMessage, aiResponse } = await localChatService.sendMessage(messageContent);
       
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: data.response,
-        role: 'assistant',
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
+      // Update UI with both messages
+      setMessages(prev => [...prev, userMessage, aiResponse]);
     } catch (error) {
       console.error('Chat error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: "I'm sorry, I'm having trouble responding right now. Please try again.",
         role: 'assistant',
-        timestamp: new Date()
+        timestamp: new Date(),
+        userId: 'user-1'
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const exportData = async () => {
+    try {
+      const data = await localChatService.exportData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `senali-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export error:', error);
+    }
+  };
+
+  const clearData = async () => {
+    if (confirm('Are you sure you want to clear all your data? This cannot be undone.')) {
+      try {
+        await localChatService.clearAllData();
+        setMessages([{
+          id: 'welcome',
+          content: "Hi there! I'm Senali, and I'm here to listen and support you. What's been on your mind lately?",
+          role: 'assistant',
+          timestamp: new Date(),
+          userId: 'user-1'
+        }]);
+      } catch (error) {
+        console.error('Clear data error:', error);
+      }
     }
   };
 
@@ -177,8 +157,26 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
           <div className="flex items-center space-x-3">
             <div className="text-right">
               <p className="text-white text-sm font-medium">{user.displayName || user.email}</p>
-              <p className="text-gray-400 text-xs">Signed in</p>
+              <p className="text-gray-400 text-xs">Data stored locally</p>
             </div>
+            <Button
+              onClick={exportData}
+              variant="outline"
+              size="sm"
+              className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              title="Export your data"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={clearData}
+              variant="outline"
+              size="sm"
+              className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              title="Clear all data"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
             <Button
               onClick={onSignOut}
               variant="outline"
