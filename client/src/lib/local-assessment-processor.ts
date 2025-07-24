@@ -423,7 +423,7 @@ export class LocalAssessmentProcessor {
       return ""; // Return empty string so Senali doesn't mention "new conversation"
     }
     
-    let context = `IMPORTANT FAMILY CONTEXT - Remember these family members from previous conversations:\n\n`;
+    let context = `IMPORTANT FAMILY CONTEXT - Remember these family members from previous conversations:\n\n**CRITICAL: These family members are real and exist. Use their names when talking. Ask about them specifically. Never act like this is a new conversation or ask for their names again.**\n\n`;
     
     for (let index = 0; index < profiles.length; index++) {
       const profile = profiles[index];

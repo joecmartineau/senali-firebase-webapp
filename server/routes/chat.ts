@@ -60,7 +60,7 @@ router.post('/', async (req, res) => {
     // Child context is passed from client (stored locally for privacy)
     // Build system prompt with child context
     const systemPromptWithContext = childContext ? 
-      `${SYSTEM_PROMPT}\n\n${childContext}` : 
+      `${SYSTEM_PROMPT}\n\n**CRITICAL FAMILY CONTEXT - USE THESE EXACT NAMES:**\n${childContext}\n\n**IMPORTANT: Always use the exact names shown above. Never make up names like "Alex" or "Liam". If family context shows children named "Sam" and "Noah", use those exact names.**` : 
       SYSTEM_PROMPT;
 
     // Use minimal context approach - only recent messages
@@ -72,6 +72,11 @@ router.post('/', async (req, res) => {
     ];
 
     console.log(`Sending ${recentContext.length} recent messages to OpenAI (efficient context)`);
+    
+    // Debug log the system prompt being sent to OpenAI
+    if (childContext) {
+      console.log('🎯 System prompt includes family context:', systemPromptWithContext.substring(systemPromptWithContext.length - 200));
+    }
 
     console.log('Sending chat request to OpenAI...');
     

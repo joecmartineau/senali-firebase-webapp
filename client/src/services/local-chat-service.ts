@@ -1,6 +1,7 @@
 import { localStorage } from '../lib/local-storage';
 import { localAssessmentProcessor } from '../lib/local-assessment-processor';
 import { clearWrongProfiles } from '../lib/clear-wrong-profiles';
+import { debugProfiles } from '../lib/debug-profiles';
 import type { Message } from '../lib/local-storage';
 
 export class LocalChatService {
@@ -56,12 +57,19 @@ export class LocalChatService {
       
       // Step 2: ALWAYS load all existing child context (regardless of current message)
       childContext = await localAssessmentProcessor.getChildContext(this.userId);
-      console.log('👶 Loaded comprehensive child context:', childContext ? `Found profiles (${childContext.substring(0, 200)}...)` : 'No profiles yet');
+      console.log('👶 Loaded comprehensive child context:', childContext ? `Found profiles` : 'No profiles yet');
+      
+      if (childContext) {
+        console.log('📋 Full context being sent to AI:');
+        console.log(childContext);
+      }
       
       // Step 3: Log all existing family members for debugging
       const allProfiles = await localStorage.getChildProfiles(this.userId);
       if (allProfiles.length > 0) {
         console.log('🏠 Existing family members in storage:', allProfiles.map(p => p.childName).join(', '));
+        console.log('🔍 Full profile debug:');
+        await debugProfiles(this.userId);
       } else {
         console.log('🏠 No family members found in storage');
       }
