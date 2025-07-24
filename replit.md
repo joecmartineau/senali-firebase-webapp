@@ -2,7 +2,7 @@
 
 ## Overview
 
-NeuroParent is a specialized AI-powered support application designed for parents of neurodivergent children, including those with ADHD, autism, ADD, ODD, and other neurological differences. The application provides personalized parenting guidance through AI chat interactions and daily tips to help parents navigate the unique challenges of raising neurodivergent children.
+Senali is an AI-powered companion designed to act as both a therapist and a friend for parents. The application provides empathetic conversation, active listening, and supportive guidance through AI chat interactions and daily tips focused on emotional well-being and family relationships. Senali specializes in building meaningful connections by asking personalized questions about users' children, spouses, and family dynamics.
 
 ## User Preferences
 
@@ -45,12 +45,13 @@ This is a full-stack TypeScript application built with a modern web architecture
 
 ### AI Integration
 - **Provider**: OpenAI GPT-3.5-turbo model  
-- **AI Personality**: Senali - specialized assistant with access to research databases
-- **Specialization**: Custom system prompt for neurodivergent parenting support with professional credentials
+- **AI Personality**: Senali - therapist and friend companion with empathetic conversation style
+- **Specialization**: Custom system prompt for therapeutic support and active listening without medical advice
 - **Features**: 
-  - Contextual chat conversations with message history
-  - Daily tip generation with personalized content
-  - Evidence-based parenting strategies and behavioral management
+  - Contextual chat conversations with message history and emotional validation
+  - Daily tip generation focused on family well-being and self-care
+  - Personalized questions about family dynamics, children, and relationships
+  - Guided conversation to explore deeper feelings and gather meaningful information
 
 ### Chat System
 - **Real-time Interface**: Message-based chat with AI assistant
@@ -150,7 +151,16 @@ This is a full-stack TypeScript application built with a modern web architecture
   - Storage Bucket: senali-235fb.firebasestorage.app
   - App ID: 1:67286745357:web:ec18d40025c29e2583b044
 
-### Recent Updates (2025-01-24)
+### Major Role Change (2025-01-24)
+- **Senali Role Transformation**: Complete shift from neurodivergent parenting specialist to therapist/friend companion
+  - Updated system prompts to focus on active listening, empathy, and therapeutic conversation
+  - Removed specialized neurodivergent content in favor of general family and emotional support
+  - Changed greeting to warm, open-ended invitation to share ("What's been on your mind lately?")
+  - Updated daily tips to focus on self-care, relationships, and emotional well-being instead of neurodivergent-specific strategies
+  - Simplified branding to show just "Senali" without descriptive text
+  - Implemented personalized questioning strategy to learn about users' families and build connections
+
+### Previous Updates (2025-01-24)
 - **Assessment System**: Implemented professional diagnostic assessment tracking system
   - Real DSM-5 criteria for ADHD, Autism, and ODD assessments  
   - Background processing of chat messages to extract symptom information

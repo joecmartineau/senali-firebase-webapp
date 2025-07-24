@@ -22,7 +22,7 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: "Hello! How can I help you today?",
+      content: "Hi there! I'm Senali, and I'm here to listen and support you. What's been on your mind lately?",
       role: 'assistant',
       timestamp: new Date()
     }
