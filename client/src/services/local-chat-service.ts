@@ -103,7 +103,7 @@ export class LocalChatService {
       const familyNames = directFamilyContext.match(/\*\*([^*]+)\*\*/g);
       console.log('🎯 Family Names in Direct Context:', familyNames);
       console.log('👥 Family member count:', familyMemberCount);
-      console.log('📋 All family names:', familyNames.join(', '));
+      console.log('📋 All family names:', familyNames ? familyNames.join(', ') : 'No names detected');
     } else {
       console.log('❌ NO DIRECT FAMILY CONTEXT - No family profiles exist yet');
     }

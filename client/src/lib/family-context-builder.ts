@@ -24,16 +24,41 @@ export class FamilyContextBuilder {
    */
   async buildFamilyContext(userId: string): Promise<string> {
     console.log('🏗️ Building comprehensive family context...');
+    console.log('🔍 Looking for profiles for userId:', userId);
     
-    // Get all family profiles
+    // Get all family profiles with extensive debugging
     const profiles = await localStorage.getChildProfiles(userId);
     
+    console.log('📊 Raw profiles result:', profiles);
+    console.log('📊 Profiles length:', profiles ? profiles.length : 'undefined');
+    
     if (!profiles || profiles.length === 0) {
-      console.log('👪 No family profiles found');
+      console.log('❌ No family profiles found - this is why Senali doesn\'t know the family!');
+      console.log('🔍 Checking if ANY profiles exist in database...');
+      
+      // Debug: Check if profiles exist but for wrong userId
+      try {
+        const allProfiles = await localStorage.exportAllData();
+        console.log('🗂️ All data in database:', allProfiles);
+        if (allProfiles.childProfiles) {
+          console.log('👥 Found profiles in database:', allProfiles.childProfiles.length);
+          console.log('📋 Profile userIds:', allProfiles.childProfiles.map((p: any) => `${p.childName} (userId: ${p.userId})`));
+        }
+      } catch (error) {
+        console.error('❌ Error checking database:', error);
+      }
+      
       return '';
     }
 
-    console.log(`👨‍👩‍👧‍👦 Found ${profiles.length} family members:`, profiles.map(p => p.childName).join(', '));
+    console.log(`✅ Found ${profiles.length} family members:`, profiles.map(p => p.childName).join(', '));
+    console.log('🔍 Profile details:', profiles.map(p => ({
+      name: p.childName,
+      age: p.age,
+      gender: p.gender,
+      relationship: p.relationshipToUser,
+      userId: p.userId
+    })));
 
     const familyMembers: FamilyMemberInfo[] = [];
 
@@ -45,16 +70,16 @@ export class FamilyContextBuilder {
         relationship: this.formatRelationship(profile.relationshipToUser || 'family member')
       };
 
-      // Add medical diagnoses if available
-      if (profile.medicalDiagnoses && profile.medicalDiagnoses.length > 0) {
-        memberInfo.diagnoses = profile.medicalDiagnoses;
+      // Add medical diagnoses if available (check profile structure)
+      if ((profile as any).medicalDiagnoses && (profile as any).medicalDiagnoses.length > 0) {
+        memberInfo.diagnoses = (profile as any).medicalDiagnoses;
       }
 
-      // Add other profile information
-      if (profile.medicalInfo) memberInfo.medicalInfo = profile.medicalInfo;
-      if (profile.schoolInfo) memberInfo.schoolInfo = profile.schoolInfo;
-      if (profile.strengths) memberInfo.strengths = profile.strengths;
-      if (profile.challenges) memberInfo.challenges = profile.challenges;
+      // Add other profile information if available
+      if ((profile as any).medicalInfo) memberInfo.medicalInfo = (profile as any).medicalInfo;
+      if ((profile as any).schoolInfo) memberInfo.schoolInfo = (profile as any).schoolInfo;
+      if ((profile as any).strengths) memberInfo.strengths = (profile as any).strengths;
+      if ((profile as any).challenges) memberInfo.challenges = (profile as any).challenges;
 
       // Check for completed symptom questionnaires
       try {
@@ -65,13 +90,13 @@ export class FamilyContextBuilder {
           // Add relevant symptom information
           const presentSymptoms: string[] = [];
           
-          // Check ADHD symptoms
-          if (symptoms.difficultyFocusing === true) presentSymptoms.push('attention difficulties');
-          if (symptoms.hyperactivity === true) presentSymptoms.push('hyperactivity');
-          if (symptoms.impulsivity === true) presentSymptoms.push('impulsivity');
+          // Check ADHD symptoms (use actual property names from SymptomChecklist)
+          if ((symptoms as any).difficultyFocusing === true) presentSymptoms.push('attention difficulties');
+          if ((symptoms as any).hyperactivity === true) presentSymptoms.push('hyperactivity');
+          if ((symptoms as any).impulsivity === true) presentSymptoms.push('impulsivity');
           
           // Check Autism symptoms
-          if (symptoms.socialCommunicationChallenges === true) presentSymptoms.push('social communication challenges');
+          if ((symptoms as any).socialCommunicationChallenges === true) presentSymptoms.push('social communication challenges');
           if (symptoms.restrictedFixatedInterests === true) presentSymptoms.push('restricted interests');
           if (symptoms.sensoryReactivity === true) presentSymptoms.push('sensory sensitivities');
           
