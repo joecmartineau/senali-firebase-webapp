@@ -77,7 +77,7 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
               <CardContent className="space-y-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span className="text-sm">10 messages per day</span>
+                  <span className="text-sm">100 messages per day</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />

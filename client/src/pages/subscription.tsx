@@ -94,7 +94,7 @@ export default function SubscriptionPage() {
                   <p className="text-sm text-muted-foreground">
                     {subscriptionStatus.isActive || subscriptionStatus.isTrialActive ? 
                       `${daysRemaining} days remaining` : 
-                      'Limited to 10 messages per day'
+                      'Limited to 100 messages per day'
                     }
                   </p>
                 </div>
@@ -121,7 +121,7 @@ export default function SubscriptionPage() {
             <CardContent className="space-y-3">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">10 messages per day</span>
+                <span className="text-sm">100 messages per day</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />
