@@ -42,13 +42,9 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
         const historyMessages = await localChatService.loadConversationHistory();
         setMessages(historyMessages);
         
-        // Count today's messages for free tier limits
-        const today = new Date().toDateString();
-        const todaysMessages = historyMessages.filter(msg => 
-          msg.role === 'user' && 
-          new Date(msg.timestamp).toDateString() === today
-        );
-        setMessageCount(todaysMessages.length);
+        // Get persistent message count (can't be reset by clearing chat)
+        const todaysCount = subscriptionService.getTodaysMessageCount();
+        setMessageCount(todaysCount);
 
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -97,9 +93,8 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
-    // Check subscription limits for free users
-    const hasPremiumAccess = subscriptionService.hasPremiumAccess();
-    if (!hasPremiumAccess && messageCount >= SUBSCRIPTION_LIMITS.free.dailyMessages) {
+    // Check subscription limits for free users using persistent counting
+    if (!subscriptionService.canSendMessage()) {
       // Add Senali's subscription prompt message
       const subscriptionPromptMessage: Message = {
         id: `subscription-prompt-${Date.now()}`,
@@ -125,9 +120,10 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
       // Update UI with both messages
       setMessages(prev => [...prev, userMessage, aiResponse]);
       
-      // Update message count for free tier tracking
-      if (!hasPremiumAccess) {
-        setMessageCount(prev => prev + 1);
+      // Update persistent message count for free tier tracking
+      if (!subscriptionService.hasPremiumAccess()) {
+        subscriptionService.incrementMessageCount();
+        setMessageCount(subscriptionService.getTodaysMessageCount());
       }
     } catch (error) {
       console.error('Chat error details:', error);
@@ -175,7 +171,7 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
           timestamp: new Date(),
           userId: 'user-1'
         }]);
-        setMessageCount(0); // Reset message count
+        // Don't reset message count - prevents unlimited free messages exploit
       } catch (error) {
         console.error('Clear conversation error:', error);
       }

@@ -26,11 +26,23 @@ export class LocalChatService {
       console.error('Local assessment processing error:', error);
     }
 
-    // Get child context for personalized responses
+    // Get comprehensive child context for personalized responses
     let childContext = '';
     try {
       childContext = await localAssessmentProcessor.getChildContext(this.userId);
       console.log('👶 Loaded child context for personalized responses');
+      
+      // If no context found, try to extract and save child names from message
+      if (!childContext && content) {
+        const childNames = localAssessmentProcessor.extractChildNames(content);
+        if (childNames.length > 0) {
+          for (const name of childNames) {
+            await localAssessmentProcessor.getOrCreateChildProfile(this.userId, name);
+          }
+          // Reload context after creating profiles
+          childContext = await localAssessmentProcessor.getChildContext(this.userId);
+        }
+      }
     } catch (error) {
       console.error('Error loading child context:', error);
     }

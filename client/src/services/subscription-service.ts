@@ -135,6 +135,50 @@ export class SubscriptionService {
     this.saveStatus();
   }
 
+  /**
+   * Get today's message count (persistent across chat clears)
+   */
+  getTodaysMessageCount(): number {
+    const today = new Date().toDateString();
+    const messageData = localStorage.getItem('senali_daily_messages');
+    
+    if (messageData) {
+      const data = JSON.parse(messageData);
+      if (data.date === today) {
+        return data.count || 0;
+      }
+    }
+    
+    // New day, reset count
+    return 0;
+  }
+
+  /**
+   * Increment today's message count
+   */
+  incrementMessageCount(): void {
+    const today = new Date().toDateString();
+    const currentCount = this.getTodaysMessageCount();
+    
+    const messageData = {
+      date: today,
+      count: currentCount + 1
+    };
+    
+    localStorage.setItem('senali_daily_messages', JSON.stringify(messageData));
+  }
+
+  /**
+   * Check if user can send another message (for free users)
+   */
+  canSendMessage(): boolean {
+    if (this.hasPremiumAccess()) {
+      return true;
+    }
+    
+    return this.getTodaysMessageCount() < SUBSCRIPTION_LIMITS.free.dailyMessages;
+  }
+
   private saveStatus(): void {
     localStorage.setItem('senali_subscription_status', JSON.stringify(this.subscriptionStatus));
   }
