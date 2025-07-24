@@ -24,6 +24,12 @@ function SenaliApp() {
   // Initialize Firebase auth listener
   useEffect(() => {
     console.log('Setting up Firebase auth listener...');
+    console.log('Firebase config check:', {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? 'Present' : 'Missing',
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? 'Present' : 'Missing',
+      appId: import.meta.env.VITE_FIREBASE_APP_ID ? 'Present' : 'Missing'
+    });
+    
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       console.log('Auth state changed:', firebaseUser?.email || 'No user');
       setUser(firebaseUser);
@@ -38,21 +44,31 @@ function SenaliApp() {
     try {
       setLoading(true);
       console.log('Starting Firebase Google sign-in...');
+      console.log('Firebase auth object:', auth);
+      console.log('Google provider:', googleProvider);
+      
       const result = await signInWithPopup(auth, googleProvider);
       console.log('Sign-in successful:', result.user.email);
+      // Loading will be set to false by the auth state listener
     } catch (error: any) {
-      console.error('Firebase sign-in error:', error);
+      console.error('Firebase sign-in error details:', {
+        code: error.code,
+        message: error.message,
+        stack: error.stack
+      });
       
       // Handle specific Firebase auth errors
       let errorMessage = 'Sign-in failed. ';
       if (error.code === 'auth/unauthorized-domain') {
-        errorMessage += 'This domain is not authorized. Please add your domain to Firebase Console.';
+        errorMessage += 'This domain is not authorized. Please add your domain to Firebase Console under Authentication > Settings > Authorized domains.';
       } else if (error.code === 'auth/popup-blocked') {
         errorMessage += 'Popup was blocked. Please allow popups for this site.';
       } else if (error.code === 'auth/operation-not-allowed') {
         errorMessage += 'Google sign-in is not enabled in Firebase Console.';
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage += 'Sign-in popup was closed. Please try again.';
       } else {
-        errorMessage += error.message;
+        errorMessage += `Error: ${error.message}`;
       }
       
       alert(errorMessage);

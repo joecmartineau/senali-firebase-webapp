@@ -2,13 +2,20 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBqO8O-3--wKFmV8Uy2M1SG2RDBSwePLmo",
+  apiKey: "AIzaSyA306aIofubqZ6sHP2ID0X7Zs49El6JrKU",
   authDomain: "senali-235fb.firebaseapp.com",
   projectId: "senali-235fb",
   storageBucket: "senali-235fb.firebasestorage.app",
-  messagingSenderId: "493244463693",
-  appId: "1:493244463693:web:eec3d8b4b9b85be30b17d0"
+  messagingSenderId: "67286745357",
+  appId: "1:67286745357:web:ec18d40025c29e2583b044"
 };
+
+// Debug logging
+console.log('Firebase config being used:', {
+  apiKey: firebaseConfig.apiKey ? 'Present' : 'Missing',
+  projectId: firebaseConfig.projectId,
+  appId: firebaseConfig.appId ? 'Present' : 'Missing'
+});
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
