@@ -6,6 +6,7 @@ import { InfinityIcon } from "@/components/ui/infinity-icon";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import FamilySetup from "@/pages/family-setup";
+import FamilyProfiles from "@/pages/family-profiles";
 import AdminPanel from "@/components/admin/admin-panel";
 import ChatInterface from "@/pages/chat";
 import { auth, googleProvider } from "@/lib/firebase";
@@ -76,6 +77,7 @@ function SenaliApp() {
     }
   };
   const [hasProfiles, setHasProfiles] = useState(false);
+  const [showProfilesMenu, setShowProfilesMenu] = useState(false);
   const [location] = useLocation();
 
 
@@ -173,13 +175,29 @@ function SenaliApp() {
     return <AdminPanel />;
   }
 
-  // Regular user flow - simple family setup then chat
+  // Regular user flow - family setup, then profiles menu, then chat
   if (!hasProfiles) {
-    return <FamilySetup onComplete={() => setHasProfiles(true)} />;
+    return <FamilySetup onComplete={() => { setHasProfiles(true); setShowProfilesMenu(true); }} />;
   }
 
-  // User has profiles - show chat interface
-  return <ChatInterface user={user} onSignOut={onSignOut} />;
+  // Show family profiles management
+  if (showProfilesMenu) {
+    return (
+      <FamilyProfiles 
+        onStartChat={() => setShowProfilesMenu(false)}
+        onBack={() => { setHasProfiles(false); setShowProfilesMenu(false); }}
+      />
+    );
+  }
+
+  // User has profiles and is ready to chat
+  return (
+    <ChatInterface 
+      user={user} 
+      onSignOut={onSignOut}
+      onManageProfiles={() => setShowProfilesMenu(true)}
+    />
+  );
 }
 
 function App() {

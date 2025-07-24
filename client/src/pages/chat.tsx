@@ -15,9 +15,10 @@ interface Message {
 interface ChatInterfaceProps {
   user: User;
   onSignOut: () => void;
+  onManageProfiles: () => void;
 }
 
-export default function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
+export default function ChatInterface({ user, onSignOut, onManageProfiles }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -130,13 +131,13 @@ export default function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              onClick={clearProfiles}
+              onClick={onManageProfiles}
               variant="outline"
               size="sm"
               className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
             >
               <Users className="w-4 h-4 mr-2" />
-              Reset Profiles
+              Manage Profiles
             </Button>
             <Button
               onClick={onSignOut}
