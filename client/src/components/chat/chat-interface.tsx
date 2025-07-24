@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot, User, LogOut, Download, Trash2, Crown, Users } from "lucide-react";
 import { Link } from "wouter";
+import { CreditDisplay } from "@/components/subscription/credit-display";
 import { InfinityIcon } from "@/components/ui/infinity-icon";
 import { localChatService } from "@/services/local-chat-service";
 import { subscriptionService, SUBSCRIPTION_LIMITS } from "@/services/subscription-service";
@@ -97,19 +98,29 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
-    // Check subscription limits for free users using persistent counting
+    // Check subscription limits (credit-based system)
     if (!subscriptionService.canSendMessage()) {
-      const remaining = subscriptionService.getRemainingTrialMessages();
-      // Add Senali's subscription prompt message
-      const subscriptionPromptMessage: Message = {
-        id: `subscription-prompt-${Date.now()}`,
-        content: `I'd love to keep chatting with you, but you've used all 25 of your trial messages! 😊 I hope I've been helpful so far. To continue our conversation and get unlimited access to all my features, would you like to upgrade to premium for just $9.99/month? You'll get unlimited messages, unlimited child profiles, and priority support. What do you think?`,
-        role: 'assistant',
-        timestamp: new Date(),
-        userId: 'user-1'
-      };
-      
-      setMessages(prev => [...prev, subscriptionPromptMessage]);
+      if (subscriptionService.hasPremiumAccess()) {
+        // Premium user with no credits
+        const creditPromptMessage: Message = {
+          id: `credit-prompt-${Date.now()}`,
+          content: `I'd love to keep chatting, but you've used all your monthly credits! You can purchase more credits to continue our conversation, or your credits will renew next month with your subscription. Would you like to buy more credits now?`,
+          role: 'assistant',
+          timestamp: new Date(),
+          userId: 'user-1'
+        };
+        setMessages(prev => [...prev, creditPromptMessage]);
+      } else {
+        // Free user reached trial limit
+        const subscriptionPromptMessage: Message = {
+          id: `subscription-prompt-${Date.now()}`,
+          content: `I'd love to keep chatting with you, but you've used all 25 of your trial messages! I hope I've been helpful so far. To continue our conversation, would you like to upgrade to premium for $14.99/month? You'll get 1,000 credits per month, unlimited child profiles, and priority support. What do you think?`,
+          role: 'assistant',
+          timestamp: new Date(),
+          userId: 'user-1'
+        };
+        setMessages(prev => [...prev, subscriptionPromptMessage]);
+      }
       setShowSubscriptionModal(true);
       return;
     }
@@ -125,10 +136,15 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
       // Update UI with both messages
       setMessages(prev => [...prev, userMessage, aiResponse]);
       
-      // Update persistent trial message count for free tier tracking
+      // Handle message counting/credits
       if (!subscriptionService.hasPremiumAccess()) {
+        // For free users, increment trial message count
         subscriptionService.incrementTrialMessageCount();
         setMessageCount(subscriptionService.getTrialMessageCount());
+      } else {
+        // For premium users, credit was already spent in the service
+        // Just update subscription status to reflect new credit balance
+        setSubscriptionStatus(subscriptionService.getStatus());
       }
     } catch (error) {
       console.error('Chat error details:', error);

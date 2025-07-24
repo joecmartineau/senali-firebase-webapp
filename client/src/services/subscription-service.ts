@@ -11,6 +11,8 @@ export interface SubscriptionStatus {
   planType: 'free' | 'monthly' | 'yearly';
   expiresAt?: Date;
   trialEndsAt?: Date;
+  credits: number; // Current available credits
+  creditsRenewDate?: Date; // When credits renew for subscription
 }
 
 export class SubscriptionService {
@@ -18,7 +20,8 @@ export class SubscriptionService {
   private subscriptionStatus: SubscriptionStatus = {
     isActive: false,
     isTrialActive: false,
-    planType: 'free'
+    planType: 'free',
+    credits: 0
   };
 
   static getInstance(): SubscriptionService {
@@ -76,7 +79,8 @@ export class SubscriptionService {
       isActive: false,
       isTrialActive: true,
       planType: 'free',
-      trialEndsAt: trialEnd
+      trialEndsAt: trialEnd,
+      credits: 0 // Trial users don't get credits, just 25 free messages
     };
 
     this.saveStatus();
@@ -93,11 +97,16 @@ export class SubscriptionService {
       expiresAt.setFullYear(expiresAt.getFullYear() + 1);
     }
 
+    const initialCredits = SUBSCRIPTION_LIMITS.premium.monthlyCredits;
+    const renewDate = new Date(expiresAt);
+    
     this.subscriptionStatus = {
       isActive: true,
       isTrialActive: false,
       planType,
-      expiresAt
+      expiresAt,
+      credits: initialCredits,
+      creditsRenewDate: renewDate
     };
 
     this.saveStatus();
@@ -130,7 +139,8 @@ export class SubscriptionService {
     this.subscriptionStatus = {
       isActive: false,
       isTrialActive: false,
-      planType: 'free'
+      planType: 'free',
+      credits: 0
     };
     this.saveStatus();
   }
@@ -164,15 +174,61 @@ export class SubscriptionService {
   }
 
   /**
-   * Check if user can send another message
+   * Check if user can send another message (credit-based system)
    */
   canSendMessage(): boolean {
-    if (this.hasPremiumAccess()) {
-      return true;
+    // Free trial users check trial message limit
+    if (!this.hasPremiumAccess()) {
+      return this.getTrialMessageCount() < SUBSCRIPTION_LIMITS.free.trialMessages;
     }
     
-    // For free users, check if they have trial messages remaining
-    return this.getTrialMessageCount() < SUBSCRIPTION_LIMITS.free.trialMessages;
+    // Premium users check credits
+    return this.subscriptionStatus.credits > 0;
+  }
+
+  /**
+   * Spend credits for a message
+   */
+  spendCredit(): boolean {
+    if (!this.hasPremiumAccess() || this.subscriptionStatus.credits <= 0) {
+      return false;
+    }
+    
+    this.subscriptionStatus.credits -= 1;
+    this.saveStatus();
+    return true;
+  }
+
+  /**
+   * Get remaining credits
+   */
+  getRemainingCredits(): number {
+    return this.subscriptionStatus.credits;
+  }
+
+  /**
+   * Purchase additional credits
+   */
+  purchaseCredits(packType: 'small' | 'medium' | 'large'): void {
+    const pack = SUBSCRIPTION_LIMITS.pricing.creditPacks[packType];
+    this.subscriptionStatus.credits += pack.credits;
+    this.saveStatus();
+  }
+
+  /**
+   * Renew monthly credits for active subscribers
+   */
+  renewMonthlyCredits(): void {
+    if (this.subscriptionStatus.isActive) {
+      this.subscriptionStatus.credits = SUBSCRIPTION_LIMITS.premium.monthlyCredits;
+      
+      // Set next renewal date
+      const nextRenewal = new Date();
+      nextRenewal.setMonth(nextRenewal.getMonth() + 1);
+      this.subscriptionStatus.creditsRenewDate = nextRenewal;
+      
+      this.saveStatus();
+    }
   }
 
   /**
@@ -188,7 +244,7 @@ export class SubscriptionService {
   }
 }
 
-// Premium feature limits for trial vs premium users
+// Credit-based subscription system with guaranteed profitability
 export const SUBSCRIPTION_LIMITS = {
   free: {
     trialMessages: 25, // One-time trial limit
@@ -198,11 +254,22 @@ export const SUBSCRIPTION_LIMITS = {
     advancedTips: false
   },
   premium: {
-    trialMessages: -1, // unlimited
+    monthlyCredits: 1000, // Credits included with subscription
     childProfiles: -1, // unlimited
     exportData: true,
     prioritySupport: true,
     advancedTips: true
+  },
+  
+  // Pricing structure
+  pricing: {
+    monthlySubscription: 14.99,
+    yearlySubscription: 149.99, // 2 months free
+    creditPacks: {
+      small: { credits: 500, price: 9.99 },
+      medium: { credits: 1000, price: 17.99 },
+      large: { credits: 2500, price: 39.99 }
+    }
   }
 };
 

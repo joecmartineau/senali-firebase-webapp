@@ -167,6 +167,17 @@ export class LocalChatService {
     
     console.log('💾 AI message saved to local storage');
 
+    // Handle message counting/credits after successful response
+    if (!subscriptionService.hasPremiumAccess()) {
+      // For free users, increment trial message count
+      subscriptionService.incrementTrialMessageCount();
+    } else {
+      // For premium users, spend a credit
+      if (!subscriptionService.spendCredit()) {
+        console.warn('⚠️ Failed to spend credit after successful message');
+      }
+    }
+
     return {
       userMessage,
       aiResponse: aiMessage
