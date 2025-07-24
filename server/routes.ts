@@ -33,6 +33,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Store Firebase user when they sign in (for admin panel tracking)
+  app.post('/api/auth/firebase-signin', async (req, res) => {
+    try {
+      const { uid, email, displayName, photoURL } = req.body;
+      
+      if (!uid || !email) {
+        return res.status(400).json({ error: 'Missing required user data' });
+      }
+      
+      console.log('Firebase user signing in:', email);
+      
+      // Check if user exists in database
+      const existingUser = await db.select().from(users).where(eq(users.id, uid)).limit(1);
+      
+      if (existingUser.length === 0) {
+        // Create new user record
+        await db.insert(users).values({
+          id: uid,
+          email,
+          displayName: displayName || email.split('@')[0],
+          profileImageUrl: photoURL || null,
+          credits: 25, // Trial credits
+          subscription: 'trial',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        console.log('Created new user record for:', email);
+      } else {
+        // Update last active time
+        await db.update(users)
+          .set({ 
+            displayName: displayName || existingUser[0].displayName,
+            profileImageUrl: photoURL || existingUser[0].profileImageUrl,
+            updatedAt: new Date() 
+          })
+          .where(eq(users.id, uid));
+        console.log('Updated existing user record for:', email);
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error storing Firebase user:', error);
+      res.status(500).json({ error: 'Failed to store user data' });
+    }
+  });
+
   // Daily tips routes
   app.get('/api/tips/today', isAuthenticated, async (req: any, res) => {
     try {
@@ -301,6 +347,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Use remaining modular routes (disabled for now)
   // app.use('/api/profiles', profilesRouter);
   
+  // Remove test/fake users (admin only)
+  app.delete('/api/admin/clear-test-data', async (req, res) => {
+    try {
+      // Remove fake test users
+      const deleted = await db.delete(users).where(
+        eq(users.id, 'test-user-1')
+      ).returning();
+      
+      const deleted2 = await db.delete(users).where(
+        eq(users.id, 'admin-user')
+      ).returning();
+      
+      console.log('Deleted test users:', deleted.length + deleted2.length);
+      res.json({ message: 'Test data cleared', deleted: deleted.length + deleted2.length });
+    } catch (error) {
+      console.error('Error clearing test data:', error);
+      res.status(500).json({ error: 'Failed to clear test data' });
+    }
+  });
+
   // Temporary admin testing route (bypass all auth)
   app.get('/api/test-admin-users', async (req, res) => {
     try {

@@ -23,12 +23,36 @@ function SenaliApp() {
   useEffect(() => {
     console.log('Setting up Firebase auth listener...');
     
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       console.log('Auth state changed:', {
         email: firebaseUser?.email || 'No user',
         uid: firebaseUser?.uid || 'No UID',
         displayName: firebaseUser?.displayName || 'No display name'
       });
+      
+      // If user is signing in, sync their data with the server
+      if (firebaseUser && firebaseUser !== user) {
+        try {
+          const response = await fetch('/api/auth/firebase-signin', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              photoURL: firebaseUser.photoURL
+            })
+          });
+          
+          if (response.ok) {
+            console.log('User data synced on auth state change');
+          }
+        } catch (syncError) {
+          console.warn('Error syncing user data on auth state change:', syncError);
+        }
+      }
       
       setUser(firebaseUser);
       setLoading(false);
@@ -49,6 +73,30 @@ function SenaliApp() {
         uid: result.user.uid,
         displayName: result.user.displayName
       });
+      
+      // Sync user data with server for admin panel tracking
+      try {
+        const response = await fetch('/api/auth/firebase-signin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: result.user.displayName,
+            photoURL: result.user.photoURL
+          })
+        });
+        
+        if (response.ok) {
+          console.log('User data synced with server');
+        } else {
+          console.warn('Failed to sync user data with server');
+        }
+      } catch (syncError) {
+        console.warn('Error syncing user data:', syncError);
+      }
       
       // Don't set loading to false here - let the auth state listener handle it
     } catch (error: any) {
