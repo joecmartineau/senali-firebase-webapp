@@ -26,13 +26,10 @@ export class LocalChatService {
       console.error('Local assessment processing error:', error);
     }
 
-    // Get comprehensive child context for personalized responses
+    // ALWAYS extract and save names from every message FIRST
     let childContext = '';
     try {
-      childContext = await localAssessmentProcessor.getChildContext(this.userId);
-      console.log('👶 Loaded child context for personalized responses');
-      
-      // Always extract and save names from every message
+      // Step 1: Extract names from current message and create profiles
       if (content) {
         const nameData = localAssessmentProcessor.extractAllNames(content);
         
@@ -51,12 +48,22 @@ export class LocalChatService {
             await localAssessmentProcessor.getOrCreateChildProfile(this.userId, name);
           }
         }
-        
-        // Always reload context after potential profile creation
-        childContext = await localAssessmentProcessor.getChildContext(this.userId);
       }
+      
+      // Step 2: ALWAYS load all existing child context (regardless of current message)
+      childContext = await localAssessmentProcessor.getChildContext(this.userId);
+      console.log('👶 Loaded comprehensive child context:', childContext ? `Found profiles (${childContext.substring(0, 200)}...)` : 'No profiles yet');
+      
+      // Step 3: Log all existing family members for debugging
+      const allProfiles = await localStorage.getChildProfiles(this.userId);
+      if (allProfiles.length > 0) {
+        console.log('🏠 Existing family members in storage:', allProfiles.map(p => p.childName).join(', '));
+      } else {
+        console.log('🏠 No family members found in storage');
+      }
+      
     } catch (error) {
-      console.error('Error loading child context:', error);
+      console.error('Error processing names and loading child context:', error);
     }
 
     // Only send minimal context - let AI request more if needed

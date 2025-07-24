@@ -363,15 +363,15 @@ export class LocalAssessmentProcessor {
     return updates;
   }
 
-  // Get child context for AI responses
+  // Get child context for AI responses - ALWAYS include existing profiles
   async getChildContext(userId: string): Promise<string> {
     const profiles = await localStorage.getChildProfiles(userId);
     
     if (profiles.length === 0) {
-      return "No child profiles found. This appears to be a new conversation.";
+      return ""; // Return empty string so Senali doesn't mention "new conversation"
     }
     
-    let context = `Child Profiles Context:\n\n`;
+    let context = `IMPORTANT FAMILY CONTEXT - Remember these family members from previous conversations:\n\n`;
     
     for (let index = 0; index < profiles.length; index++) {
       const profile = profiles[index];
@@ -444,6 +444,8 @@ export class LocalAssessmentProcessor {
       
       context += `\n`;
     }
+    
+    context += `\n\n**CRITICAL: These family members are real and exist. Use their names when talking. Ask about them specifically. Never act like this is a new conversation or ask for their names again.**`;
     
     return context;
   }
