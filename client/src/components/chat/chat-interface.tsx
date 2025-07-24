@@ -98,7 +98,7 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
       // Add Senali's subscription prompt message
       const subscriptionPromptMessage: Message = {
         id: `subscription-prompt-${Date.now()}`,
-        content: "I'd love to keep chatting with you, but you've reached your 10 free messages for today! 😊 To continue our conversation and get unlimited access to all my features, would you like to upgrade to premium for just $9.99/month? You'll get unlimited messages with GPT-4o, unlimited child profiles, and priority support. What do you think?",
+        content: "I'd love to keep chatting with you, but you've reached your 10 free messages for today! 😊 To continue our conversation and get unlimited access to all my features, would you like to upgrade to premium for just $9.99/month? You'll get unlimited messages, unlimited child profiles, and priority support. What do you think?",
         role: 'assistant',
         timestamp: new Date(),
         userId: 'user-1'

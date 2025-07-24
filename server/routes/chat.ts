@@ -78,8 +78,8 @@ router.post('/', async (req, res) => {
       console.log('🎯 System prompt includes family context:', systemPromptWithContext.substring(systemPromptWithContext.length - 200));
     }
 
-    // Use GPT-4o for premium users, GPT-3.5-turbo for free users
-    const model = isPremium ? 'gpt-4o' : 'gpt-3.5-turbo';
+    // Use GPT-3.5-turbo for all users (cost-effective for sustainable business model)
+    const model = 'gpt-3.5-turbo';
     console.log(`Sending chat request to OpenAI using ${model}...`);
     
     const completion = await openai.chat.completions.create({
