@@ -28,10 +28,14 @@ export const sessions = pgTable(
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().notNull(),
+  uid: varchar("uid").unique(), // Firebase UID for compatibility
   email: varchar("email").unique(),
+  displayName: varchar("display_name"),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  credits: serial("credits"), // Credits for user - default 25 handled in application
+  subscription: varchar("subscription", { enum: ["free", "premium"] }).default("free"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

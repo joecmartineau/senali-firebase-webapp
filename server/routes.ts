@@ -297,6 +297,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Use remaining modular routes
   app.use('/api/profiles', profilesRouter);
+  
+  // Admin routes (protected by admin middleware)
+  const { adminRoutes } = await import('./routes/admin');
+  app.use('/api/admin', adminRoutes);
 
   const httpServer = createServer(app);
   return httpServer;

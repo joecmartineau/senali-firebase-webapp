@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User, LogOut, Download, Trash2, Crown, Users } from "lucide-react";
+import { Send, Bot, User, LogOut, Download, Trash2, Crown, Users, Shield } from "lucide-react";
 import { Link } from "wouter";
 import { CreditDisplay } from "@/components/subscription/credit-display";
 import { InfinityIcon } from "@/components/ui/infinity-icon";
@@ -300,6 +300,20 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
                 <Users className="h-4 w-4" />
               </Button>
             </Link>
+            
+            {/* Admin Panel - Only visible for admin */}
+            {user?.email === 'joecmartineau@gmail.com' && (
+              <Link href="/admin">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-red-600 text-red-400 hover:bg-red-900"
+                  title="Admin Panel"
+                >
+                  <Shield className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
             <Button
               onClick={onSignOut}
               variant="outline"

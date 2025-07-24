@@ -9,6 +9,7 @@ import { Router, Route, Switch, useLocation } from "wouter";
 import FamilySetup from "@/pages/family-setup";
 import Questionnaires from "@/pages/questionnaires";
 import { FamilyProfiles } from "@/pages/family-profiles";
+import { AdminPanel } from "@/components/admin/admin-panel";
 import { localStorage } from "@/lib/local-storage";
 
 // Initialize Firebase directly to avoid import issues
@@ -271,6 +272,9 @@ function AuthenticatedApp({ user, onSignOut }: { user: any; onSignOut: () => voi
       </Route>
       <Route path="/assessment/:profileId">
         {(params) => <Questionnaires profileId={params.profileId} />}
+      </Route>
+      <Route path="/admin">
+        <AdminPanel currentUser={user} />
       </Route>
       <Route path="/chat">
         <ChatInterface user={user} onSignOut={onSignOut} />
