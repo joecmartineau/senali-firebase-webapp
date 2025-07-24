@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import chatRoutes from './routes/chat';
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateChatResponse, generateDailyTip } from "./openai";
@@ -12,8 +13,8 @@ import profilesRouter from './routes/profiles';
 import chatRouter from './routes/chat';
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup chat routes first (before auth middleware) for local storage compatibility
-  app.use('/api/chat', chatRouter);
+  // Chat routes
+  app.use('/api', chatRoutes);
 
   // Auth middleware
   await setupAuth(app);

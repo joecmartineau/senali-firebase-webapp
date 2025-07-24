@@ -4,13 +4,10 @@ import { MessageCircle, Lightbulb, Heart } from "lucide-react";
 import { ParentingQuote } from "@/components/ParentingQuote";
 import { InfinityIcon } from "@/components/ui/infinity-icon";
 import { useState, useEffect } from "react";
-import { ChatInterface } from "@/components/chat/chat-interface";
-import { Router, Route, Switch, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import FamilySetup from "@/pages/family-setup";
-import Questionnaires from "@/pages/questionnaires";
-import { FamilyProfiles } from "@/pages/family-profiles";
-import { AdminPanel } from "@/components/admin/admin-panel";
-import { localStorage } from "@/lib/local-storage";
+import AdminPanel from "@/components/admin/admin-panel";
+import ChatInterface from "@/pages/chat";
 import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, onAuthStateChanged, signOut, User } from 'firebase/auth';
 
@@ -89,10 +86,12 @@ function SenaliApp() {
 
   const checkForExistingProfiles = async () => {
     try {
-      // For now, assume no profiles
-      setHasProfiles(false);
+      // Check if user has saved family profiles in browser localStorage
+      const saved = window.localStorage.getItem('senali_family_profiles');
+      setHasProfiles(saved && JSON.parse(saved).length > 0);
     } catch (error) {
       console.error('Error checking profiles:', error);
+      setHasProfiles(false);
     }
   };
 
@@ -169,38 +168,18 @@ function SenaliApp() {
     );
   }
 
-  // Authenticated user view
-  return (
-    <Router>
-      <Switch>
-        <Route path="/family-setup">
-          <FamilySetup />
-        </Route>
-        <Route path="/family-profiles">
-          <FamilyProfiles user={user} />
-        </Route>
-        <Route path="/questionnaires">
-          <Questionnaires />
-        </Route>
-        <Route path="/assessment/:profileId">
-          {(params) => <Questionnaires profileId={params.profileId} />}
-        </Route>
-        <Route path="/admin">
-          <AdminPanel />
-        </Route>
-        <Route path="/chat">
-          <ChatInterface user={user} onSignOut={onSignOut} />
-        </Route>
-        <Route path="/">
-          {hasProfiles ? (
-            <ChatInterface user={user} onSignOut={onSignOut} />
-          ) : (
-            <FamilySetup />
-          )}
-        </Route>
-      </Switch>
-    </Router>
-  );
+  // Show admin panel for specific email only
+  if (user?.email === 'joecmartineau@gmail.com') {
+    return <AdminPanel />;
+  }
+
+  // Regular user flow - simple family setup then chat
+  if (!hasProfiles) {
+    return <FamilySetup onComplete={() => setHasProfiles(true)} />;
+  }
+
+  // User has profiles - show chat interface
+  return <ChatInterface user={user} onSignOut={onSignOut} />;
 }
 
 function App() {

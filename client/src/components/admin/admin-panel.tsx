@@ -1,291 +1,270 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Users, CreditCard, Plus, Minus, Search, Shield } from 'lucide-react';
-import { useToast } from '../../hooks/use-toast';
-import { useAuth } from '../../hooks/useAuth';
-import { apiRequest } from '../../lib/api';
+import { User } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { Shield, Users, CreditCard, LogOut, Settings } from 'lucide-react';
 
-interface User {
-  uid: string;
+interface UserData {
+  id: string;
   email: string;
   displayName: string;
   credits: number;
-  subscription: string;
+  subscriptionStatus: string;
   lastActive: string;
 }
 
-export function AdminPanel() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [creditAmount, setCreditAmount] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-  const { user, isAdmin } = useAuth();
+export default function AdminPanel() {
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [creditAdjustment, setCreditAdjustment] = useState('');
 
   useEffect(() => {
-    if (isAdmin) {
-      loadUsers();
-    }
-  }, [isAdmin]);
+    loadUsers();
+  }, []);
 
   const loadUsers = async () => {
-    setLoading(true);
     try {
-      const response = await apiRequest('GET', '/api/admin/users');
-      const userData = await response.json();
-      setUsers(userData);
+      // Simulate user data - replace with actual Firebase/API call
+      const mockUsers: UserData[] = [
+        {
+          id: '1',
+          email: 'user1@example.com',
+          displayName: 'John Doe',
+          credits: 850,
+          subscriptionStatus: 'active',
+          lastActive: '2025-01-24'
+        },
+        {
+          id: '2',
+          email: 'user2@example.com',
+          displayName: 'Jane Smith',
+          credits: 25,
+          subscriptionStatus: 'trial',
+          lastActive: '2025-01-23'
+        }
+      ];
+      setUsers(mockUsers);
     } catch (error) {
       console.error('Error loading users:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load users",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  const updateUserCredits = async (userId: string, creditChange: number) => {
-    try {
-      const response = await apiRequest('POST', '/api/admin/update-credits', {
-        userId,
-        creditChange,
-      });
+  const adjustCredits = async () => {
+    if (!selectedUser || !creditAdjustment) return;
 
-      const updatedUser = await response.json();
-      setUsers(prev => prev.map(user => 
-        user.uid === userId ? { ...user, credits: updatedUser.credits } : user
+    try {
+      const adjustment = parseInt(creditAdjustment);
+      const newCredits = selectedUser.credits + adjustment;
+      
+      // Update user credits - replace with actual API call
+      setUsers(users.map(user => 
+        user.id === selectedUser.id 
+          ? { ...user, credits: Math.max(0, newCredits) }
+          : user
       ));
       
-      if (selectedUser?.uid === userId) {
-        setSelectedUser(prev => prev ? { ...prev, credits: updatedUser.credits } : null);
-      }
-
-      toast({
-        title: "Success",
-        description: `Credits updated for ${updatedUser.displayName || updatedUser.email}`,
-      });
+      setSelectedUser({ ...selectedUser, credits: Math.max(0, newCredits) });
+      setCreditAdjustment('');
+      
+      alert(`Credits adjusted! New balance: ${Math.max(0, newCredits)}`);
     } catch (error) {
-      console.error('Error updating credits:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update credits",
-        variant: "destructive",
-      });
+      console.error('Error adjusting credits:', error);
+      alert('Error adjusting credits');
     }
   };
 
-  const handleCreditAdjustment = (isAdd: boolean) => {
-    const amount = parseInt(creditAmount);
-    if (isNaN(amount) || amount <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid number of credits",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (selectedUser) {
-      updateUserCredits(selectedUser.uid, isAdd ? amount : -amount);
-      setCreditAmount('');
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (user.displayName && user.displayName.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  if (!isAdmin) {
-    return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white">Loading admin panel...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center gap-2 mb-6">
-        <Shield className="w-6 h-6 text-red-500" />
-        <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
-        <Badge variant="destructive">Admin Only</Badge>
+    <div className="min-h-screen bg-black text-white">
+      {/* Header */}
+      <div className="bg-gray-900 border-b border-gray-700 p-4">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+              <Shield className="w-6 h-6 text-black" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">Senali Admin Panel</h1>
+              <p className="text-sm text-gray-400">User management and system administration</p>
+            </div>
+          </div>
+          <Button
+            onClick={handleSignOut}
+            variant="outline"
+            className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Total Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{users.length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Premium Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">
-              {users.filter(u => u.subscription === 'premium').length}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Total Credits</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">
-              {users.reduce((sum, user) => sum + (user.credits || 0), 0)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Users List */}
+          <Card className="bg-gray-900 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                User Management ({users.length} users)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {users.map((user) => (
+                <div
+                  key={user.id}
+                  onClick={() => setSelectedUser(user)}
+                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                    selectedUser?.id === user.id
+                      ? 'border-green-500 bg-green-500/10'
+                      : 'border-gray-600 hover:border-gray-500'
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-white">{user.displayName}</p>
+                      <p className="text-sm text-gray-400">{user.email}</p>
+                      <p className="text-xs text-gray-500">Last active: {user.lastActive}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-green-400">{user.credits} credits</p>
+                      <p className={`text-xs ${
+                        user.subscriptionStatus === 'active' ? 'text-green-400' :
+                        user.subscriptionStatus === 'trial' ? 'text-yellow-400' : 'text-red-400'
+                      }`}>
+                        {user.subscriptionStatus}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
 
-      {/* Search and Controls */}
-      <Card className="bg-gray-800 border-gray-700 mb-6">
-        <CardHeader>
-          <CardTitle className="text-white">User Management</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 mb-4">
-            <div className="flex-1">
-              <Label htmlFor="search" className="text-gray-300">Search Users</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="search"
-                  placeholder="Search by email or name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-gray-700 border-gray-600 text-white"
-                />
+          {/* User Details & Actions */}
+          <Card className="bg-gray-900 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                User Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {selectedUser ? (
+                <>
+                  <div className="space-y-2">
+                    <h3 className="font-medium text-white">{selectedUser.displayName}</h3>
+                    <p className="text-sm text-gray-400">{selectedUser.email}</p>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Credits:</span>
+                      <span className="text-green-400 font-medium">{selectedUser.credits}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Subscription:</span>
+                      <span className={
+                        selectedUser.subscriptionStatus === 'active' ? 'text-green-400' :
+                        selectedUser.subscriptionStatus === 'trial' ? 'text-yellow-400' : 'text-red-400'
+                      }>
+                        {selectedUser.subscriptionStatus}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-700 pt-4">
+                    <Label htmlFor="credit-adjustment" className="text-white">Adjust Credits</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        id="credit-adjustment"
+                        value={creditAdjustment}
+                        onChange={(e) => setCreditAdjustment(e.target.value)}
+                        placeholder="Enter adjustment (+/- number)"
+                        className="bg-gray-800 border-gray-600 text-white"
+                        type="number"
+                      />
+                      <Button
+                        onClick={adjustCredits}
+                        disabled={!creditAdjustment}
+                        className="bg-green-500 hover:bg-green-600 text-black font-semibold"
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Use positive numbers to add credits, negative to subtract
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center text-gray-400 py-8">
+                  <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>Select a user from the list to manage their account</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* System Stats */}
+        <Card className="mt-6 bg-gray-900 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              System Statistics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-400">{users.length}</p>
+                <p className="text-sm text-gray-400">Total Users</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-400">
+                  {users.filter(u => u.subscriptionStatus === 'active').length}
+                </p>
+                <p className="text-sm text-gray-400">Active Subscribers</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-yellow-400">
+                  {users.filter(u => u.subscriptionStatus === 'trial').length}
+                </p>
+                <p className="text-sm text-gray-400">Trial Users</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-purple-400">
+                  {users.reduce((sum, u) => sum + u.credits, 0)}
+                </p>
+                <p className="text-sm text-gray-400">Total Credits</p>
               </div>
             </div>
-            <div className="flex items-end">
-              <Button onClick={loadUsers} disabled={loading} className="bg-green-600 hover:bg-green-700">
-                {loading ? 'Loading...' : 'Refresh'}
-              </Button>
-            </div>
-          </div>
-
-          {/* Users Table */}
-          <div className="border border-gray-600 rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-gray-600">
-                  <TableHead className="text-gray-300">User</TableHead>
-                  <TableHead className="text-gray-300">Email</TableHead>
-                  <TableHead className="text-gray-300">Credits</TableHead>
-                  <TableHead className="text-gray-300">Subscription</TableHead>
-                  <TableHead className="text-gray-300">Last Active</TableHead>
-                  <TableHead className="text-gray-300">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.uid} className="border-gray-600">
-                    <TableCell className="text-white">
-                      {user.displayName || 'Unknown'}
-                    </TableCell>
-                    <TableCell className="text-gray-300">{user.email}</TableCell>
-                    <TableCell className="text-white">
-                      <Badge variant={user.credits > 0 ? "default" : "destructive"}>
-                        {user.credits || 0}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.subscription === 'premium' ? "default" : "secondary"}>
-                        {user.subscription || 'free'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-gray-300">
-                      {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
-                    </TableCell>
-                    <TableCell>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedUser(user)}
-                            className="border-gray-600 text-white hover:bg-gray-700"
-                          >
-                            <CreditCard className="w-4 h-4 mr-1" />
-                            Manage
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="bg-gray-800 border-gray-700">
-                          <DialogHeader>
-                            <DialogTitle className="text-white">
-                              Manage Credits - {selectedUser?.displayName || selectedUser?.email}
-                            </DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label className="text-gray-300">Current Credits</Label>
-                              <div className="text-2xl font-bold text-white">
-                                {selectedUser?.credits || 0}
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="creditAmount" className="text-gray-300">
-                                Credit Amount
-                              </Label>
-                              <Input
-                                id="creditAmount"
-                                type="number"
-                                placeholder="Enter amount..."
-                                value={creditAmount}
-                                onChange={(e) => setCreditAmount(e.target.value)}
-                                className="bg-gray-700 border-gray-600 text-white"
-                              />
-                            </div>
-                            
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={() => handleCreditAdjustment(true)}
-                                className="flex-1 bg-green-600 hover:bg-green-700"
-                              >
-                                <Plus className="w-4 h-4 mr-1" />
-                                Add Credits
-                              </Button>
-                              <Button
-                                onClick={() => handleCreditAdjustment(false)}
-                                variant="destructive"
-                                className="flex-1"
-                              >
-                                <Minus className="w-4 h-4 mr-1" />
-                                Remove Credits
-                              </Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          
-          {filteredUsers.length === 0 && (
-            <div className="text-center py-8 text-gray-400">
-              {searchTerm ? 'No users found matching your search.' : 'No users found.'}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

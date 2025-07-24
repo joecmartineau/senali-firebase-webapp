@@ -26,8 +26,11 @@ interface FamilyMember {
   workSchoolInfo?: string;
 }
 
-export default function FamilySetup() {
-  const [, setLocation] = useLocation();
+interface FamilySetupProps {
+  onComplete: () => void;
+}
+
+export default function FamilySetup({ onComplete }: FamilySetupProps) {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([
     {
       id: '1',
@@ -80,10 +83,10 @@ export default function FamilySetup() {
         symptoms: []
       }));
       
-      localStorage.setItem('senali_family_profiles', JSON.stringify(profiles));
+      window.localStorage.setItem('senali_family_profiles', JSON.stringify(profiles));
 
       console.log('Family profiles saved successfully');
-      setLocation('/family-profiles');
+      onComplete(); // Trigger parent to show chat interface
     } catch (error) {
       console.error('Error saving profiles:', error);
       alert('Error saving profiles. Please try again.');
