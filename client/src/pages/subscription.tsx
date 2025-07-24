@@ -125,7 +125,7 @@ export default function SubscriptionPage() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">1 child profile</span>
+                <span className="text-sm">Basic family profiles</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />

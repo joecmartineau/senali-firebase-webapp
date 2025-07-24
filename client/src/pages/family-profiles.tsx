@@ -59,12 +59,7 @@ export function FamilyProfiles({ user }: FamilyProfilesProps) {
   const handleAddProfile = async () => {
     if (!user?.uid || !newProfile.childName.trim()) return;
 
-    // Check trial limits - only 1 profile allowed for trial users
-    const subscriptionStatus = subscriptionService.getStatus();
-    if (!subscriptionStatus.isActive && profiles.length >= 1) {
-      alert('Trial users are limited to 1 family profile. Upgrade to Premium for unlimited profiles!');
-      return;
-    }
+
 
     try {
       const profileData = {

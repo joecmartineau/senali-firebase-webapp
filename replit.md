@@ -158,7 +158,7 @@ This is a full-stack TypeScript application built with a privacy-first, local st
 
 ### App Store Monetization System (2025-01-24)
 - **Subscription-Based Revenue Model**: Implemented App Store and Play Store compliant subscription system
-  - **Free Tier**: 25 messages total trial (GPT-3.5-turbo), 1 child profile, basic features
+  - **Free Tier**: 25 messages total trial (GPT-3.5-turbo), basic family profiles, basic features
   - **Premium Subscription**: 1,000 credits/month included (GPT-3.5-turbo), unlimited profiles, data export, priority support
   - **Pricing**: $7.99/month or $79.99/year (2 months free) - optimized for $5 average profit per user
   - **Profit Protection**: Usage-based overage pricing ensures 100% profitability regardless of usage patterns
