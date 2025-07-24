@@ -44,8 +44,9 @@ This is a full-stack TypeScript application built with a modern web architecture
 - **Authorization**: Protected routes with isAuthenticated middleware
 
 ### AI Integration
-- **Provider**: OpenAI GPT-3.5-turbo model
-- **Specialization**: Custom system prompt for neurodivergent parenting support
+- **Provider**: OpenAI GPT-3.5-turbo model  
+- **AI Personality**: Senali - specialized assistant with access to research databases
+- **Specialization**: Custom system prompt for neurodivergent parenting support with professional credentials
 - **Features**: 
   - Contextual chat conversations with message history
   - Daily tip generation with personalized content
