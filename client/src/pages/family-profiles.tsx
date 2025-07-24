@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { localStorage } from "@/lib/local-storage";
 import type { ChildProfile } from "@/lib/local-storage";
 import { Link } from "wouter";
+import { subscriptionService } from '@/services/subscription-service';
 
 interface FamilyProfilesProps {
   user: any;
@@ -57,6 +58,13 @@ export function FamilyProfiles({ user }: FamilyProfilesProps) {
   // Add new family member
   const handleAddProfile = async () => {
     if (!user?.uid || !newProfile.childName.trim()) return;
+
+    // Check trial limits - only 1 profile allowed for trial users
+    const subscriptionStatus = subscriptionService.getStatus();
+    if (!subscriptionStatus.isActive && profiles.length >= 1) {
+      alert('Trial users are limited to 1 family profile. Upgrade to Premium for unlimited profiles!');
+      return;
+    }
 
     try {
       const profileData = {

@@ -29,7 +29,7 @@ export default function SubscriptionPage() {
   const handleSubscribe = (planType: 'monthly' | 'yearly') => {
     // In mobile app, this would trigger App Store/Play Store purchase
     // For web demo, we'll simulate the purchase
-    alert(`In the mobile app, this would open ${planType === 'monthly' ? 'monthly' : 'yearly'} subscription purchase through App Store/Play Store`);
+    alert(`📱 In the mobile app, this would open ${planType === 'monthly' ? 'monthly ($7.99)' : 'yearly ($79.99)'} subscription purchase through your device's app store.`);
     
     // Simulate successful purchase for demo
     subscriptionService.activateSubscription(planType);

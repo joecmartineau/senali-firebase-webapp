@@ -242,6 +242,16 @@ export class LocalChatService {
     try {
       console.log(`🔄 Attempting to create profile for ${name} (${relationship})`);
       
+      // Check trial limits - only 1 profile allowed for trial users
+      const subscriptionStatus = subscriptionService.getStatus();
+      if (!subscriptionStatus.isActive) {
+        const existingProfiles = await localStorage.getChildProfiles(this.userId!);
+        if (existingProfiles.length >= 1) {
+          console.log(`❌ Trial user already has ${existingProfiles.length} profiles. Skipping profile creation for ${name}.`);
+          return;
+        }
+      }
+      
       // Check if profile already exists
       const existing = await localStorage.getChildProfile(this.userId!, name);
       if (existing) {

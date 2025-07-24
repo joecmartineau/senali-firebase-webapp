@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, X, Users, ArrowRight } from 'lucide-react';
 import { localStorage, type ChildProfile } from '@/lib/local-storage';
 import { useAuth } from '@/hooks/use-auth';
+import { subscriptionService } from '@/services/subscription-service';
 import { useLocation } from 'wouter';
 
 interface FamilyMember {
@@ -60,6 +61,13 @@ export default function FamilySetup() {
 
   const addFamilyMember = () => {
     if (!currentMember.name.trim()) return;
+    
+    // Check trial limits - only 1 profile allowed for trial users
+    const subscriptionStatus = subscriptionService.getStatus();
+    if (!subscriptionStatus.isActive && familyMembers.length >= 1) {
+      alert('Trial users are limited to 1 family profile. Upgrade to Premium for unlimited profiles!');
+      return;
+    }
     
     setFamilyMembers(prev => [...prev, currentMember]);
     setCurrentMember({
