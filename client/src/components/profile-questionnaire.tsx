@@ -16,20 +16,19 @@ import {
 
 interface ProfileQuestionnaireProps {
   profile: ChildProfile;
-  onBack: () => void;
-  onUpdate: () => void;
+  onClose: () => void;
 }
 
-export function ProfileQuestionnaire({ profile, onBack, onUpdate }: ProfileQuestionnaireProps) {
+export function ProfileQuestionnaire({ profile, onClose }: ProfileQuestionnaireProps) {
   const [responses, setResponses] = useState<Record<string, 'yes' | 'no' | 'unsure'>>({});
   const [diagnosticResults, setDiagnosticResults] = useState<DiagnosticResult[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Load existing responses from profile
-    if (profile.symptomTracking) {
+    // Load existing responses from profile symptoms
+    if (profile.symptoms) {
       const convertedResponses: Record<string, 'yes' | 'no' | 'unsure'> = {};
-      Object.entries(profile.symptomTracking).forEach(([key, value]) => {
+      Object.entries(profile.symptoms).forEach(([key, value]) => {
         if (value === true) convertedResponses[key] = 'yes';
         else if (value === false) convertedResponses[key] = 'no';
         else convertedResponses[key] = 'unsure';
@@ -53,18 +52,16 @@ export function ProfileQuestionnaire({ profile, onBack, onUpdate }: ProfileQuest
     // Save to profile immediately
     setLoading(true);
     try {
-      const updatedSymptomTracking = { ...profile.symptomTracking };
+      const updatedSymptoms = { ...profile.symptoms };
       Object.entries(newResponses).forEach(([key, value]) => {
-        if (value === 'yes') updatedSymptomTracking[key] = true;
-        else if (value === 'no') updatedSymptomTracking[key] = false;
-        else updatedSymptomTracking[key] = undefined;
+        if (value === 'yes') updatedSymptoms[key] = true;
+        else if (value === 'no') updatedSymptoms[key] = false;
+        else delete updatedSymptoms[key];
       });
 
       await localStorage.updateChildProfile(profile.id, {
-        symptomTracking: updatedSymptomTracking
+        symptoms: updatedSymptoms
       });
-      
-      onUpdate();
     } catch (error) {
       console.error('Error saving response:', error);
     } finally {
@@ -113,13 +110,13 @@ export function ProfileQuestionnaire({ profile, onBack, onUpdate }: ProfileQuest
     <div className="h-full flex flex-col">
       <div className="p-4 border-b">
         <div className="flex items-center gap-2 mb-3">
-          <Button variant="ghost" size="sm" onClick={onBack}>
+          <Button variant="ghost" size="sm" onClick={onClose}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
             <h3 className="font-semibold">{profile.childName}</h3>
             <p className="text-sm text-muted-foreground capitalize">
-              {profile.relationship} Assessment
+              {profile.relationshipToUser} Assessment
             </p>
           </div>
         </div>

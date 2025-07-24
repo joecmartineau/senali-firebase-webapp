@@ -5,6 +5,10 @@ import { ParentingQuote } from "@/components/ParentingQuote";
 import { InfinityIcon } from "@/components/ui/infinity-icon";
 import { useState, useEffect } from "react";
 import { ChatInterface } from "@/components/chat/chat-interface";
+import { Router, Route, Switch, useLocation } from "wouter";
+import FamilySetup from "@/pages/family-setup";
+import Questionnaires from "@/pages/questionnaires";
+import { localStorage } from "@/lib/local-storage";
 
 // Initialize Firebase directly to avoid import issues
 import { initializeApp } from 'firebase/app';
@@ -146,9 +150,13 @@ function SenaliApp() {
     );
   }
 
-  // Show chat interface if user is signed in
+  // Show authenticated app with routing if user is signed in
   if (user) {
-    return <ChatInterface user={user} onSignOut={handleSignOut} />;
+    return (
+      <Router>
+        <AuthenticatedApp user={user} onSignOut={handleSignOut} />
+      </Router>
+    );
   }
 
   // Show landing page if not signed in
@@ -207,6 +215,64 @@ function SenaliApp() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Authenticated app with routing
+function AuthenticatedApp({ user, onSignOut }: { user: any; onSignOut: () => void }) {
+  const [, setLocation] = useLocation();
+  const [hasProfiles, setHasProfiles] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkUserProfiles();
+  }, [user]);
+
+  const checkUserProfiles = async () => {
+    try {
+      const profiles = await localStorage.getChildProfiles(user.uid);
+      setHasProfiles(profiles.length > 0);
+      
+      // If no profiles and on root path, redirect to family setup
+      if (profiles.length === 0 && window.location.pathname === '/') {
+        setLocation('/family-setup');
+      }
+    } catch (error) {
+      console.error('Error checking profiles:', error);
+      setHasProfiles(false);
+    }
+  };
+
+  // Show loading while checking profiles
+  if (hasProfiles === null) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white">Setting up your family...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Switch>
+      <Route path="/family-setup">
+        <FamilySetup />
+      </Route>
+      <Route path="/questionnaires">
+        <Questionnaires />
+      </Route>
+      <Route path="/chat">
+        <ChatInterface user={user} onSignOut={onSignOut} />
+      </Route>
+      <Route path="/">
+        {hasProfiles ? (
+          <ChatInterface user={user} onSignOut={onSignOut} />
+        ) : (
+          <FamilySetup />
+        )}
+      </Route>
+    </Switch>
   );
 }
 
