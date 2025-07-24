@@ -100,7 +100,16 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
     // Check subscription limits for free users
     const hasPremiumAccess = subscriptionService.hasPremiumAccess();
     if (!hasPremiumAccess && messageCount >= SUBSCRIPTION_LIMITS.free.dailyMessages) {
-      // Show upgrade prompt
+      // Add Senali's subscription prompt message
+      const subscriptionPromptMessage: Message = {
+        id: `subscription-prompt-${Date.now()}`,
+        content: "I'd love to keep chatting with you, but you've reached your 10 free messages for today! 😊 To continue our conversation and get unlimited access to all my features, would you like to upgrade to premium for just $3.99/month? You'll get unlimited messages, unlimited child profiles, and priority support. What do you think?",
+        role: 'assistant',
+        timestamp: new Date(),
+        userId: 'user-1'
+      };
+      
+      setMessages(prev => [...prev, subscriptionPromptMessage]);
       setShowSubscriptionModal(true);
       return;
     }
