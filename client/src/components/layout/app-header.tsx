@@ -8,7 +8,7 @@ export default function AppHeader() {
   return (
     <header className="bg-gray-900 shadow-sm border-b border-gray-700 px-4 py-3 flex items-center justify-between">
       <div className="flex items-center space-x-3">
-        <InfinityIcon size={40} className="rounded-lg" />
+        <InfinityIcon size={40} glowing className="rounded-lg" />
         <div>
           <h1 className="text-lg font-semibold text-white">Senali</h1>
           <p className="text-xs text-gray-300">AI Parenting Support</p>

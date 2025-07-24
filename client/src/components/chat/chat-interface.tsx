@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot, User, LogOut } from "lucide-react";
+import { InfinityIcon } from "@/components/ui/infinity-icon";
 
 interface Message {
   id: string;
@@ -108,9 +109,7 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
       <div className="bg-gray-900 border-b border-gray-700 p-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-              <Bot className="h-4 w-4 text-black" />
-            </div>
+            <InfinityIcon size={32} glowing />
             <div>
               <h1 className="text-white font-semibold">Senali AI Assistant</h1>
               <p className="text-gray-400 text-sm">Neurodivergent parenting support</p>

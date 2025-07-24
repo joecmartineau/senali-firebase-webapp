@@ -5,7 +5,7 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
-  "theme_color": "#166534",
+  "theme_color": "#2d6a7a",
   "orientation": "portrait-primary",
   "scope": "/",
   "id": "com.senali.app",

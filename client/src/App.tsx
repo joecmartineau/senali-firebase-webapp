@@ -159,7 +159,7 @@ function SenaliApp() {
       <div className="px-4 py-12">
         <div className="max-w-md mx-auto text-center">
           <div className="flex justify-center mb-6">
-            <InfinityIcon size={80} className="rounded-2xl" />
+            <InfinityIcon size={80} glowing className="rounded-2xl" />
           </div>
           
           <h1 className="text-3xl font-bold text-white mb-4">
