@@ -545,19 +545,38 @@ class LocalStorage {
     }
   }
 
-  // Delete a specific child profile by ID
-  async deleteChildProfile(profileId: string): Promise<void> {
+  // Update child profile
+  async updateChildProfile(profileId: string, updates: Partial<ChildProfile>): Promise<ChildProfile> {
     const db = await this.ensureDB();
     
-    return new Promise<void>((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const transaction = db.transaction(['childProfiles'], 'readwrite');
       const store = transaction.objectStore('childProfiles');
-      const request = store.delete(profileId);
+      const request = store.get(profileId);
       
-      request.onsuccess = () => resolve();
+      request.onsuccess = () => {
+        const existingProfile = request.result;
+        if (!existingProfile) {
+          reject(new Error('Profile not found'));
+          return;
+        }
+        
+        const updatedProfile = { 
+          ...existingProfile, 
+          ...updates, 
+          updatedAt: new Date() 
+        };
+        
+        const updateRequest = store.put(updatedProfile);
+        updateRequest.onsuccess = () => resolve(updatedProfile);
+        updateRequest.onerror = () => reject(updateRequest.error);
+      };
+      
       request.onerror = () => reject(request.error);
     });
   }
+
+
 }
 
 export const localStorage = new LocalStorage();

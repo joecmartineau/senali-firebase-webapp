@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User, LogOut, Download, Trash2, Crown } from "lucide-react";
+import { Send, Bot, User, LogOut, Download, Trash2, Crown, Users } from "lucide-react";
 import { InfinityIcon } from "@/components/ui/infinity-icon";
 import { localChatService } from "@/services/local-chat-service";
 import { subscriptionService, SUBSCRIPTION_LIMITS } from "@/services/subscription-service";
 import { SubscriptionBanner } from "@/components/subscription/subscription-banner";
 import { SubscriptionModal } from "@/components/subscription/subscription-modal";
+import { FamilySidebar } from "@/components/family-sidebar";
 import type { Message } from "@/lib/local-storage";
 
 // Message interface now imported from local-storage
@@ -26,6 +27,7 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
   const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
   const [messageCount, setMessageCount] = useState(0);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showFamilySidebar, setShowFamilySidebar] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -228,7 +230,7 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
                   ) : (
                     <div className="flex items-center gap-1">
                       <User className="w-3 h-3 text-gray-400" />
-                      <span className="text-gray-400 text-xs">Free ({messageCount}/{SUBSCRIPTION_LIMITS.free.dailyMessages})</span>
+                      <span className="text-gray-400 text-xs">Trial ({messageCount}/{SUBSCRIPTION_LIMITS.free.trialMessages})</span>
                     </div>
                   )}
                 </div>
@@ -269,6 +271,15 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
               title="Clear conversation (keeps profiles)"
             >
               <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={() => setShowFamilySidebar(true)}
+              variant="outline"
+              size="sm"
+              className="border-green-600 text-green-300 hover:bg-green-800"
+              title="View family profiles"
+            >
+              <Users className="h-4 w-4" />
             </Button>
             <Button
               onClick={onSignOut}
@@ -362,18 +373,18 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={
-                  !subscriptionService.hasPremiumAccess() && messageCount >= SUBSCRIPTION_LIMITS.free.dailyMessages
-                    ? "Daily message limit reached. Upgrade to Premium for unlimited messages!"
+                  !subscriptionService.hasPremiumAccess() && messageCount >= SUBSCRIPTION_LIMITS.free.trialMessages
+                    ? "Trial messages used up. Upgrade to Premium for unlimited messages!"
                     : isLoading 
                       ? "Thinking..." 
-                      : "Ask about parenting strategies, behavior management, or daily challenges..."
+                      : "Share your family details to get started..."
                 }
                 className="flex-1 bg-gray-800 border-gray-600 text-white placeholder-gray-400"
-                disabled={isLoading || (!subscriptionService.hasPremiumAccess() && messageCount >= SUBSCRIPTION_LIMITS.free.dailyMessages)}
+                disabled={isLoading || (!subscriptionService.hasPremiumAccess() && messageCount >= SUBSCRIPTION_LIMITS.free.trialMessages)}
               />
               <Button
                 onClick={sendMessage}
-                disabled={!input.trim() || isLoading || (!subscriptionService.hasPremiumAccess() && messageCount >= SUBSCRIPTION_LIMITS.free.dailyMessages)}
+                disabled={!input.trim() || isLoading || (!subscriptionService.hasPremiumAccess() && messageCount >= SUBSCRIPTION_LIMITS.free.trialMessages)}
                 className="bg-green-500 hover:bg-green-600 text-black"
               >
                 <Send className="h-4 w-4" />
@@ -393,6 +404,13 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
             setSubscriptionStatus(subscriptionService.getStatus());
           });
         }}
+      />
+
+      {/* Family Sidebar */}
+      <FamilySidebar
+        isOpen={showFamilySidebar}
+        onClose={() => setShowFamilySidebar(false)}
+        userId="user-1"
       />
     </div>
   );

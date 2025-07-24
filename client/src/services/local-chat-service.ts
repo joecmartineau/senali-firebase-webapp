@@ -1,8 +1,9 @@
-import { localStorage } from '../lib/local-storage';
+import { localStorage, type ChildProfile } from '../lib/local-storage';
 import { localAssessmentProcessor } from '../lib/local-assessment-processor';
 import { clearWrongProfiles } from '../lib/clear-wrong-profiles';
 import { debugProfiles } from '../lib/debug-profiles';
 import { subscriptionService } from './subscription-service';
+import { getFamilyDiscoveryPrompt, extractFamilyMembers } from '../lib/guided-family-discovery';
 import type { Message } from '../lib/local-storage';
 
 export class LocalChatService {
@@ -67,15 +68,25 @@ export class LocalChatService {
       console.error('Error processing names and loading child context:', error);
     }
 
-    // Only send minimal context - let AI request more if needed
-    const recentMessages = await this.getMessageHistory(3); // Just last 3 messages for immediate context
+    // Extract and create family members from current message
+    const recentMessages = await this.getMessageHistory(3);
+    const messageCount = recentMessages.length + 1;
+    const existingProfiles = await localStorage.getChildProfiles(this.userId);
     
-    // Call API for AI response with minimal context
-    // For now, always use local dev API since we're still in development
+    // Get guided family discovery prompt for current message count
+    const systemPrompt = getFamilyDiscoveryPrompt(messageCount, existingProfiles);
+    
+    // Extract and create family members from current message
+    const newMembers = extractFamilyMembers(content);
+    for (const member of newMembers) {
+      await this.createFamilyProfile(member.name, member.age, member.relationship);
+    }
+    
+    // Call API for AI response with guided discovery context
     const apiUrl = '/api/chat';
     
     console.log('🌐 Making API call to:', apiUrl);
-    console.log('📝 Request data:', { message: content, childContext, recentContextLength: recentMessages.length });
+    console.log('📝 Request data - Message count:', messageCount, 'Family members:', newMembers.length);
     
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -84,13 +95,15 @@ export class LocalChatService {
       },
       body: JSON.stringify({
         message: content,
+        systemPrompt: systemPrompt, // Include guided discovery prompt
         childContext: childContext, // Include context for personalized responses
         recentContext: recentMessages.slice(-3).map(msg => ({
           role: msg.role,
           content: msg.content
         })),
-        userId: this.userId, // Allow server to request more context if needed
-        isPremium: subscriptionService.hasPremiumAccess() // Send premium status for model selection
+        messageCount: messageCount,
+        userId: this.userId,
+        isPremium: subscriptionService.hasPremiumAccess()
       }),
     }).catch(fetchError => {
       console.error('🚨 Fetch failed:', fetchError);
@@ -130,10 +143,10 @@ export class LocalChatService {
     const messages = await this.getMessageHistory(200);
     
     if (messages.length === 0) {
-      // Return welcome message if no history
+      // Return guided discovery welcome message
       const welcomeMessage: Message = {
         id: 'welcome',
-        content: "Hi there! I'm Senali, and I'm here to listen and support you. What's been on your mind lately?",
+        content: "Hi! I'm Senali, and I'm here to support you and your family. I'd love to get to know your family better. Can you tell me a bit about yourself - are you a parent or caregiver?",
         role: 'assistant',
         timestamp: new Date(),
         userId: this.userId
@@ -167,6 +180,35 @@ export class LocalChatService {
 
   async clearAllData() {
     return await localStorage.clearAllData();
+  }
+
+  // Create family profile from discovered information
+  private async createFamilyProfile(name: string, age?: number, relationship: 'self' | 'spouse' | 'child' | 'other' = 'child'): Promise<void> {
+    try {
+      // Check if profile already exists
+      const existing = await localStorage.getChildProfileByName(this.userId, name);
+      if (existing) {
+        console.log(`👤 Profile for ${name} already exists, skipping creation`);
+        return;
+      }
+
+      // Create new profile
+      const profile: Omit<ChildProfile, 'id'> = {
+        childName: name,
+        age: age,
+        relationship: relationship,
+        userId: this.userId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        symptomTracking: {}
+      };
+      
+      await localStorage.saveChildProfile(profile);
+
+      console.log(`✅ Created new family profile: ${name} (${relationship})`);
+    } catch (error) {
+      console.error(`Error creating profile for ${name}:`, error);
+    }
   }
 }
 
