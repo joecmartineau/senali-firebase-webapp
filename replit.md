@@ -223,6 +223,20 @@ This is a full-stack TypeScript application built with a privacy-first, local st
   - Updates profiles when new information is shared
   - Maintains comprehensive family context for therapeutic responses
 
+### Latest Updates (2025-01-24)
+- **Fixed Guided Family Discovery System**: Resolved JavaScript errors preventing chat functionality
+  - Fixed variable scope issue with `newMembers` variable that was causing chat failures
+  - Limited auto profile creation to first 10 messages only for cost efficiency
+  - Added explicit profile creation commands ("create profile for [name]")
+  - Updated system prompts for better family discovery guidance
+  - Reduced API context to last 3 messages for cost control
+  - Premium users get GPT-4o, free users get GPT-3.5-turbo
+- **Cost-Efficient Architecture**: Implemented guided discovery workflow
+  - Natural conversation flow with focused family questions in first 10 messages
+  - Auto-creates family profiles when names mentioned naturally during discovery phase
+  - User can manually request profiles anytime with explicit commands
+  - API tested and working correctly with cost-efficient minimal context approach
+
 ### Previous Updates (2025-01-24)
 - **Assessment System**: Implemented professional diagnostic assessment tracking system
   - Real DSM-5 criteria for ADHD, Autism, and ODD assessments  

@@ -77,8 +77,10 @@ export class LocalChatService {
     const systemPrompt = getFamilyDiscoveryPrompt(messageCount, existingProfiles);
     
     // Extract and create family members from current message (only if in first 10 messages or explicit request)
+    let newMembersCount = 0;
     if (messageCount <= 10) {
       const newMembers = extractFamilyMembers(content);
+      newMembersCount = newMembers.length;
       for (const member of newMembers) {
         await this.createFamilyProfile(member.name, member.age, member.relationship);
         console.log(`👶 Auto-created profile for ${member.name} (${member.relationship}) in discovery phase`);
@@ -89,7 +91,7 @@ export class LocalChatService {
     const apiUrl = '/api/chat';
     
     console.log('🌐 Making API call to:', apiUrl);
-    console.log('📝 Request data - Message count:', messageCount, 'Family members:', newMembers.length);
+    console.log('📝 Request data - Message count:', messageCount, 'Family members:', newMembersCount);
     
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -195,15 +197,13 @@ export class LocalChatService {
         return;
       }
 
-      // Create new profile (simplified to avoid type issues)
+      // Create new profile with correct schema
       const profile = {
         childName: name,
         age: age ? age.toString() : undefined,
         userId: this.userId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         symptomTracking: {},
-        relationship: relationship
+        relationshipToUser: relationship // Use correct field name
       };
       
       await localStorage.saveChildProfile(profile);
