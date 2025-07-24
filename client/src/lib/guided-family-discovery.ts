@@ -130,108 +130,67 @@ export const extractFamilyMembers = (message: string): Array<{
     age?: number;
     relationship: 'self' | 'spouse' | 'child' | 'other';
   }> = [];
+  
+  console.log('🔍 Starting family extraction from:', message);
 
-  // Explicit profile creation requests
-  const explicitPatterns = [
-    /create (?:a )?profile for (\w+)/gi,
-    /add (\w+) to (?:the )?family/gi,
-    /make (?:a )?profile for (\w+)/gi
-  ];
-
-  // Child patterns - Enhanced to catch more variations
-  const childPatterns = [
-    /my (?:son|daughter|child|kid|boy|girl|kids|children) (?:is |are )?(?:named )?(\w+)(?:.*?(?:is |'s |, )?(\d+))?/gi,
-    /(\w+) is my (?:son|daughter|child|kid|boy|girl)(?:.*?(?:is |'s |, )?(\d+))?/gi,
-    /(\w+)(?:,)? (?:who is |is )?(\d+) years? old/gi,
-    /(\w+) (?:who is |is )?(\d+)/gi, // Simple "Sam is 12" or "Sam who is 12"
-    /my kids are (\w+)(?:.*?(\d+))?/gi, // "my kids are Sam and Noah"
-    /(?:my )?(?:kids|children) (?:are |named )?(\w+)/gi // "kids are Sam" or "children named Sam"
-  ];
-
-  // Spouse patterns
-  const spousePatterns = [
-    /my (?:wife|husband|spouse|partner) (?:is )?(\w+)/gi,
-    /(\w+) is my (?:wife|husband|spouse|partner)/gi,
-    /(\w+) and I/gi
-  ];
-
-  // Self patterns
-  const selfPatterns = [
-    /I'm (\w+)/gi,
-    /call me (\w+)/gi,
-    /my name is (\w+)/gi
-  ];
-
-  // Extract explicit requests
-  for (const pattern of explicitPatterns) {
-    let match;
-    while ((match = pattern.exec(message)) !== null) {
-      const name = match[1];
-      if (name && name.length > 2) {
-        members.push({ name, relationship: 'other' });
+  // Helper function to add member if not duplicate
+  const addMember = (name: string, relationship: 'self' | 'spouse' | 'child' | 'other', age?: number) => {
+    if (name && name.length > 2 && !members.some(m => m.name === name && m.relationship === relationship)) {
+      const skipWords = ['and', 'or', 'also', 'but', 'the', 'are', 'is', 'who', 'old', 'years', 'year', 'have', 'kids', 'children', 'name', 'my', 'wife', 'husband'];
+      if (!skipWords.includes(name.toLowerCase())) {
+        members.push({ name, age, relationship });
+        console.log(`✅ Added ${relationship}: ${name}${age ? ` (age ${age})` : ''}`);
       }
     }
-  }
+  };
 
-  // Extract children - Enhanced logic for multiple kids in one message
-  for (const pattern of childPatterns) {
+  // Helper function to extract matches from pattern
+  const extractMatches = (pattern: RegExp, relationship: 'self' | 'spouse' | 'child' | 'other', ageIndex?: number) => {
     let match;
     while ((match = pattern.exec(message)) !== null) {
-      const name = match[1];
-      const age = match[2] ? parseInt(match[2]) : undefined;
-      if (name && name.length > 2) {
-        members.push({ name, age, relationship: 'child' });
-      }
-    }
-  }
-
-  // Special case: Multiple children mentioned together like "Sam and Noah" or "Emma, Jake and Lucy"
-  const multipleChildPattern = /(?:my )?(?:kids|children) (?:are |named )?(?:called )?([^.!?]+)/gi;
-  let multiMatch;
-  while ((multiMatch = multipleChildPattern.exec(message)) !== null) {
-    const namesText = multiMatch[1];
-    // Extract individual names from "Sam who is 12 and Noah who is 5" format
-    const nameAgeMatches = namesText.match(/(\w+)(?:\s+who\s+is\s+(\d+))?/gi);
-    if (nameAgeMatches) {
-      // Filter out common words that aren't names
-      const skipWords = ['and', 'or', 'also', 'but', 'the', 'are', 'is', 'who', 'old', 'years', 'year'];
-      
-      for (const nameAge of nameAgeMatches) {
-        const nameAgeMatch = nameAge.match(/(\w+)(?:\s+who\s+is\s+(\d+))?/i);
-        if (nameAgeMatch && nameAgeMatch[1] && nameAgeMatch[1].length > 2) {
-          const name = nameAgeMatch[1];
-          const age = nameAgeMatch[2] ? parseInt(nameAgeMatch[2]) : undefined;
-          
-          // Skip common words and duplicates
-          if (!skipWords.includes(name.toLowerCase()) && !members.some(m => m.name === name)) {
-            members.push({ name, age, relationship: 'child' });
-          }
+      if (match[1]) {
+        const age = ageIndex && match[ageIndex] ? parseInt(match[ageIndex]) : undefined;
+        if (!ageIndex || !age || (age > 0 && age < 100)) {
+          addMember(match[1], relationship, age);
         }
       }
-    }
-  }
-
-  // Extract spouse
-  for (const pattern of spousePatterns) {
-    let match;
-    while ((match = pattern.exec(message)) !== null) {
-      const name = match[1];
-      if (name && name.length > 2) {
-        members.push({ name, relationship: 'spouse' });
+      if (match[2] && relationship === 'child' && !ageIndex) {
+        addMember(match[2], relationship);
       }
     }
+  };
+
+  // 1. Extract self - "My name is Joe" or "I'm Joe"
+  extractMatches(/my name is (\w+)/gi, 'self');
+  extractMatches(/I'm (\w+)/gi, 'self');
+  extractMatches(/call me (\w+)/gi, 'self');
+
+  // 2. Extract spouse - "My wife's name is Kessi"
+  extractMatches(/my (?:wife|husband|spouse|partner)(?:'s name)? is (\w+)/gi, 'spouse');
+  extractMatches(/(\w+) is my (?:wife|husband|spouse|partner)/gi, 'spouse');
+
+  // 3. Extract children with ages - "Sam is 12", "Noah is 5"
+  extractMatches(/(\w+) is (\d+)/gi, 'child', 2);
+  extractMatches(/(\w+) who is (\d+)/gi, 'child', 2);
+  extractMatches(/(\w+),? (\d+) years? old/gi, 'child', 2);
+
+  // 4. Extract multiple children - "Sam and Noah are boys"
+  extractMatches(/(\w+) and (\w+) are (?:boys|girls|kids|children)/gi, 'child');
+
+  // 5. Extract baby/pregnancy - "baby girl Elizabeth"
+  extractMatches(/(?:baby|our) (?:girl|boy) (\w+)/gi, 'child');
+  extractMatches(/(?:have|expecting) (?:a|our) (?:baby|child) (?:girl|boy) (?:named )?(\w+)/gi, 'child');
+
+  // 6. Extract from "We have 3 kids. Sam and Noah..."
+  if (message.includes('kids') || message.includes('children')) {
+    extractMatches(/(?:kids|children)[^.!?]*?(\w+)(?:\s+and\s+(\w+))?/gi, 'child');
   }
 
-  // Extract self
-  for (const pattern of selfPatterns) {
-    let match;
-    while ((match = pattern.exec(message)) !== null) {
-      const name = match[1];
-      if (name && name.length > 2) {
-        members.push({ name, relationship: 'self' });
-      }
-    }
-  }
+  // 7. Explicit profile creation requests
+  extractMatches(/create (?:a )?profile for (\w+)/gi, 'other');
+  extractMatches(/add (\w+) to (?:the )?family/gi, 'other');
+  extractMatches(/make (?:a )?profile for (\w+)/gi, 'other');
 
+  console.log('🔍 Final extraction results:', members);
   return members;
 };

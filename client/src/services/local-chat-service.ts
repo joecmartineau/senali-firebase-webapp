@@ -79,15 +79,29 @@ export class LocalChatService {
     // Extract and create family members from current message (only if in first 10 messages or explicit request)
     let newMembersCount = 0;
     if (messageCount <= 10) {
+      console.log(`🔍 Processing message ${messageCount}/10 for family extraction`);
       console.log(`🔍 Extracting family members from: "${content}"`);
+      
       const newMembers = extractFamilyMembers(content);
       newMembersCount = newMembers.length;
-      console.log(`🔍 Extraction results:`, newMembers);
+      console.log(`🔍 Found ${newMembersCount} family members:`, newMembers);
       
-      for (const member of newMembers) {
-        await this.createFamilyProfile(member.name, member.age, member.relationship);
-        console.log(`👶 Auto-created profile for ${member.name} (${member.relationship}) in discovery phase`);
+      if (newMembers.length > 0) {
+        console.log(`🏗️ Creating ${newMembers.length} family profiles...`);
+        for (const member of newMembers) {
+          await this.createFamilyProfile(member.name, member.age, member.relationship);
+          console.log(`👶 Created profile: ${member.name} (${member.relationship})`);
+        }
+        
+        // Verify profiles were created
+        const allProfilesAfter = await localStorage.getChildProfiles(this.userId);
+        console.log(`✅ Total profiles after creation: ${allProfilesAfter.length}`);
+        console.log(`✅ Profile names: ${allProfilesAfter.map(p => p.childName).join(', ')}`);
+      } else {
+        console.log(`ℹ️ No family members found in message ${messageCount}`);
       }
+    } else {
+      console.log(`ℹ️ Message ${messageCount} beyond discovery phase, skipping auto-extraction`);
     }
     
     // Call API for AI response with guided discovery context
