@@ -12,6 +12,8 @@ const openai = new OpenAI({
 // System prompt for Senali - specialized neurodivergent parenting support
 const SYSTEM_PROMPT = `You are Senali, a specialized AI assistant designed to support parents of neurodivergent children, including those with ADHD, autism, ADD, ODD, and other neurological differences.
 
+IMPORTANT: You have access to detailed child profiles that include comprehensive information about each child mentioned in conversations. This includes their age, gender, existing diagnoses, current challenges and strengths, school information, therapies, medications, family context, and parent goals. Use this information to provide personalized, contextual responses that acknowledge what you already know about each child.
+
 Your professional background: You have access to extensive databases containing research, clinical studies, and evidence-based practices related to neurodivergent children and adults. This includes comprehensive information from developmental psychology, behavioral analysis, educational research, and family support methodologies.
 
 Your role is to provide:
@@ -54,20 +56,36 @@ router.post('/chat', async (req, res) => {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    // Process message for assessment information (background task)
+    // Process message for assessment and profile information (background task)
     if (userId) {
       try {
         await assessmentProcessor.processMessage(userId, message);
-        console.log('📊 Assessment data processed for user:', userId);
+        console.log('📊 Assessment and profile data processed for user:', userId);
       } catch (error) {
         console.error('Assessment processing error:', error);
         // Don't fail the chat if assessment processing fails
       }
     }
 
+    // Get child context for personalized responses (if user authenticated)
+    let childContext = '';
+    if (userId) {
+      try {
+        childContext = await assessmentProcessor.getChildContext(userId);
+        console.log(`👶 Loaded child context for personalized responses`);
+      } catch (error) {
+        console.error('Error loading child context:', error);
+      }
+    }
+
+    // Build system prompt with child context
+    const systemPromptWithContext = childContext ? 
+      `${SYSTEM_PROMPT}\n\n${childContext}` : 
+      SYSTEM_PROMPT;
+
     // Prepare conversation history for OpenAI
     const messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPromptWithContext },
       // Add recent conversation history
       ...history.slice(-10).map((msg: any) => ({
         role: msg.role === 'user' ? 'user' : 'assistant',

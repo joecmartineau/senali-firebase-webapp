@@ -156,6 +156,11 @@ This is a full-stack TypeScript application built with a modern web architecture
   - Background processing of chat messages to extract symptom information
   - Hidden child profiles with standardized assessment forms (Vanderbilt, ADOS/ADI-R elements)
   - Assessment insights generation for parents to discuss with professionals
+- **Comprehensive Child Profiles**: Enhanced child profile system for persistent information storage
+  - Captures age, gender, diagnoses, challenges, strengths, school info, therapies, medications
+  - Natural language extraction from parent conversations
+  - Persistent context across conversations - Senali remembers each child's details
+  - Professional notes and observations tracking over time
 - **Firebase Hosting Ready**: Configured app for Firebase hosting deployment with stable domains
 - **Domain Stability**: Optimized for Firebase hosting with senali-235fb.firebaseapp.com and senali-235fb.web.app domains
 - **Mobile Optimization**: Enhanced PWA configuration for iOS and Android deployment

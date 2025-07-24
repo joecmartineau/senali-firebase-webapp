@@ -106,14 +106,20 @@ export class AssessmentProcessor {
       return profiles[0];
     }
     
-    // Create new profile
+    // Create new profile with comprehensive information
     console.log(`➕ Creating new profile for ${childName}`);
     const newProfile = await db.insert(childProfiles)
       .values({
         userId,
         childName,
         dateOfBirth: additionalInfo?.dateOfBirth || null,
-        gender: additionalInfo?.gender || null
+        age: additionalInfo?.age || null,
+        gender: additionalInfo?.gender || null,
+        existingDiagnoses: additionalInfo?.existingDiagnoses || [],
+        currentChallenges: additionalInfo?.currentChallenges || [],
+        currentStrengths: additionalInfo?.currentStrengths || [],
+        parentGoals: additionalInfo?.parentGoals || [],
+        senaliObservations: 'Initial profile created through conversation'
       })
       .returning();
     
@@ -121,6 +127,85 @@ export class AssessmentProcessor {
     await this.initializeAssessments(newProfile[0].id);
     
     return newProfile[0];
+  }
+
+  // Update child profile with new information from conversation
+  async updateChildProfile(userId: string, childName: string, updates: any) {
+    console.log(`📝 Updating profile for ${childName} with new information`);
+    
+    const profile = await this.getOrCreateChildProfile(userId, childName);
+    
+    // Merge arrays without duplicates
+    const mergeArrays = (existing: string[] | null, newItems: string[]) => {
+      const existingArray = existing || [];
+      const combined = [...existingArray, ...newItems];
+      // Convert Set to Array for TypeScript compatibility
+      return Array.from(new Set(combined)); // Remove duplicates
+    };
+    
+    const updateData: any = {
+      updatedAt: new Date()
+    };
+    
+    // Update scalar fields
+    if (updates.age) updateData.age = updates.age;
+    if (updates.gender) updateData.gender = updates.gender;
+    if (updates.schoolGrade) updateData.schoolGrade = updates.schoolGrade;
+    if (updates.schoolType) updateData.schoolType = updates.schoolType;
+    if (updates.hasIEP !== undefined) updateData.hasIEP = updates.hasIEP;
+    if (updates.has504Plan !== undefined) updateData.has504Plan = updates.has504Plan;
+    if (updates.sleepPatterns) updateData.sleepPatterns = updates.sleepPatterns;
+    if (updates.dietaryNeeds) updateData.dietaryNeeds = updates.dietaryNeeds;
+    if (updates.sensoryNeeds) updateData.sensoryNeeds = updates.sensoryNeeds;
+    if (updates.communicationStyle) updateData.communicationStyle = updates.communicationStyle;
+    if (updates.familyStructure) updateData.familyStructure = updates.familyStructure;
+    if (updates.siblings) updateData.siblings = updates.siblings;
+    
+    // Update array fields by merging
+    if (updates.existingDiagnoses) {
+      updateData.existingDiagnoses = mergeArrays(profile.existingDiagnoses, updates.existingDiagnoses);
+    }
+    if (updates.currentChallenges) {
+      updateData.currentChallenges = mergeArrays(profile.currentChallenges, updates.currentChallenges);
+    }
+    if (updates.currentStrengths) {
+      updateData.currentStrengths = mergeArrays(profile.currentStrengths, updates.currentStrengths);
+    }
+    if (updates.currentTherapies) {
+      updateData.currentTherapies = mergeArrays(profile.currentTherapies, updates.currentTherapies);
+    }
+    if (updates.currentMedications) {
+      updateData.currentMedications = mergeArrays(profile.currentMedications, updates.currentMedications);
+    }
+    if (updates.parentGoals) {
+      updateData.parentGoals = mergeArrays(profile.parentGoals, updates.parentGoals);
+    }
+    if (updates.primaryCaregivers) {
+      updateData.primaryCaregivers = mergeArrays(profile.primaryCaregivers, updates.primaryCaregivers);
+    }
+    
+    // Update notes by appending
+    if (updates.parentNotes) {
+      const existingNotes = profile.parentNotes || '';
+      updateData.parentNotes = existingNotes ? 
+        `${existingNotes}\n\n[${new Date().toLocaleDateString()}] ${updates.parentNotes}` : 
+        `[${new Date().toLocaleDateString()}] ${updates.parentNotes}`;
+    }
+    
+    // Update Senali observations
+    if (updates.senaliObservations) {
+      const existingObs = profile.senaliObservations || '';
+      updateData.senaliObservations = existingObs ? 
+        `${existingObs}\n\n[${new Date().toLocaleDateString()}] ${updates.senaliObservations}` : 
+        `[${new Date().toLocaleDateString()}] ${updates.senaliObservations}`;
+    }
+    
+    await db.update(childProfiles)
+      .set(updateData)
+      .where(eq(childProfiles.id, profile.id));
+    
+    console.log(`✅ Updated profile for ${childName}`);
+    return updateData;
   }
   
   // Initialize empty assessment forms for a new child
@@ -155,6 +240,9 @@ export class AssessmentProcessor {
     for (const childName of childNames) {
       const profile = await this.getOrCreateChildProfile(userId, childName);
       
+      // Extract and update child profile information
+      await this.extractAndUpdateProfileInfo(userId, childName, message);
+      
       // Extract and update ADHD symptoms
       await this.updateAdhdAssessment(profile.id, message);
       
@@ -163,6 +251,177 @@ export class AssessmentProcessor {
       
       // Extract and update ODD symptoms
       await this.updateOddAssessment(profile.id, message);
+    }
+  }
+
+  // Extract comprehensive profile information from conversation
+  async extractAndUpdateProfileInfo(userId: string, childName: string, message: string) {
+    const lowerMessage = message.toLowerCase();
+    const updates: any = {};
+    
+    // Extract age information
+    const ageMatch = message.match(new RegExp(`${childName}.*?(\\d+)\\s*(?:years?\\s*old|year-old)`, 'i')) ||
+                     message.match(/(\d+)\s*(?:years?\s*old|year-old)/i);
+    if (ageMatch) {
+      updates.age = ageMatch[1];
+      console.log(`📝 Age extracted: ${updates.age}`);
+    }
+    
+    // Extract gender information
+    if (lowerMessage.includes('my son') || lowerMessage.includes('he ') || lowerMessage.includes('his ')) {
+      updates.gender = 'male';
+    } else if (lowerMessage.includes('my daughter') || lowerMessage.includes('she ') || lowerMessage.includes('her ')) {
+      updates.gender = 'female';
+    }
+    
+    // Extract existing diagnoses
+    const diagnoses = [];
+    if (lowerMessage.includes('diagnosed with adhd') || lowerMessage.includes('has adhd')) {
+      diagnoses.push('ADHD');
+    }
+    if (lowerMessage.includes('diagnosed with autism') || lowerMessage.includes('has autism') || lowerMessage.includes('on the spectrum')) {
+      diagnoses.push('Autism Spectrum Disorder');
+    }
+    if (lowerMessage.includes('anxiety') && lowerMessage.includes('diagnosed')) {
+      diagnoses.push('Anxiety Disorder');
+    }
+    if (lowerMessage.includes('odd') && lowerMessage.includes('diagnosed')) {
+      diagnoses.push('Oppositional Defiant Disorder');
+    }
+    if (diagnoses.length > 0) {
+      updates.existingDiagnoses = diagnoses;
+      console.log(`📝 Diagnoses extracted: ${diagnoses.join(', ')}`);
+    }
+    
+    // Extract challenges
+    const challenges = [];
+    if (lowerMessage.includes('trouble focusing') || lowerMessage.includes('can\'t focus') || lowerMessage.includes('attention')) {
+      challenges.push('attention and focus');
+    }
+    if (lowerMessage.includes('social') && (lowerMessage.includes('difficult') || lowerMessage.includes('struggle'))) {
+      challenges.push('social skills');
+    }
+    if (lowerMessage.includes('sensory') || lowerMessage.includes('noise') || lowerMessage.includes('texture')) {
+      challenges.push('sensory processing');
+    }
+    if (lowerMessage.includes('meltdown') || lowerMessage.includes('tantrum')) {
+      challenges.push('emotional regulation');
+    }
+    if (lowerMessage.includes('sleep') && (lowerMessage.includes('problem') || lowerMessage.includes('difficult'))) {
+      challenges.push('sleep difficulties');
+    }
+    if (challenges.length > 0) {
+      updates.currentChallenges = challenges;
+      console.log(`📝 Challenges extracted: ${challenges.join(', ')}`);
+    }
+    
+    // Extract strengths
+    const strengths = [];
+    if (lowerMessage.includes('good at') || lowerMessage.includes('excellent at') || lowerMessage.includes('talented')) {
+      const strengthMatch = message.match(/(?:good at|excellent at|talented in|great with)\s+([^.!?]+)/i);
+      if (strengthMatch) {
+        strengths.push(strengthMatch[1].trim());
+      }
+    }
+    if (lowerMessage.includes('creative') || lowerMessage.includes('artistic')) {
+      strengths.push('creative and artistic');
+    }
+    if (lowerMessage.includes('smart') || lowerMessage.includes('intelligent') || lowerMessage.includes('bright')) {
+      strengths.push('intellectually gifted');  
+    }
+    if (lowerMessage.includes('kind') || lowerMessage.includes('caring') || lowerMessage.includes('empathetic')) {
+      strengths.push('empathetic and caring');
+    }
+    if (strengths.length > 0) {
+      updates.currentStrengths = strengths;
+      console.log(`📝 Strengths extracted: ${strengths.join(', ')}`);
+    }
+    
+    // Extract school information
+    if (lowerMessage.includes('grade') || lowerMessage.includes('kindergarten') || lowerMessage.includes('preschool')) {
+      const gradeMatch = message.match(/(?:in\s+)?(\w+)\s+grade|kindergarten|preschool/i);
+      if (gradeMatch) {
+        updates.schoolGrade = gradeMatch[1] || (lowerMessage.includes('kindergarten') ? 'kindergarten' : 'preschool');
+        console.log(`📝 School grade extracted: ${updates.schoolGrade}`);
+      }
+    }
+    
+    // Extract IEP/504 information
+    if (lowerMessage.includes('iep')) {
+      updates.hasIEP = true;
+      console.log(`📝 IEP status: true`);
+    }
+    if (lowerMessage.includes('504') || lowerMessage.includes('five oh four')) {
+      updates.has504Plan = true;
+      console.log(`📝 504 plan status: true`);
+    }
+    
+    // Extract therapy information
+    const therapies = [];
+    if (lowerMessage.includes('speech therapy') || lowerMessage.includes('speech therapist')) {
+      therapies.push('speech therapy');
+    }
+    if (lowerMessage.includes('occupational therapy') || lowerMessage.includes('ot ')) {
+      therapies.push('occupational therapy');
+    }
+    if (lowerMessage.includes('behavioral therapy') || lowerMessage.includes('aba')) {
+      therapies.push('behavioral therapy');
+    }
+    if (lowerMessage.includes('physical therapy') || lowerMessage.includes('pt ')) {
+      therapies.push('physical therapy');
+    }
+    if (therapies.length > 0) {
+      updates.currentTherapies = therapies;
+      console.log(`📝 Therapies extracted: ${therapies.join(', ')}`);
+    }
+    
+    // Extract medication information
+    const medications = [];
+    if (lowerMessage.includes('medication') || lowerMessage.includes('meds')) {
+      // Common ADHD medications
+      if (lowerMessage.includes('adderall') || lowerMessage.includes('ritalin') || lowerMessage.includes('concerta') || lowerMessage.includes('vyvanse')) {
+        const medMatch = message.match(/(adderall|ritalin|concerta|vyvanse)/i);
+        if (medMatch) medications.push(medMatch[1]);
+      }
+    }
+    if (medications.length > 0) {
+      updates.currentMedications = medications;
+      console.log(`📝 Medications extracted: ${medications.join(', ')}`);
+    }
+    
+    // Extract parent goals
+    const goals = [];
+    if (lowerMessage.includes('want to work on') || lowerMessage.includes('hoping to improve') || lowerMessage.includes('goal is')) {
+      const goalMatch = message.match(/(?:want to work on|hoping to improve|goal is)\s+([^.!?]+)/i);
+      if (goalMatch) {
+        goals.push(goalMatch[1].trim());
+      }
+    }
+    if (goals.length > 0) {
+      updates.parentGoals = goals;
+      console.log(`📝 Parent goals extracted: ${goals.join(', ')}`);
+    }
+    
+    // Add Senali observation based on the conversation
+    const observationParts = [];
+    if (Object.keys(updates).length > 0) {
+      observationParts.push('Parent shared new information about child');
+    }
+    if (lowerMessage.includes('struggling') || lowerMessage.includes('difficult') || lowerMessage.includes('problem')) {
+      observationParts.push('Parent expressing concerns about challenges');
+    }
+    if (lowerMessage.includes('improve') || lowerMessage.includes('help') || lowerMessage.includes('support')) {
+      observationParts.push('Parent seeking guidance and support');
+    }
+    
+    if (observationParts.length > 0) {
+      updates.senaliObservations = observationParts.join('; ');
+    }
+    
+    // Update the profile if we found any information
+    if (Object.keys(updates).length > 0) {
+      await this.updateChildProfile(userId, childName, updates);
+      console.log(`📊 Updated ${childName}'s profile with ${Object.keys(updates).length} new pieces of information`);
     }
   }
   
@@ -374,6 +633,71 @@ export class AssessmentProcessor {
       autism: autismData,
       odd: oddData
     };
+  }
+
+  // Get all child profiles for a user (for chat context)
+  async getAllChildProfiles(userId: string) {
+    const profiles = await db.select()
+      .from(childProfiles)
+      .where(eq(childProfiles.userId, userId))
+      .orderBy(childProfiles.createdAt);
+    
+    return profiles;
+  }
+
+  // Get comprehensive child context for chat
+  async getChildContext(userId: string): Promise<string> {
+    const profiles = await this.getAllChildProfiles(userId);
+    
+    if (profiles.length === 0) {
+      return "No child profiles found. This appears to be a new conversation.";
+    }
+    
+    let context = `Child Profiles Context:\n\n`;
+    
+    profiles.forEach((profile, index) => {
+      context += `${index + 1}. ${profile.childName}:\n`;
+      
+      if (profile.age) context += `   Age: ${profile.age}\n`;
+      if (profile.gender && profile.gender !== 'prefer_not_to_say') context += `   Gender: ${profile.gender}\n`;
+      
+      if (profile.existingDiagnoses && profile.existingDiagnoses.length > 0) {
+        context += `   Diagnosed conditions: ${profile.existingDiagnoses.join(', ')}\n`;
+      }
+      
+      if (profile.currentChallenges && profile.currentChallenges.length > 0) {
+        context += `   Current challenges: ${profile.currentChallenges.join(', ')}\n`;
+      }
+      
+      if (profile.currentStrengths && profile.currentStrengths.length > 0) {
+        context += `   Strengths: ${profile.currentStrengths.join(', ')}\n`;
+      }
+      
+      if (profile.schoolGrade) context += `   School: ${profile.schoolGrade}\n`;
+      if (profile.hasIEP) context += `   Has IEP: Yes\n`;
+      if (profile.has504Plan) context += `   Has 504 Plan: Yes\n`;
+      
+      if (profile.currentTherapies && profile.currentTherapies.length > 0) {
+        context += `   Current therapies: ${profile.currentTherapies.join(', ')}\n`;
+      }
+      
+      if (profile.currentMedications && profile.currentMedications.length > 0) {
+        context += `   Medications: ${profile.currentMedications.join(', ')}\n`;
+      }
+      
+      if (profile.parentGoals && profile.parentGoals.length > 0) {
+        context += `   Parent goals: ${profile.parentGoals.join('; ')}\n`;
+      }
+      
+      if (profile.sensoryNeeds) context += `   Sensory needs: ${profile.sensoryNeeds}\n`;
+      if (profile.communicationStyle) context += `   Communication style: ${profile.communicationStyle}\n`;
+      
+      context += `\n`;
+    });
+    
+    context += `Use this information to provide personalized, contextual responses that acknowledge what you already know about each child. Reference their specific challenges, strengths, and circumstances naturally in your advice.`;
+    
+    return context;
   }
 }
 

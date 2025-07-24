@@ -70,7 +70,49 @@ export const childProfiles = pgTable("child_profiles", {
   userId: varchar("user_id").notNull().references(() => users.id),
   childName: varchar("child_name").notNull(),
   dateOfBirth: timestamp("date_of_birth"),
+  age: varchar("age"), // Current age as mentioned by parent
   gender: varchar("gender", { enum: ["male", "female", "other", "prefer_not_to_say"] }),
+  
+  // Existing diagnoses
+  existingDiagnoses: text("existing_diagnoses").array(), // ["ADHD", "Autism", "Anxiety"]
+  diagnosisDate: varchar("diagnosis_date"), // When diagnosed
+  diagnostician: varchar("diagnostician"), // Who diagnosed them
+  
+  // Current challenges and strengths
+  currentChallenges: text("current_challenges").array(), // ["attention", "social skills", "sensory processing"]
+  currentStrengths: text("current_strengths").array(), // ["creative", "good memory", "kind"]
+  
+  // School and therapy information
+  schoolGrade: varchar("school_grade"),
+  schoolType: varchar("school_type"), // "public", "private", "homeschool", "special needs"
+  hasIEP: boolean("has_iep").default(false),
+  has504Plan: boolean("has_504_plan").default(false),
+  currentTherapies: text("current_therapies").array(), // ["speech therapy", "occupational therapy"]
+  
+  // Medications and treatments
+  currentMedications: text("current_medications").array(),
+  allergies: text("allergies").array(),
+  medicalConditions: text("medical_conditions").array(),
+  
+  // Behavioral and developmental notes
+  sleepPatterns: text("sleep_patterns"), // Free text about sleep
+  dietaryNeeds: text("dietary_needs"), // Special diets, preferences, restrictions
+  sensoryNeeds: text("sensory_needs"), // Sensory processing information
+  communicationStyle: text("communication_style"), // How child communicates best
+  
+  // Family context
+  familyStructure: varchar("family_structure"), // "two_parent", "single_parent", "extended_family"
+  siblings: varchar("siblings"), // Number and ages of siblings
+  primaryCaregivers: text("primary_caregivers").array(), // ["mom", "dad", "grandma"]
+  
+  // Goals and priorities
+  parentGoals: text("parent_goals").array(), // What parent wants to work on
+  childGoals: text("child_goals").array(), // What child wants to work on (if applicable)
+  
+  // Notes and observations
+  parentNotes: text("parent_notes"), // Free-form notes from parent
+  senaliObservations: text("senali_observations"), // AI observations over time
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
