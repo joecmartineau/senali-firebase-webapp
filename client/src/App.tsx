@@ -24,14 +24,14 @@ function SenaliApp() {
   // Initialize Firebase auth listener
   useEffect(() => {
     console.log('Setting up Firebase auth listener...');
-    console.log('Firebase config check:', {
-      apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? 'Present' : 'Missing',
-      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? 'Present' : 'Missing',
-      appId: import.meta.env.VITE_FIREBASE_APP_ID ? 'Present' : 'Missing'
-    });
     
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log('Auth state changed:', firebaseUser?.email || 'No user');
+      console.log('Auth state changed:', {
+        email: firebaseUser?.email || 'No user',
+        uid: firebaseUser?.uid || 'No UID',
+        displayName: firebaseUser?.displayName || 'No display name'
+      });
+      
       setUser(firebaseUser);
       setLoading(false);
     });
@@ -42,14 +42,17 @@ function SenaliApp() {
   // Real Firebase Google sign in
   const signInWithGoogle = async () => {
     try {
-      setLoading(true);
       console.log('Starting Firebase Google sign-in...');
-      console.log('Firebase auth object:', auth);
-      console.log('Google provider:', googleProvider);
+      console.log('Current auth state before sign-in:', auth.currentUser?.email || 'No user');
       
       const result = await signInWithPopup(auth, googleProvider);
-      console.log('Sign-in successful:', result.user.email);
-      // Loading will be set to false by the auth state listener
+      console.log('Sign-in successful! User details:', {
+        email: result.user.email,
+        uid: result.user.uid,
+        displayName: result.user.displayName
+      });
+      
+      // Don't set loading to false here - let the auth state listener handle it
     } catch (error: any) {
       console.error('Firebase sign-in error details:', {
         code: error.code,
@@ -113,6 +116,8 @@ function SenaliApp() {
       </div>
     );
   }
+
+  console.log('Rendering app with user state:', user ? `Signed in as ${user.email}` : 'Not signed in');
 
 
 
