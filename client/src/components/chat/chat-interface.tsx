@@ -88,10 +88,13 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
       // Update UI with both messages
       setMessages(prev => [...prev, userMessage, aiResponse]);
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error('Chat error details:', error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I'm sorry, I'm having trouble responding right now. Please try again.",
+        content: `I'm sorry, I'm having trouble responding right now. Error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
         role: 'assistant',
         timestamp: new Date(),
         userId: 'user-1'

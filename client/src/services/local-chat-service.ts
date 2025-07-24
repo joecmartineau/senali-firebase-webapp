@@ -43,6 +43,9 @@ export class LocalChatService {
       ? 'https://us-central1-senali-235fb.cloudfunctions.net/chat'
       : '/api/chat';
     
+    console.log('🌐 Making API call to:', apiUrl);
+    console.log('📝 Request data:', { message: content, childContext, recentContextLength: recentMessages.length });
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -60,7 +63,9 @@ export class LocalChatService {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to get AI response');
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(`Failed to get AI response: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
