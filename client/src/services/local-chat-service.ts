@@ -12,7 +12,10 @@ export class LocalChatService {
     await localStorage.init();
     
     // Clean up any incorrectly detected profiles on startup
-    await clearWrongProfiles(this.userId);
+    // DISABLED for now to prevent losing real child names like Sam and Noah
+    // await clearWrongProfiles(this.userId);
+    
+    console.log('📋 Local chat service initialized, profile cleanup disabled to preserve real names');
   }
 
   async sendMessage(content: string): Promise<{ userMessage: Message; aiResponse: Message }> {

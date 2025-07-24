@@ -544,6 +544,20 @@ class LocalStorage {
       });
     }
   }
+
+  // Delete a specific child profile by ID
+  async deleteChildProfile(profileId: string): Promise<void> {
+    const db = await this.ensureDB();
+    
+    return new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction(['childProfiles'], 'readwrite');
+      const store = transaction.objectStore('childProfiles');
+      const request = store.delete(profileId);
+      
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
 }
 
 export const localStorage = new LocalStorage();

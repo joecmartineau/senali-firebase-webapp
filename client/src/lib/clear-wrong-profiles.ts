@@ -6,8 +6,8 @@ export async function clearWrongProfiles(userId: string) {
     await localStorage.init();
     const profiles = await localStorage.getChildProfiles(userId);
     
-    // List of incorrect "names" that should be removed
-    const wrongNames = ['Name', 'Names', 'Called', 'Call', 'Known', 'Calling', 'Title', 'Titled', 'Alex', 'Liam']; // Add Alex and Liam as they seem to be AI hallucinations
+    // List of incorrect "names" that should be removed - NEVER include real names like Sam or Noah
+    const wrongNames = ['Name', 'Names', 'Called', 'Call', 'Known', 'Calling', 'Title', 'Titled']; // Removed Alex and Liam - they could be real names
     
     for (const profile of profiles) {
       if (wrongNames.includes(profile.childName)) {
