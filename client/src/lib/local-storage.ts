@@ -11,13 +11,16 @@ interface ChildProfile {
   id: string;
   userId: string;
   childName: string;
+  relationshipToUser: 'child' | 'spouse' | 'self' | 'other'; // To distinguish family member types
   age?: string;
+  height?: string;
   gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
   existingDiagnoses?: string[];
   currentChallenges?: string[];
   currentStrengths?: string[];
   schoolGrade?: string;
   schoolType?: string;
+  workInfo?: string; // For adults
   hasIEP?: boolean;
   has504Plan?: boolean;
   currentTherapies?: string[];
@@ -29,6 +32,82 @@ interface ChildProfile {
   siblings?: string;
   parentNotes?: string;
   senaliObservations?: string;
+  
+  // Comprehensive neurodivergent symptom tracking (yes/no/unknown - default undefined = unknown)
+  symptoms?: {
+    // ADHD - Inattentive symptoms
+    difficultyPayingAttention?: boolean;
+    easilyDistracted?: boolean;
+    forgetfulInDailyActivities?: boolean;
+    difficultyOrganizingTasks?: boolean;
+    avoidsTasksRequiringSustainedMentalEffort?: boolean;
+    losesThingsNecessaryForTasks?: boolean;
+    difficultyFollowingInstructions?: boolean;
+    failsToFinishSchoolworkOrChores?: boolean;
+    difficultyListeningWhenSpokenToDirectly?: boolean;
+    
+    // ADHD - Hyperactive/Impulsive symptoms
+    fidgetsWithHandsOrFeetOrSquirmsInSeat?: boolean;
+    leavesSeatingWhenRemainingSeatedIsExpected?: boolean;
+    runsAboutOrClimbsExcessively?: boolean;
+    difficultyPlayingQuietly?: boolean;
+    onTheGoOrActsAsDrivenByMotor?: boolean;
+    talksExcessively?: boolean;
+    blurtsOutAnswers?: boolean;
+    difficultyWaitingTurn?: boolean;
+    interruptsOrIntrudesOnOthers?: boolean;
+    
+    // Autism - Social Communication
+    deficitsInSocialEmotionalReciprocity?: boolean;
+    deficitsInNonverbalCommunication?: boolean;
+    deficitsInDevelopingMaintainingRelationships?: boolean;
+    lackOfSpontaneousSeekingToShareEnjoyment?: boolean;
+    failureToInitiateOrRespondToSocialInteractions?: boolean;
+    abnormalSocialApproachAndFailureOfNormalBackAndForth?: boolean;
+    reducedSharingOfInterestsEmotionsOrAffect?: boolean;
+    failureToAdjustBehaviorToSuitSocialContexts?: boolean;
+    difficultiesInSharingImaginativePlay?: boolean;
+    
+    // Autism - Restricted, Repetitive Behaviors
+    stereotypedOrRepetitiveMotorMovements?: boolean;
+    insistenceOnSamenessOrRoutines?: boolean;
+    highlyRestrictedFixatedInterests?: boolean;
+    hyperOrHypoReactivityToSensoryInput?: boolean;
+    excessiveAdherenceToRoutinesOrRitualizedPatterns?: boolean;
+    stereotypedOrIdiosyncraticLanguage?: boolean;
+    preoccupationWithPartsOfObjects?: boolean;
+    
+    // Sensory Processing
+    oversensitiveToSounds?: boolean;
+    oversensitiveToTextures?: boolean;
+    oversensitiveToLights?: boolean;
+    undersensitiveToSensoryInput?: boolean;
+    seeksIntenseSensoryExperiences?: boolean;
+    difficultiesWithBodyAwareness?: boolean;
+    clumsyOrPoorMotorCoordination?: boolean;
+    sensorySeekingBehaviors?: boolean;
+    
+    // Emotional Regulation
+    frequentMeltdowns?: boolean;
+    difficultyWithTransitions?: boolean;
+    chronicAngerIrritability?: boolean;
+    extremeReactionsToMinorChanges?: boolean;
+    difficultyCalminDownWhenUpset?: boolean;
+    intenseMoodSwings?: boolean;
+    argumentativeDefiantBehavior?: boolean;
+    difficultyExpressingEmotionsAppropriately?: boolean;
+    
+    // Executive Function
+    poorTimeManagement?: boolean;
+    difficultyPlanningAndOrganizing?: boolean;
+    poorWorkingMemory?: boolean;
+    difficultyWithTaskInitiation?: boolean;
+    procrastination?: boolean;
+    impulsiveDecisionMaking?: boolean;
+    difficultyWithFlexibleThinking?: boolean;
+    poorSelfMonitoring?: boolean;
+  };
+  
   createdAt: Date;
   updatedAt: Date;
 }

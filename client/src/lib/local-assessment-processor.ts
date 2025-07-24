@@ -8,6 +8,20 @@ export class LocalAssessmentProcessor {
     const childNames: string[] = [];
     const adultNames: string[] = [];
     
+    // Patterns for adult family member detection (Mom, Dad, spouse)
+    const adultPatterns = [
+      // Direct references
+      /(?:my (?:wife|husband|spouse|partner))\s+([A-Z][a-z]+)/gi,
+      /(?:my (?:mom|mother|dad|father))\s+([A-Z][a-z]+)/gi,
+      /([A-Z][a-z]+)\s+(?:is my (?:wife|husband|spouse|partner|mom|mother|dad|father))/gi,
+      
+      // Name patterns for adults
+      /([A-Z][a-z]+)\s+(?:and I|works|teaches|drives|cooks|helps)/gi,
+      
+      // Context clues for parents/spouses
+      /([A-Z][a-z]+)\s+(?:thinks|says|believes|wants|needs|feels)/gi
+    ];
+    
     // Enhanced patterns for child names - more precise detection
     const childPatterns = [
       // Direct child references with names
@@ -26,13 +40,7 @@ export class LocalAssessmentProcessor {
       /(?:not|isn't)\s+([A-Z][a-z]+)[.,]\s+(?:it|his name|her name) is ([A-Z][a-z]+)/gi
     ];
     
-    // Patterns for adult names (parents, spouses)
-    const adultPatterns = [
-      /(?:my (?:husband|wife|partner|spouse))\s+([A-Z][a-z]+)/gi,
-      /(?:my name is|i'm|i am)\s+([A-Z][a-z]+)/gi,
-      /(?:my (?:name|first name))\s+(?:is\s+)?([A-Z][a-z]+)/gi,
-      /(?:call me|i'm called)\s+([A-Z][a-z]+)/gi
-    ];
+
     
     // Process child patterns
     for (const pattern of childPatterns) {
@@ -62,14 +70,23 @@ export class LocalAssessmentProcessor {
     }
     
     // Process adult patterns
-    for (const pattern of adultPatterns) {
+    for (const adultPattern of adultPatterns) {
       let match;
-      const regex = new RegExp(pattern.source, pattern.flags);
+      const regex = new RegExp(adultPattern.source, adultPattern.flags);
       while ((match = regex.exec(message)) !== null) {
         const name = match[1];
-        if (name && name.length > 1 && !adultNames.includes(name)) {
-          adultNames.push(name);
-          console.log(`👤 Detected adult name: ${name} from pattern: ${pattern.source}`);
+        if (name && name.length > 2 && !adultNames.includes(name)) {
+          // Same filter logic as children
+          const nonNames = [
+            'He', 'She', 'They', 'This', 'That', 'Then', 'When', 'Where', 'What', 'How', 'Why', 'The', 'And', 'But', 'Or', 'So', 'If', 'As', 'To', 'At', 'In', 'On', 'Up', 'By', 'For', 'From', 'With', 'About', 'Over', 'Under', 'Through', 'During', 'Before', 'After', 'Above', 'Below', 'Between', 'Among', 'Against', 'Across', 'Behind', 'Beyond', 'Beside', 'Near', 'Around', 'Inside', 'Outside', 'Without', 'Within', 'Upon', 'Since', 'Until', 'While', 'Although', 'Because', 'Unless', 'Whether', 'Though', 'Whereas', 'However', 'Therefore', 'Moreover', 'Furthermore', 'Nevertheless', 'Nonetheless', 'Consequently', 'Otherwise', 'Meanwhile', 'Similarly', 'Likewise', 'Instead', 'Rather', 'Indeed', 'Actually', 'Really', 'Quite', 'Very', 'Too', 'Also', 'Even', 'Just', 'Only', 'Still', 'Yet', 'Already', 'Soon', 'Now', 'Then', 'Here', 'There', 'Everywhere', 'Anywhere', 'Somewhere', 'Nowhere',
+            'Senali', 'Chat', 'Message', 'App', 'Screen', 'Phone', 'Browser', 'Website', 'Internet', 'Premium', 'Free', 'Trial', 'Subscribe', 'Upgrade',
+            'Are', 'Were', 'Been', 'Being', 'Have', 'Has', 'Had', 'Will', 'Would', 'Could', 'Should', 'Must', 'Might', 'May', 'Can', 'Cannot', 'Does', 'Did', 'Done', 'Make', 'Made', 'Take', 'Took', 'Give', 'Gave', 'Get', 'Got', 'Come', 'Came', 'Go', 'Went', 'See', 'Saw', 'Know', 'Knew', 'Think', 'Thought', 'Feel', 'Felt', 'Look', 'Looked', 'Want', 'Wanted', 'Need', 'Needed', 'Help', 'Helped', 'Try', 'Tried', 'Work', 'Worked', 'Play', 'Played', 'Live', 'Lived', 'Love', 'Loved', 'Like', 'Liked', 'Hate', 'Hated', 'Hope', 'Hoped', 'Wish', 'Wished', 'Good', 'Bad', 'Great', 'Best', 'Worst', 'Better', 'Worse', 'Big', 'Small', 'Large', 'Little', 'Old', 'New', 'Young', 'Happy', 'Sad', 'Angry', 'Mad', 'Glad', 'Nice', 'Mean', 'Kind', 'Smart', 'Dumb', 'Funny', 'Silly', 'Cute', 'Pretty', 'Ugly', 'Fast', 'Slow', 'Easy', 'Hard', 'Difficult', 'Simple', 'Right', 'Wrong', 'True', 'False', 'Name', 'Names', 'Called', 'Call', 'Known', 'Calling', 'Title', 'Titled'
+          ];
+          
+          if (!nonNames.includes(name)) {
+            adultNames.push(name);
+            console.log(`👨 Detected adult name: ${name} from pattern: ${adultPattern.source}`);
+          }
         }
       }
     }
@@ -85,7 +102,9 @@ export class LocalAssessmentProcessor {
       console.log(`Creating new profile for child: ${childName}`);
       profile = await localStorage.saveChildProfile({
         userId,
-        childName
+        childName,
+        relationshipToUser: 'child',
+        symptoms: {} // Initialize with empty symptoms object
       });
     }
     
@@ -160,14 +179,33 @@ export class LocalAssessmentProcessor {
     console.log(`✅ Updated profile for ${childName}`);
   }
 
+  // Get or create family member profile (for Mom, Dad, spouse)
+  async getOrCreateFamilyMemberProfile(userId: string, name: string, relationship: 'child' | 'spouse' | 'self' | 'other'): Promise<ChildProfile> {
+    let profile = await localStorage.getChildProfile(userId, name);
+    
+    if (!profile) {
+      console.log(`Creating new family member profile: ${name} (${relationship})`);
+      profile = await localStorage.saveChildProfile({
+        userId,
+        childName: name,
+        relationshipToUser: relationship,
+        symptoms: {} // Initialize with empty symptoms object
+      });
+    }
+    
+    return profile;
+  }
+
   // Process message and extract information
   async processMessage(userId: string, message: string): Promise<void> {
     console.log(`🔄 Processing message for local assessments: ${message.substring(0, 100)}...`);
     
-    // Extract child names mentioned in the message
+    // Extract all names mentioned in the message
     const nameData = this.extractAllNames(message);
     const childNames = nameData.children;
+    const adultNames = nameData.adults;
     console.log(`👶 Children mentioned: ${childNames.join(', ')}`);
+    console.log(`👨 Adults mentioned: ${adultNames.join(', ')}`);
     
     // Process each child mentioned
     for (const childName of childNames) {
@@ -178,6 +216,17 @@ export class LocalAssessmentProcessor {
       
       // Process symptom checklist updates based on conversation
       await this.updateSymptomChecklist(profile.id, message, childName);
+    }
+    
+    // Process each adult mentioned (Mom, Dad, spouse)
+    for (const adultName of adultNames) {
+      const profile = await this.getOrCreateFamilyMemberProfile(userId, adultName, 'other');
+      
+      // Extract and update adult profile information
+      await this.extractAndUpdateProfileInfo(userId, adultName, message);
+      
+      // Process symptom checklist updates for adults too
+      await this.updateSymptomChecklist(profile.id, message, adultName);
     }
   }
 
@@ -378,10 +427,16 @@ export class LocalAssessmentProcessor {
     
     for (let index = 0; index < profiles.length; index++) {
       const profile = profiles[index];
-      context += `${index + 1}. ${profile.childName}:\n`;
+      const relationshipType = profile.relationshipToUser === 'child' ? 'Child' : 
+                              profile.relationshipToUser === 'spouse' ? 'Spouse' : 
+                              profile.relationshipToUser === 'self' ? 'User' : 'Family Member';
+      
+      context += `${index + 1}. ${profile.childName} (${relationshipType}):\n`;
       
       if (profile.age) context += `   Age: ${profile.age}\n`;
+      if (profile.height) context += `   Height: ${profile.height}\n`;
       if (profile.gender && profile.gender !== 'prefer_not_to_say') context += `   Gender: ${profile.gender}\n`;
+      if (profile.workInfo) context += `   Work: ${profile.workInfo}\n`;
       
       if (profile.existingDiagnoses && profile.existingDiagnoses.length > 0) {
         context += `   Diagnosed conditions: ${profile.existingDiagnoses.join(', ')}\n`;

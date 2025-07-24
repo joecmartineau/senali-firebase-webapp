@@ -191,22 +191,28 @@ This is a full-stack TypeScript application built with a privacy-first, local st
   - Simplified branding to show just "Senali" without descriptive text
   - Implemented personalized questioning strategy to learn about users' families and build connections
 
-### Enhanced Memory & Profile System (2025-01-24)
-- **Conversation Memory**: Stores up to 200 messages locally for comprehensive conversation continuity
-- **Local Chat History**: Chat loads full conversation history from local IndexedDB on startup
-- **Efficient OpenAI Context**: Optimized to send only last 3 messages to OpenAI for immediate context, reducing API costs and improving response speed
-- **Smart Context Handling**: Senali asks for clarification when missing context rather than assuming, preventing errors and reducing token usage
-- **Dynamic Symptom Tracking**: Senali automatically updates symptom checklists based on natural conversation
-  - Tracks 60+ symptoms across attention, hyperactivity, social communication, sensory processing, and emotional regulation
-  - Recognizes positive/negative statements ("Sam is always angry" vs "Sam was angry today but isn't always angry")
-  - Handles corrections and clarifications ("Actually, I misspoke" or "Let me clarify")
-  - Updates symptom status in real-time during chat interactions
-- **Comprehensive Profile Management**: Senali remembers and updates:
-  - Child names, ages, genders, diagnoses, strengths, and challenges
-  - School information, therapies, medications, and family structure
-  - Parent goals, observations, and ongoing notes
-  - Dynamic profile updates when user provides corrections or new information
-- **Persistent Context**: All family information persists across chat sessions and informs therapeutic responses
+### Comprehensive Family Profile System (2025-01-24)
+- **Complete Family Member Tracking**: Automatically creates profiles for ALL family members (Mom, Dad, children, other relatives)
+  - **Relationship Types**: Distinguishes between 'child', 'spouse', 'self', and 'other' family members
+  - **Universal Symptom Tracking**: All family members get comprehensive neurodivergent symptom checklists (yes/no/unknown)
+  - **Individual Basic Information**: Name, age, height, medical diagnoses, work/school info for each person
+  - **Flexible Profile Updates**: Senali can update any family member's information as new details are learned
+- **Enhanced Name Detection**: Improved pattern matching for family member identification
+  - **Adult Detection Patterns**: Recognizes mentions of spouses, parents, and other adults
+  - **Context-Aware Creation**: Creates appropriate relationship types based on conversation context
+  - **False Positive Prevention**: Filters out question words and common non-names
+  - **Automatic Cleanup**: Removes incorrectly detected profiles on app startup
+- **Comprehensive Symptom Assessment**: 60+ neurodivergent symptoms tracked for each family member
+  - **ADHD Symptoms**: Complete inattentive and hyperactive-impulsive criteria
+  - **Autism Symptoms**: Social communication and restricted/repetitive behavior tracking
+  - **Sensory Processing**: Comprehensive sensory sensitivity and seeking behaviors
+  - **Emotional Regulation**: Meltdowns, mood swings, and emotional expression challenges
+  - **Executive Function**: Time management, organization, and planning difficulties
+- **Persistent Memory**: All family profiles persist across chat sessions and survive chat clearing
+- **Dynamic Updates**: Real-time symptom tracking based on natural conversation
+  - Recognizes positive/negative statements and corrections
+  - Updates profiles when new information is shared
+  - Maintains comprehensive family context for therapeutic responses
 
 ### Previous Updates (2025-01-24)
 - **Assessment System**: Implemented professional diagnostic assessment tracking system
