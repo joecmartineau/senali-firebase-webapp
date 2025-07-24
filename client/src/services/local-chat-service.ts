@@ -38,8 +38,12 @@ export class LocalChatService {
     // Only send minimal context - let AI request more if needed
     const recentMessages = await this.getMessageHistory(3); // Just last 3 messages for immediate context
     
-    // Call the server API for AI response with minimal context
-    const response = await fetch('/api/chat', {
+    // Call Firebase Functions API for AI response with minimal context
+    const apiUrl = import.meta.env.PROD 
+      ? 'https://us-central1-senali-235fb.cloudfunctions.net/chat'
+      : '/api/chat';
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

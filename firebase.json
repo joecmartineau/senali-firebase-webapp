@@ -3,6 +3,10 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs18"
+  },
   "hosting": {
     "public": "dist/public",
     "ignore": [
@@ -11,6 +15,14 @@
       "**/node_modules/**"
     ],
     "rewrites": [
+      {
+        "source": "/api/chat",
+        "function": "chat"
+      },
+      {
+        "source": "/api/tips/generate",
+        "function": "generateTip"
+      },
       {
         "source": "**",
         "destination": "/index.html"
