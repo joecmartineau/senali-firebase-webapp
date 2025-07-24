@@ -60,7 +60,7 @@ router.post('/', async (req, res) => {
     // Child context is passed from client (stored locally for privacy)
     // Build system prompt with child context
     const systemPromptWithContext = childContext ? 
-      `${SYSTEM_PROMPT}\n\n**CRITICAL FAMILY CONTEXT - USE THESE EXACT NAMES:**\n${childContext}\n\n**IMPORTANT: Always use the exact names shown above. Never make up names like "Alex" or "Liam". If family context shows children named "Sam" and "Noah", use those exact names.**` : 
+      `${SYSTEM_PROMPT}\n\n**CRITICAL FAMILY CONTEXT - USE EXACT INFORMATION ONLY:**\n${childContext}\n\n**ABSOLUTELY CRITICAL: Use ONLY the exact information shown above. Never guess or make up ages, names, or details. If the context shows specific ages like "Sam is 12" and "Noah is 5", use those EXACT ages. Never say "Sam is 8" or "Noah is 6" or any other made-up information. Only reference what is explicitly provided in the context above.**` : 
       SYSTEM_PROMPT;
 
     // Use minimal context approach - only recent messages
