@@ -3,9 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User, LogOut, Download, Trash2 } from "lucide-react";
+import { Send, Bot, User, LogOut, Download, Trash2, Crown } from "lucide-react";
 import { InfinityIcon } from "@/components/ui/infinity-icon";
 import { localChatService } from "@/services/local-chat-service";
+import { subscriptionService, SUBSCRIPTION_LIMITS } from "@/services/subscription-service";
+import { SubscriptionBanner } from "@/components/subscription/subscription-banner";
+import { SubscriptionModal } from "@/components/subscription/subscription-modal";
 import type { Message } from "@/lib/local-storage";
 
 // Message interface now imported from local-storage
@@ -20,18 +23,35 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
+  const [messageCount, setMessageCount] = useState(0);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load conversation history from local storage when component mounts
+  // Load conversation history and subscription status
   useEffect(() => {
-    const loadHistory = async () => {
+    const loadData = async () => {
       try {
+        // Initialize subscription service
+        await subscriptionService.initialize();
+        setSubscriptionStatus(subscriptionService.getStatus());
+
+        // Load chat history
         await localChatService.init();
         const historyMessages = await localChatService.loadConversationHistory();
         setMessages(historyMessages);
+        
+        // Count today's messages for free tier limits
+        const today = new Date().toDateString();
+        const todaysMessages = historyMessages.filter(msg => 
+          msg.role === 'user' && 
+          new Date(msg.timestamp).toDateString() === today
+        );
+        setMessageCount(todaysMessages.length);
+
       } catch (error) {
-        console.error('Failed to load local chat history:', error);
+        console.error('Failed to load data:', error);
         // Fallback to welcome message
         setMessages([{
           id: 'welcome',
@@ -45,7 +65,7 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
       }
     };
 
-    loadHistory();
+    loadData();
   }, []);
 
   const scrollToBottom = () => {
@@ -77,6 +97,14 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
+    // Check subscription limits for free users
+    const hasPremiumAccess = subscriptionService.hasPremiumAccess();
+    if (!hasPremiumAccess && messageCount >= SUBSCRIPTION_LIMITS.free.dailyMessages) {
+      // Show upgrade prompt
+      setShowSubscriptionModal(true);
+      return;
+    }
+
     const messageContent = input.trim();
     setInput('');
     setIsLoading(true);
@@ -87,6 +115,11 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
       
       // Update UI with both messages
       setMessages(prev => [...prev, userMessage, aiResponse]);
+      
+      // Update message count for free tier tracking
+      if (!hasPremiumAccess) {
+        setMessageCount(prev => prev + 1);
+      }
     } catch (error) {
       console.error('Chat error details:', error);
       console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
@@ -155,6 +188,26 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
             <InfinityIcon size={32} glowing />
             <div>
               <h1 className="text-white font-semibold">Senali</h1>
+              {subscriptionStatus && (
+                <div className="flex items-center gap-2 mt-1">
+                  {subscriptionStatus.isActive ? (
+                    <div className="flex items-center gap-1">
+                      <Crown className="w-3 h-3 text-yellow-400" />
+                      <span className="text-yellow-400 text-xs">Premium</span>
+                    </div>
+                  ) : subscriptionStatus.isTrialActive ? (
+                    <div className="flex items-center gap-1">
+                      <Crown className="w-3 h-3 text-amber-400" />
+                      <span className="text-amber-400 text-xs">Trial ({subscriptionService.getDaysRemaining()}d)</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <User className="w-3 h-3 text-gray-400" />
+                      <span className="text-gray-400 text-xs">Free ({messageCount}/{SUBSCRIPTION_LIMITS.free.dailyMessages})</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center space-x-3">
@@ -162,12 +215,24 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
               <p className="text-white text-sm font-medium">{user.displayName || user.email}</p>
               <p className="text-gray-400 text-xs">Data stored locally</p>
             </div>
+            {!subscriptionService.hasPremiumAccess() && (
+              <Button
+                onClick={() => setShowSubscriptionModal(true)}
+                variant="outline"
+                size="sm"
+                className="border-yellow-600 text-yellow-400 hover:bg-yellow-900"
+                title="Upgrade to Premium"
+              >
+                <Crown className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               onClick={exportData}
               variant="outline"
               size="sm"
               className="border-gray-600 text-gray-300 hover:bg-gray-800"
               title="Export your data"
+              disabled={!subscriptionService.hasPremiumAccess()}
             >
               <Download className="h-4 w-4" />
             </Button>
@@ -192,6 +257,9 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
           </div>
         </div>
       </div>
+
+      {/* Subscription Banner */}
+      <SubscriptionBanner onUpgrade={() => setShowSubscriptionModal(true)} />
 
       {/* Chat Area */}
       <div className="flex-1 max-w-4xl mx-auto w-full p-4">
@@ -268,13 +336,19 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask about parenting strategies, behavior management, or daily challenges..."
+                placeholder={
+                  !subscriptionService.hasPremiumAccess() && messageCount >= SUBSCRIPTION_LIMITS.free.dailyMessages
+                    ? "Daily message limit reached. Upgrade to Premium for unlimited messages!"
+                    : isLoading 
+                      ? "Thinking..." 
+                      : "Ask about parenting strategies, behavior management, or daily challenges..."
+                }
                 className="flex-1 bg-gray-800 border-gray-600 text-white placeholder-gray-400"
-                disabled={isLoading}
+                disabled={isLoading || (!subscriptionService.hasPremiumAccess() && messageCount >= SUBSCRIPTION_LIMITS.free.dailyMessages)}
               />
               <Button
                 onClick={sendMessage}
-                disabled={!input.trim() || isLoading}
+                disabled={!input.trim() || isLoading || (!subscriptionService.hasPremiumAccess() && messageCount >= SUBSCRIPTION_LIMITS.free.dailyMessages)}
                 className="bg-green-500 hover:bg-green-600 text-black"
               >
                 <Send className="h-4 w-4" />
@@ -283,6 +357,18 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
           </div>
         </Card>
       </div>
+
+      {/* Subscription Modal */}
+      <SubscriptionModal 
+        isOpen={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        onSubscribe={() => {
+          // Refresh subscription status after successful subscription
+          subscriptionService.initialize().then(() => {
+            setSubscriptionStatus(subscriptionService.getStatus());
+          });
+        }}
+      />
     </div>
   );
 }

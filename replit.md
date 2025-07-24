@@ -156,6 +156,22 @@ This is a full-stack TypeScript application built with a privacy-first, local st
   - Automatic scaling and SSL management
   - Optimized for privacy-first local storage architecture
 
+### App Store Monetization System (2025-01-24)
+- **Subscription-Based Revenue Model**: Implemented App Store and Play Store compliant subscription system
+  - **Free Tier**: 10 messages per day, 1 child profile, basic features
+  - **Premium Subscription**: Unlimited messages, unlimited profiles, data export, priority support
+  - **Pricing**: $9.99/month or $79.99/year (33% discount) with 7-day free trial
+  - **App Store Integration**: Designed for native In-App Purchase (IAP) implementation
+- **Premium Features**: Advanced feature gating with subscription checks
+  - Message limit enforcement for free users with upgrade prompts
+  - Data export restricted to premium subscribers
+  - Visual subscription status indicators throughout UI
+  - Smooth upgrade flow with modal-based subscription management
+- **Mobile Store Ready**: Compliant with Apple App Store and Google Play Store policies
+  - All payments processed through platform stores (no direct credit card handling)
+  - User-friendly subscription management through device settings
+  - Clear pricing transparency and cancellation policies
+
 ### Major Architecture Change: Local Device Storage (2025-01-24)
 - **Complete Migration to Local Storage**: Migrated entire data architecture from PostgreSQL database to local device storage using IndexedDB
   - **Privacy-First Approach**: All sensitive family information, child profiles, symptom tracking, and chat history now stored locally on user's device
