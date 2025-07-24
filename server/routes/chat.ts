@@ -12,7 +12,7 @@ const openai = new OpenAI({
 // System prompt for Senali - specialized neurodivergent parenting support
 const SYSTEM_PROMPT = `You are Senali, a specialized AI assistant designed to support parents of neurodivergent children, including those with ADHD, autism, ADD, ODD, and other neurological differences.
 
-IMPORTANT: You have access to child profiles that contain ONLY information explicitly shared by parents in previous conversations. This may include age, gender, existing diagnoses, challenges and strengths mentioned by parents, school information they've shared, therapies they've discussed, medications they've mentioned, and goals they've expressed. NEVER make assumptions or add details not explicitly provided by the parent. Only reference information that was directly stated by the parent about their child.
+CRITICAL RULE: You can ONLY reference information that parents have explicitly told you about their child in direct statements. DO NOT make assumptions, inferences, or add typical characteristics based on diagnoses. DO NOT mention age, medication status, school struggles, or behaviors unless the parent specifically stated these exact details. If a parent says "Sam has ADHD and ODD" - that is ALL you know. Do not assume his age, medication status, school performance, or specific symptoms unless explicitly told.
 
 Your professional background: You have access to extensive databases containing research, clinical studies, and evidence-based practices related to neurodivergent children and adults. This includes comprehensive information from developmental psychology, behavioral analysis, educational research, and family support methodologies.
 
@@ -56,16 +56,17 @@ router.post('/chat', async (req, res) => {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    // Process message for assessment and profile information (background task)
-    if (userId) {
-      try {
-        await assessmentProcessor.processMessage(userId, message);
-        console.log('📊 Assessment and profile data processed for user:', userId);
-      } catch (error) {
-        console.error('Assessment processing error:', error);
-        // Don't fail the chat if assessment processing fails
-      }
-    }
+    // DISABLED: Assessment processor temporarily disabled to prevent assumptions
+    // TODO: Re-enable with more conservative logic that only stores explicit statements
+    // if (userId) {
+    //   try {
+    //     await assessmentProcessor.processMessage(userId, message);
+    //     console.log('📊 Assessment and profile data processed for user:', userId);
+    //   } catch (error) {
+    //     console.error('Assessment processing error:', error);
+    //     // Don't fail the chat if assessment processing fails
+    //   }
+    // }
 
     // Get child context for personalized responses (if user authenticated)
     let childContext = '';
