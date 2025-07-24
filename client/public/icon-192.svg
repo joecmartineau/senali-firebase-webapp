@@ -1,18 +1,39 @@
 <svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" rx="20" fill="url(#backgroundGradient)"/>
+  
   <defs>
-    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1a4d5c" />
-      <stop offset="30%" stop-color="#2d6a7a" />
-      <stop offset="70%" stop-color="#3a7f8f" />
-      <stop offset="100%" stop-color="#4a9aa8" />
+    <!-- Background gradient matching your reference -->
+    <radialGradient id="backgroundGradient" cx="50%" cy="50%">
+      <stop offset="0%" stopColor="#4a9aa8" />
+      <stop offset="30%" stopColor="#3a7f8f" />
+      <stop offset="70%" stopColor="#2d6a7a" />
+      <stop offset="100%" stopColor="#1a4d5c" />
+    </radialGradient>
+    
+    <!-- Main infinity gradient -->
+    <linearGradient id="infinityGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#4ade80" />
+      <stop offset="30%" stopColor="#22c55e" />
+      <stop offset="70%" stopColor="#16a34a" />
+      <stop offset="100%" stopColor="#15803d" />
     </linearGradient>
-    <linearGradient id="infinity-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00ff88" />
-      <stop offset="50%" stop-color="#00e676" />
-      <stop offset="100%" stop-color="#00c853" />
+    
+    <!-- Inner highlight gradient -->
+    <linearGradient id="innerHighlight" x1="20%" y1="20%" x2="80%" y2="80%">
+      <stop offset="0%" stopColor="#86efac" opacity="0.9" />
+      <stop offset="50%" stopColor="#4ade80" opacity="0.7" />
+      <stop offset="100%" stopColor="#22c55e" opacity="0.5" />
     </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+    
+    <!-- Shadow gradient -->
+    <linearGradient id="shadowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#166534" opacity="0.8" />
+      <stop offset="100%" stopColor="#15803d" opacity="0.6" />
+    </linearGradient>
+    
+    <!-- Glow filter -->
+    <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
       <feMerge> 
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -20,18 +41,40 @@
     </filter>
   </defs>
   
-  <!-- Background rounded square -->
-  <rect width="192" height="192" rx="32" fill="url(#bg-gradient)" stroke="rgba(255, 255, 255, 0.1)" stroke-width="2"/>
-  
-  <!-- Infinity symbol -->
-  <g transform="translate(46, 76)">
-    <path 
-      d="M20 20 C20 8, 30 0, 40 8 C45 5, 55 5, 60 8 C70 0, 80 8, 80 20 C80 32, 70 40, 60 32 C55 35, 45 35, 40 32 C30 40, 20 32, 20 20 Z" 
-      fill="url(#infinity-gradient)"
-      filter="url(#glow)"
+  <!-- Infinity symbol centered and scaled for icon -->
+  <g transform="translate(46, 76) scale(0.5, 0.5)">
+    <!-- Background shadow for depth -->
+    <path
+      d="M100 50 C100 22.5, 72.5 5, 50 22.5 C27.5 5, 0 22.5, 0 50 
+         C0 77.5, 27.5 95, 50 77.5 C72.5 95, 100 77.5, 100 50 
+         C100 77.5, 127.5 95, 150 77.5 C172.5 95, 200 77.5, 200 50 
+         C200 22.5, 172.5 5, 150 22.5 C127.5 5, 100 22.5, 100 50 Z"
+      fill="url(#shadowGradient)"
+      transform="translate(2, 4)"
+      opacity="0.3"
     />
-    <!-- Inner hollow -->
-    <ellipse cx="35" cy="20" rx="8" ry="6" fill="#1a4d5c" opacity="0.7"/>
-    <ellipse cx="65" cy="20" rx="8" ry="6" fill="#1a4d5c" opacity="0.7"/>
+    
+    <!-- Main infinity shape -->
+    <path
+      d="M100 50 C100 22.5, 72.5 5, 50 22.5 C27.5 5, 0 22.5, 0 50 
+         C0 77.5, 27.5 95, 50 77.5 C72.5 95, 100 77.5, 100 50 
+         C100 77.5, 127.5 95, 150 77.5 C172.5 95, 200 77.5, 200 50 
+         C200 22.5, 172.5 5, 150 22.5 C127.5 5, 100 22.5, 100 50 Z"
+      fill="url(#infinityGradient)"
+      stroke="url(#innerHighlight)"
+      strokeWidth="2"
+      filter="url(#glowEffect)"
+    />
+    
+    <!-- Inner loops for 3D depth -->
+    <ellipse cx="50" cy="50" rx="25" ry="18" fill="none" stroke="url(#innerHighlight)" strokeWidth="3" opacity="0.6"/>
+    <ellipse cx="150" cy="50" rx="25" ry="18" fill="none" stroke="url(#innerHighlight)" strokeWidth="3" opacity="0.6"/>
+    
+    <!-- Center crossing highlight -->
+    <ellipse cx="100" cy="50" rx="5" ry="10" fill="url(#innerHighlight)" opacity="0.9"/>
+    
+    <!-- Top highlights for glass effect -->
+    <ellipse cx="50" cy="35" rx="18" ry="10" fill="url(#innerHighlight)" opacity="0.4"/>
+    <ellipse cx="150" cy="35" rx="18" ry="10" fill="url(#innerHighlight)" opacity="0.4"/>
   </g>
 </svg>
