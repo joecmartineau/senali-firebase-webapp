@@ -19,18 +19,61 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: "Hi there! I'm Senali, and I'm here to listen and support you. What's been on your mind lately?",
-      role: 'assistant',
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load conversation history when component mounts
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const response = await fetch('/api/chat/history');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.messages && data.messages.length > 0) {
+            // Convert timestamp strings back to Date objects
+            const historyMessages = data.messages.map((msg: any) => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp)
+            }));
+            setMessages(historyMessages);
+          } else {
+            // No history, show welcome message
+            setMessages([{
+              id: 'welcome',
+              content: "Hi there! I'm Senali, and I'm here to listen and support you. What's been on your mind lately?",
+              role: 'assistant',
+              timestamp: new Date()
+            }]);
+          }
+        } else {
+          // Fallback to welcome message if history fails to load
+          setMessages([{
+            id: 'welcome',
+            content: "Hi there! I'm Senali, and I'm here to listen and support you. What's been on your mind lately?",
+            role: 'assistant',
+            timestamp: new Date()
+          }]);
+        }
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+        // Fallback to welcome message
+        setMessages([{
+          id: 'welcome',
+          content: "Hi there! I'm Senali, and I'm here to listen and support you. What's been on your mind lately?",
+          role: 'assistant',
+          timestamp: new Date()
+        }]);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    loadHistory();
+  }, []);
 
   const scrollToBottom = () => {
     // Try multiple methods to ensure scrolling works
@@ -80,8 +123,8 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: input.trim(),
-          history: messages.slice(-10) // Send last 10 messages for context
+          message: input.trim()
+          // No need to send history - server will get it from database
         }),
       });
 
@@ -154,7 +197,15 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
         <Card className="h-[calc(100vh-200px)] bg-gray-900 border-gray-700 flex flex-col">
           {/* Messages */}
           <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-            <div className="space-y-4">
+            {isLoadingHistory ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-400">Loading your conversation...</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -205,7 +256,8 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
               )}
               {/* Invisible element to scroll to */}
               <div ref={messagesEndRef} />
-            </div>
+              </div>
+            )}
           </ScrollArea>
 
           {/* Input Area */}

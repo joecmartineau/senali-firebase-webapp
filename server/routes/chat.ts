@@ -51,27 +51,37 @@ router.post('/chat', async (req, res) => {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    // DISABLED: Assessment processor temporarily disabled to prevent assumptions
-    // TODO: Re-enable with more conservative logic that only stores explicit statements
-    // if (userId) {
-    //   try {
-    //     await assessmentProcessor.processMessage(userId, message);
-    //     console.log('📊 Assessment and profile data processed for user:', userId);
-    //   } catch (error) {
-    //     console.error('Assessment processing error:', error);
-    //     // Don't fail the chat if assessment processing fails
-    //   }
-    // }
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
-    // Get child context for personalized responses (if user authenticated)
+    // Import storage after we know we need it
+    const { storage } = await import('../storage');
+
+    // Save user message to database
+    await storage.createMessage({
+      userId,
+      content: message,
+      role: 'user'
+    });
+
+    // Get conversation history from database (last 20 messages for better context)
+    const dbMessages = await storage.getUserMessages(userId, 20);
+    const conversationHistory = dbMessages
+      .reverse() // Reverse to get chronological order
+      .map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      }));
+
+    // Get child context for personalized responses
     let childContext = '';
-    if (userId) {
-      try {
-        childContext = await assessmentProcessor.getChildContext(userId);
-        console.log(`👶 Loaded child context for personalized responses`);
-      } catch (error) {
-        console.error('Error loading child context:', error);
-      }
+    try {
+      const { assessmentProcessor } = await import('../services/assessment-processor');
+      childContext = await assessmentProcessor.getChildContext(userId);
+      console.log(`👶 Loaded child context for personalized responses`);
+    } catch (error) {
+      console.error('Error loading child context:', error);
     }
 
     // Build system prompt with child context
@@ -82,16 +92,13 @@ router.post('/chat', async (req, res) => {
     // Prepare conversation history for OpenAI
     const messages = [
       { role: 'system', content: systemPromptWithContext },
-      // Add recent conversation history
-      ...history.slice(-10).map((msg: any) => ({
-        role: msg.role === 'user' ? 'user' : 'assistant',
-        content: msg.content
-      })),
+      // Use database conversation history instead of client-sent history
+      ...conversationHistory,
       // Add current message
       { role: 'user', content: message }
     ];
 
-    console.log('Sending chat request to OpenAI...');
+    console.log('Sending chat request to OpenAI with', conversationHistory.length, 'previous messages...');
     
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
@@ -106,7 +113,14 @@ router.post('/chat', async (req, res) => {
       throw new Error('No response from OpenAI');
     }
 
-    console.log('OpenAI response received');
+    // Save AI response to database
+    await storage.createMessage({
+      userId,
+      content: response,
+      role: 'assistant'
+    });
+
+    console.log('OpenAI response received and saved to database');
     
     res.json({ response });
   } catch (error: any) {
@@ -125,6 +139,33 @@ router.post('/chat', async (req, res) => {
         error: 'Failed to get AI response. Please try again.' 
       });
     }
+  }
+});
+
+// Get conversation history
+router.get('/history', async (req, res) => {
+  try {
+    const userId = (req.user as any)?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const { storage } = await import('../storage');
+    const dbMessages = await storage.getUserMessages(userId, 50);
+    
+    // Convert to frontend format and reverse to chronological order
+    const messages = dbMessages.reverse().map(msg => ({
+      id: msg.id.toString(),
+      content: msg.content,
+      role: msg.role,
+      timestamp: msg.timestamp
+    }));
+
+    res.json({ messages });
+  } catch (error) {
+    console.error('Error fetching chat history:', error);
+    res.status(500).json({ error: 'Failed to load chat history' });
   }
 });
 
