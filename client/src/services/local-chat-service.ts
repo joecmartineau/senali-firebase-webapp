@@ -94,13 +94,13 @@ export class LocalChatService {
       console.log(`📝 Creating brief summary for messages ${messageCount - 9}-${messageCount}`);
       // Create summary after API call to avoid delaying response
       setTimeout(() => {
-        conversationContextManager.createBriefSummary(this.userId, messageCount);
+        conversationContextManager.createBriefSummary(this.userId!, messageCount);
       }, 100);
     }
     if (summaryNeeds.meta) {
       console.log(`📚 Creating meta-summary for first ${messageCount} messages`);
       setTimeout(() => {
-        conversationContextManager.createMetaSummary(this.userId, messageCount);
+        conversationContextManager.createMetaSummary(this.userId!, messageCount);
       }, 100);
     }
 

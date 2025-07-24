@@ -290,13 +290,14 @@ Comprehensive Summary:`;
     
     prompt += `\n\n**How to Help:**
 * Use the family and conversation context naturally - you know these people and their ongoing situations
-* Reference specific family members by name and ask about ongoing concerns
+* Reference specific family members by name using ONLY the information provided
 * Build on previous conversations rather than starting fresh each time
 * Listen well and show you understand their ongoing journey
-* Ask follow-up questions based on what you know about their family dynamics
-* Give personalized advice based on their specific family situation
+* Ask follow-up questions to learn MORE about family members rather than assuming details
+* Give personalized advice based ONLY on their specific family information provided
+* When you don't know something about a family member, ask to learn more instead of guessing
 
-**Remember:** You have context - use it to provide thoughtful, personalized responses that show you remember and care about their ongoing family situation.`;
+**CRITICAL:** Never assume or invent details about family members (hobbies, interests, activities, personality) that aren't explicitly provided. Stick to facts and ask questions to learn more.`;
 
     return prompt;
   }
