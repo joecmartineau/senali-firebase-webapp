@@ -32,16 +32,28 @@ export class LocalChatService {
       childContext = await localAssessmentProcessor.getChildContext(this.userId);
       console.log('👶 Loaded child context for personalized responses');
       
-      // If no context found, try to extract and save child names from message
-      if (!childContext && content) {
-        const childNames = localAssessmentProcessor.extractChildNames(content);
-        if (childNames.length > 0) {
-          for (const name of childNames) {
+      // Always extract and save names from every message
+      if (content) {
+        const nameData = localAssessmentProcessor.extractAllNames(content);
+        
+        // Create child profiles for detected children
+        if (nameData.children.length > 0) {
+          console.log(`🧒 Creating profiles for children: ${nameData.children.join(', ')}`);
+          for (const name of nameData.children) {
             await localAssessmentProcessor.getOrCreateChildProfile(this.userId, name);
           }
-          // Reload context after creating profiles
-          childContext = await localAssessmentProcessor.getChildContext(this.userId);
         }
+        
+        // Create child profiles for detected adults (treat all names as potential children for now)
+        if (nameData.adults.length > 0) {
+          console.log(`👤 Creating profiles for adults: ${nameData.adults.join(', ')}`);
+          for (const name of nameData.adults) {
+            await localAssessmentProcessor.getOrCreateChildProfile(this.userId, name);
+          }
+        }
+        
+        // Always reload context after potential profile creation
+        childContext = await localAssessmentProcessor.getChildContext(this.userId);
       }
     } catch (error) {
       console.error('Error loading child context:', error);

@@ -3,34 +3,75 @@ import { localStorage } from './local-storage';
 import type { ChildProfile, SymptomChecklist } from './local-storage';
 
 export class LocalAssessmentProcessor {
-  // Extract child names from message
-  extractChildNames(message: string): string[] {
-    const names: string[] = [];
+  // Extract all names from message (children, parents, spouses)
+  extractAllNames(message: string): { children: string[], adults: string[] } {
+    const childNames: string[] = [];
+    const adultNames: string[] = [];
     
-    // Common patterns for child names
-    const namePatterns = [
-      /(?:my (?:son|daughter|child|kid))\s+([A-Z][a-z]+)/gi,
-      /([A-Z][a-z]+)\s+(?:is|was|has|does|can't|won't)/gi,
-      /(?:with|about|for)\s+([A-Z][a-z]+)/gi
+    // Enhanced patterns for child names - aggressive detection
+    const childPatterns = [
+      // Direct child references
+      /(?:my (?:son|daughter|child|kid|baby|toddler|boy|girl))\s+([A-Z][a-z]+)/gi,
+      /(?:my (?:sons?|daughters?|children|kids))\s+(?:are\s+)?([A-Z][a-z]+)/gi,
+      /(?:my (?:kids?'?|children'?s?)) names? (?:are|is)?\s*([A-Z][a-z]+)/gi,
+      
+      // Name patterns with actions/descriptions
+      /([A-Z][a-z]+)\s+(?:is|was|has|does|can't|won't|will|would|should|could|loves|likes|hates|enjoys|struggles|needs|goes|attends|started|finished)/gi,
+      
+      // Question patterns
+      /(?:what are my kids? names?|what are my child(?:ren)?'?s? names?)/gi,
+      
+      // Simple name mentions in context
+      /\b([A-Z][a-z]{2,})\b/g  // Any capitalized word 3+ letters
     ];
     
-    for (const pattern of namePatterns) {
+    // Patterns for adult names (parents, spouses)
+    const adultPatterns = [
+      /(?:my (?:husband|wife|partner|spouse))\s+([A-Z][a-z]+)/gi,
+      /(?:my name is|i'm|i am)\s+([A-Z][a-z]+)/gi,
+      /(?:my (?:name|first name))\s+(?:is\s+)?([A-Z][a-z]+)/gi,
+      /(?:call me|i'm called)\s+([A-Z][a-z]+)/gi
+    ];
+    
+    // Process child patterns
+    for (const pattern of childPatterns) {
       let match;
       const regex = new RegExp(pattern.source, pattern.flags);
       while ((match = regex.exec(message)) !== null) {
         const name = match[1];
-        if (name && name.length > 1 && !names.includes(name)) {
-          // Filter out common words that aren't names
-          const nonNames = ['He', 'She', 'They', 'This', 'That', 'Then', 'When', 'Where', 'What', 'How', 'Why'];
+        if (name && name.length > 2 && !childNames.includes(name)) {
+          // Comprehensive filter for non-names
+          const nonNames = [
+            // Pronouns and common words
+            'He', 'She', 'They', 'This', 'That', 'Then', 'When', 'Where', 'What', 'How', 'Why', 'The', 'And', 'But', 'Or', 'So', 'If', 'As', 'To', 'At', 'In', 'On', 'Up', 'By', 'For', 'From', 'With', 'About', 'Over', 'Under', 'Through', 'During', 'Before', 'After', 'Above', 'Below', 'Between', 'Among', 'Against', 'Across', 'Behind', 'Beyond', 'Beside', 'Near', 'Around', 'Inside', 'Outside', 'Without', 'Within', 'Upon', 'Since', 'Until', 'While', 'Although', 'Because', 'Unless', 'Whether', 'Though', 'Whereas', 'However', 'Therefore', 'Moreover', 'Furthermore', 'Nevertheless', 'Nonetheless', 'Consequently', 'Otherwise', 'Meanwhile', 'Similarly', 'Likewise', 'Instead', 'Rather', 'Indeed', 'Actually', 'Really', 'Quite', 'Very', 'Too', 'Also', 'Even', 'Just', 'Only', 'Still', 'Yet', 'Already', 'Soon', 'Now', 'Then', 'Here', 'There', 'Everywhere', 'Anywhere', 'Somewhere', 'Nowhere',
+            // App/tech terms
+            'Senali', 'Chat', 'Message', 'App', 'Screen', 'Phone', 'Browser', 'Website', 'Internet', 'Premium', 'Free', 'Trial', 'Subscribe', 'Upgrade',
+            // Common verbs/adjectives that get capitalized
+            'Are', 'Were', 'Been', 'Being', 'Have', 'Has', 'Had', 'Will', 'Would', 'Could', 'Should', 'Must', 'Might', 'May', 'Can', 'Cannot', 'Does', 'Did', 'Done', 'Make', 'Made', 'Take', 'Took', 'Give', 'Gave', 'Get', 'Got', 'Come', 'Came', 'Go', 'Went', 'See', 'Saw', 'Know', 'Knew', 'Think', 'Thought', 'Feel', 'Felt', 'Look', 'Looked', 'Want', 'Wanted', 'Need', 'Needed', 'Help', 'Helped', 'Try', 'Tried', 'Work', 'Worked', 'Play', 'Played', 'Live', 'Lived', 'Love', 'Loved', 'Like', 'Liked', 'Hate', 'Hated', 'Hope', 'Hoped', 'Wish', 'Wished', 'Good', 'Bad', 'Great', 'Best', 'Worst', 'Better', 'Worse', 'Big', 'Small', 'Large', 'Little', 'Old', 'New', 'Young', 'Happy', 'Sad', 'Angry', 'Mad', 'Glad', 'Nice', 'Mean', 'Kind', 'Smart', 'Dumb', 'Funny', 'Silly', 'Cute', 'Pretty', 'Ugly', 'Fast', 'Slow', 'Easy', 'Hard', 'Difficult', 'Simple', 'Right', 'Wrong', 'True', 'False'
+          ];
+          
           if (!nonNames.includes(name)) {
-            names.push(name);
+            childNames.push(name);
+            console.log(`🧒 Detected child name: ${name} from pattern: ${pattern.source}`);
           }
         }
-        if (!pattern.global) break;
       }
     }
     
-    return names;
+    // Process adult patterns
+    for (const pattern of adultPatterns) {
+      let match;
+      const regex = new RegExp(pattern.source, pattern.flags);
+      while ((match = regex.exec(message)) !== null) {
+        const name = match[1];
+        if (name && name.length > 1 && !adultNames.includes(name)) {
+          adultNames.push(name);
+          console.log(`👤 Detected adult name: ${name} from pattern: ${pattern.source}`);
+        }
+      }
+    }
+    
+    return { children: childNames, adults: adultNames };
   }
 
   // Get or create child profile in local storage
@@ -121,7 +162,8 @@ export class LocalAssessmentProcessor {
     console.log(`🔄 Processing message for local assessments: ${message.substring(0, 100)}...`);
     
     // Extract child names mentioned in the message
-    const childNames = this.extractChildNames(message);
+    const nameData = this.extractAllNames(message);
+    const childNames = nameData.children;
     console.log(`👶 Children mentioned: ${childNames.join(', ')}`);
     
     // Process each child mentioned
