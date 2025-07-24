@@ -1,6 +1,7 @@
 import { localStorage, type ChildProfile } from '../lib/local-storage';
 import { localAssessmentProcessor } from '../lib/local-assessment-processor';
 import { conversationContextManager } from '../lib/conversation-context-manager';
+import { familyContextBuilder } from '../lib/family-context-builder';
 import { clearWrongProfiles } from '../lib/clear-wrong-profiles';
 import { debugProfiles } from '../lib/debug-profiles';
 import { subscriptionService } from './subscription-service';
@@ -52,16 +53,31 @@ export class LocalChatService {
       }
     }
 
-    // Get comprehensive context package (family + conversation summaries)
+    // Build comprehensive family context with all member details
+    const directFamilyContext = await familyContextBuilder.buildFamilyContext(this.userId);
+    const familyMemberCount = await familyContextBuilder.getFamilyMemberCount(this.userId);
+    const familyNames = await familyContextBuilder.getFamilyMemberNames(this.userId);
+    
+    console.log('👨‍👩‍👧‍👦 Direct family context built:', {
+      memberCount: familyMemberCount,
+      names: familyNames.join(', '),
+      contextLength: directFamilyContext.length
+    });
+
+    // Get conversation summaries for memory
     const contextPackage = await conversationContextManager.getContextPackage(this.userId, messageCount);
     console.log('📦 Context package loaded:', {
-      familyMembers: contextPackage.familyContext ? 'YES' : 'NO',
+      familyMembers: directFamilyContext ? 'YES - DIRECT BUILD' : 'NO',
       summaryCount: contextPackage.conversationSummaries.length,
       recentMessages: contextPackage.recentMessages.length
     });
 
-    // Generate contextual system prompt with family and conversation context
-    const systemPrompt = conversationContextManager.generateContextualSystemPrompt(contextPackage);
+    // Generate contextual system prompt with direct family context
+    const enhancedContextPackage = {
+      ...contextPackage,
+      familyContext: directFamilyContext // Use direct family context instead
+    };
+    const systemPrompt = conversationContextManager.generateContextualSystemPrompt(enhancedContextPackage);
 
     // Check if we need to create summaries
     const summaryNeeds = conversationContextManager.shouldCreateSummary(messageCount);
@@ -79,23 +95,17 @@ export class LocalChatService {
       }, 100);
     }
 
-    // CRITICAL: Debug family context before sending to API
-    console.log('🔍 PRE-API DEBUG - Family Context Check:');
-    console.log('Family Context Length:', contextPackage.familyContext ? contextPackage.familyContext.length : 0);
-    if (contextPackage.familyContext) {
-      console.log('Family Context Preview:', contextPackage.familyContext.substring(0, 500) + '...');
-      const familyNames = contextPackage.familyContext.match(/\*\*([^*]+)\*\*/g);
-      console.log('Family Names Detected in Context:', familyNames);
+    // CRITICAL: Debug direct family context before sending to API
+    console.log('🔍 PRE-API DEBUG - Direct Family Context Check:');
+    console.log('Direct Family Context Length:', directFamilyContext.length);
+    if (directFamilyContext && directFamilyContext.length > 0) {
+      console.log('✅ DIRECT Family Context Preview:', directFamilyContext.substring(0, 500) + '...');
+      const familyNames = directFamilyContext.match(/\*\*([^*]+)\*\*/g);
+      console.log('🎯 Family Names in Direct Context:', familyNames);
+      console.log('👥 Family member count:', familyMemberCount);
+      console.log('📋 All family names:', familyNames.join(', '));
     } else {
-      console.log('❌ NO FAMILY CONTEXT - This is why Senali is hallucinating!');
-      
-      // Emergency fallback - load family context directly
-      const emergencyContext = await localAssessmentProcessor.getChildContext(this.userId);
-      console.log('🚨 Emergency context load:', emergencyContext ? 'SUCCESS' : 'FAILED');
-      if (emergencyContext) {
-        contextPackage.familyContext = emergencyContext;
-        console.log('✅ Using emergency family context');
-      }
+      console.log('❌ NO DIRECT FAMILY CONTEXT - No family profiles exist yet');
     }
 
     // Call API with enhanced context
@@ -104,7 +114,8 @@ export class LocalChatService {
     console.log('🌐 Making API call with enhanced context system');
     console.log('🔍 Final context details:', {
       systemPromptLength: systemPrompt.length,
-      familyContext: contextPackage.familyContext ? 'INCLUDED' : 'NONE',
+      directFamilyContext: directFamilyContext ? 'INCLUDED' : 'NONE',
+      familyMemberCount: familyMemberCount,
       conversationSummaries: contextPackage.conversationSummaries.length,
       recentMessages: contextPackage.recentMessages.length
     });
@@ -117,7 +128,7 @@ export class LocalChatService {
       body: JSON.stringify({
         message: content,
         systemPrompt: systemPrompt, // Enhanced system prompt with full context
-        childContext: contextPackage.familyContext, // Family information - CRITICAL
+        childContext: directFamilyContext, // DIRECT family information with names, ages, genders, relations, diagnoses
         recentContext: contextPackage.recentMessages, // Recent messages only
         messageCount: messageCount,
         userId: this.userId,

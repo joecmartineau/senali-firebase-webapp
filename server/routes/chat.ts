@@ -69,12 +69,16 @@ router.post('/', async (req, res) => {
     
     // CRITICAL DEBUG: Log the actual family context content
     if (childContext && childContext.trim().length > 0) {
-      console.log('👨‍👩‍👧‍👦 FAMILY CONTEXT CONTENT PREVIEW:');
-      console.log(childContext.substring(0, 800) + '...');
+      console.log('👨‍👩‍👧‍👦 DIRECT FAMILY CONTEXT RECEIVED:');
+      console.log(childContext.substring(0, 1000));
       const nameMatches = childContext.match(/\*\*([^*]+)\*\*/g);
-      console.log('🎯 Family names detected in context:', nameMatches || 'NONE FOUND');
+      console.log('🎯 Family names detected in server context:', nameMatches || 'NONE FOUND');
+      
+      // Count family members
+      const memberCount = (childContext.match(/\*\*[^*]+\*\*\n- Relationship:/g) || []).length;
+      console.log('👥 Family members in context:', memberCount);
     } else {
-      console.log('🚨 CRITICAL: NO FAMILY CONTEXT - This will cause hallucination!');
+      console.log('🚨 CRITICAL: NO FAMILY CONTEXT RECEIVED - This will cause hallucination!');
     }
     
     // Use guided discovery system prompt if provided, otherwise use default
@@ -82,11 +86,11 @@ router.post('/', async (req, res) => {
     
     // Add comprehensive family context if available
     if (childContext && childContext.trim().length > 0) {
-      finalSystemPrompt += `\n\n**CRITICAL FAMILY INFORMATION - USE THESE EXACT NAMES:**\n${childContext}\n\n**STRICT INSTRUCTIONS:**\n- These family members are REAL and already known to you\n- Use ONLY the exact names provided: Never invent names like "Lily" or other made-up names\n- When referring to family members, use their exact names from the context above\n- Ask specific questions about the family members listed in the context\n- DO NOT hallucinate or make up family member names that are not explicitly listed above\n- If no family context is provided, admit you don't know their family yet`;
-      console.log(`✅ Added STRICT family context to system prompt. Context preview: ${childContext.substring(0, 200)}...`);
-      console.log(`🎯 System prompt now includes family context: ${finalSystemPrompt.includes('CRITICAL FAMILY INFORMATION') ? 'YES' : 'NO'}`);
+      finalSystemPrompt += `\n\n**COMPLETE FAMILY INFORMATION - ALWAYS USE THESE EXACT DETAILS:**\n${childContext}\n\n**STRICT FAMILY CONTEXT RULES:**\n- These family members are REAL and already known to you from previous conversations\n- ALWAYS use the exact names, ages, genders, and relationships provided above\n- Reference specific diagnoses, questionnaire results, and challenges mentioned for each family member\n- Ask follow-up questions about specific family members using their real names\n- NEVER invent or guess family member names, ages, or details not provided\n- Use this information to provide personalized, relevant support and questions\n- If someone mentions a family member, immediately connect it to the information above`;
+      console.log(`✅ Added COMPLETE family context to system prompt with ${(childContext.match(/\*\*[^*]+\*\*\n- Relationship:/g) || []).length} family members`);
+      console.log(`🎯 System prompt includes family context: ${finalSystemPrompt.includes('COMPLETE FAMILY INFORMATION') ? 'YES' : 'NO'}`);
     } else {
-      finalSystemPrompt += `\n\n**NO FAMILY INFORMATION PROVIDED:**\nYou do not have information about this user's family yet. Do not make up or guess family member names. Ask them to tell you about their family members.`;
+      finalSystemPrompt += `\n\n**NO FAMILY INFORMATION PROVIDED:**\nYou do not have information about this user's family yet. Ask them to share details about their family members including names, ages, and relationships.`;
       console.log(`❌ No family context provided - Added explicit no-context instruction`);
     }
 
