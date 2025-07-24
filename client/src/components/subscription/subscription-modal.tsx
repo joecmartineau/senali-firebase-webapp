@@ -70,14 +70,14 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MessageCircle className="w-5 h-5 text-gray-600" />
-                  Free Plan
+                  Trial
                 </CardTitle>
-                <CardDescription>Perfect for trying Senali</CardDescription>
+                <CardDescription>Try Senali with 25 messages</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span className="text-sm">10 messages per day</span>
+                  <span className="text-sm">25 total messages</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
@@ -85,7 +85,7 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span className="text-sm">Basic daily tips</span>
+                  <span className="text-sm">Basic features</span>
                 </div>
               </CardContent>
               <CardFooter>
@@ -107,7 +107,7 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
               <CardContent className="space-y-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span className="text-sm">Unlimited daily conversations</span>
+                  <span className="text-sm">1,000 credits per month</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-green-500" />

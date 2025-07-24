@@ -84,7 +84,7 @@ export default function SubscriptionPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-semibold">
                       {subscriptionStatus.isActive ? 'Premium Active' : 
-                       subscriptionStatus.isTrialActive ? 'Free Trial Active' : 'Free Plan'}
+                       subscriptionStatus.isTrialActive ? 'Trial Active' : 'Trial Expired'}
                     </span>
                     <Badge variant={subscriptionStatus.isActive || subscriptionStatus.isTrialActive ? 'default' : 'secondary'}>
                       {subscriptionStatus.planType === 'yearly' ? 'Yearly' :
@@ -94,7 +94,7 @@ export default function SubscriptionPage() {
                   <p className="text-sm text-muted-foreground">
                     {subscriptionStatus.isActive || subscriptionStatus.isTrialActive ? 
                       `${daysRemaining} days remaining` : 
-                      'Limited to 10 messages per day'
+                      'Trial messages used up - upgrade to continue'
                     }
                   </p>
                 </div>
@@ -114,14 +114,14 @@ export default function SubscriptionPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageCircle className="w-5 h-5 text-green-600" />
-                Free Plan
+                Trial
               </CardTitle>
-              <CardDescription>Perfect for trying Senali</CardDescription>
+              <CardDescription>Try Senali with 25 messages</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">10 messages per day</span>
+                <span className="text-sm">25 total messages</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />
@@ -153,7 +153,7 @@ export default function SubscriptionPage() {
             <CardContent className="space-y-3">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">Unlimited daily conversations</span>
+                <span className="text-sm">1,000 credits per month</span>
               </div>
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-green-500" />
@@ -174,12 +174,12 @@ export default function SubscriptionPage() {
             </CardContent>
             <CardFooter className="flex flex-col gap-3">
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold">$9.99</span>
+                <span className="text-2xl font-bold">$7.99</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-lg font-semibold text-green-600">$99.99</span>
-                <span className="text-sm text-muted-foreground">/year (17% off)</span>
+                <span className="text-lg font-semibold text-green-600">$79.99</span>
+                <span className="text-sm text-muted-foreground">/year (2 months free)</span>
               </div>
             </CardFooter>
           </Card>
@@ -210,14 +210,14 @@ export default function SubscriptionPage() {
                 onClick={() => handleSubscribe('monthly')}
                 className="px-8"
               >
-                Subscribe Monthly - $9.99
+                Subscribe Monthly - $7.99
               </Button>
               <Button 
                 size="lg"
                 onClick={() => handleSubscribe('yearly')}
                 className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-8"
               >
-                Subscribe Yearly - $99.99
+                Subscribe Yearly - $79.99
               </Button>
             </div>
           )}
