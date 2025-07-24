@@ -158,6 +158,15 @@ interface SymptomChecklist {
   lastUpdated: Date;
 }
 
+interface ConversationSummary {
+  id: string;
+  userId: string;
+  messageRange: string; // "1-10", "11-20", etc.
+  summary: string;
+  timestamp: Date;
+  type: 'brief' | 'meta';
+}
+
 interface UserProfile {
   id: string;
   email?: string;
@@ -174,7 +183,7 @@ interface UserProfile {
 
 class LocalStorage {
   private dbName = 'SenaliDB';
-  private version = 1;
+  private version = 2;
   private db: IDBDatabase | null = null;
 
   async init(): Promise<void> {
@@ -215,6 +224,13 @@ class LocalStorage {
         if (!db.objectStoreNames.contains('dailyTips')) {
           const tipStore = db.createObjectStore('dailyTips', { keyPath: 'id' });
           tipStore.createIndex('date', 'date', { unique: false });
+        }
+        
+        if (!db.objectStoreNames.contains('conversationSummaries')) {
+          const summaryStore = db.createObjectStore('conversationSummaries', { keyPath: 'id' });
+          summaryStore.createIndex('userId', 'userId', { unique: false });
+          summaryStore.createIndex('type', 'type', { unique: false });
+          summaryStore.createIndex('timestamp', 'timestamp', { unique: false });
         }
       };
     });
@@ -591,8 +607,71 @@ class LocalStorage {
     });
   }
 
+  // Conversation Summary methods
+  async saveConversationSummary(summary: ConversationSummary): Promise<ConversationSummary> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['conversationSummaries'], 'readwrite');
+      const store = transaction.objectStore('conversationSummaries');
+      const request = store.add(summary);
+      
+      request.onsuccess = () => resolve(summary);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getConversationSummaries(userId: string): Promise<ConversationSummary[]> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['conversationSummaries'], 'readonly');
+      const store = transaction.objectStore('conversationSummaries');
+      const index = store.index('userId');
+      const request = index.getAll(userId);
+      
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteConversationSummary(summaryId: string): Promise<void> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['conversationSummaries'], 'readwrite');
+      const store = transaction.objectStore('conversationSummaries');
+      const request = store.delete(summaryId);
+      
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getRecentMessages(userId: string, count: number): Promise<Message[]> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['messages'], 'readonly');
+      const store = transaction.objectStore('messages');
+      const index = store.index('userId');
+      const request = index.getAll(userId);
+      
+      request.onsuccess = () => {
+        const messages = request.result || [];
+        // Sort by timestamp and take last N messages
+        const sortedMessages = messages
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .slice(0, count)
+          .reverse(); // Reverse to get chronological order
+        resolve(sortedMessages);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
 
 }
 
 export const localStorage = new LocalStorage();
-export type { Message, ChildProfile, SymptomChecklist, UserProfile };
+export type { Message, ChildProfile, SymptomChecklist, UserProfile, ConversationSummary };

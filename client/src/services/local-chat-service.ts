@@ -1,5 +1,6 @@
 import { localStorage, type ChildProfile } from '../lib/local-storage';
 import { localAssessmentProcessor } from '../lib/local-assessment-processor';
+import { conversationContextManager } from '../lib/conversation-context-manager';
 import { clearWrongProfiles } from '../lib/clear-wrong-profiles';
 import { debugProfiles } from '../lib/debug-profiles';
 import { subscriptionService } from './subscription-service';
@@ -28,6 +29,10 @@ export class LocalChatService {
       timestamp: new Date()
     });
 
+    // Get message count for context management
+    const messageCount = await this.getMessageCount();
+    console.log(`💬 Processing message #${messageCount}`);
+
     // Process message for profile and symptom updates locally
     try {
       await localAssessmentProcessor.processMessageEfficient(this.userId, content);
@@ -36,80 +41,54 @@ export class LocalChatService {
       console.error('Local assessment processing error:', error);
     }
 
-    // ALWAYS extract and save names from every message FIRST
-    let childContext = '';
-    try {
-      // Step 1: Cost-efficient comprehensive profile processing (NO EXTRA API CALLS)
-      if (content) {
-        // Use the enhanced pattern matcher instead of separate processes
-        await localAssessmentProcessor.processMessageEfficient(this.userId, content);
-      }
-      
-      // Step 2: ALWAYS load all existing child context (regardless of current message)
-      childContext = await localAssessmentProcessor.getChildContext(this.userId);
-      console.log('👶 Loaded comprehensive child context:', childContext ? `Found profiles` : 'No profiles yet');
-      
-      if (childContext) {
-        console.log('📋 Full context being sent to AI:');
-        console.log(childContext);
-      }
-      
-      // Step 3: Log all existing family members for debugging
-      const allProfiles = await localStorage.getChildProfiles(this.userId);
-      if (allProfiles.length > 0) {
-        console.log('🏠 Existing family members in storage:', allProfiles.map(p => p.childName).join(', '));
-        console.log('🔍 Full profile debug:');
-        await debugProfiles(this.userId);
-      } else {
-        console.log('🏠 No family members found in storage');
-      }
-      
-    } catch (error) {
-      console.error('Error processing names and loading child context:', error);
-    }
-
-    // Extract and create family members from current message
-    const recentMessages = await this.getMessageHistory(3);
-    const messageCount = recentMessages.length + 1;
-    const existingProfiles = await localStorage.getChildProfiles(this.userId);
-    
-    // Get guided family discovery prompt for current message count
-    const systemPrompt = getFamilyDiscoveryPrompt(messageCount, existingProfiles);
-    
-    // Extract and create family members from current message (only if in first 10 messages or explicit request)
-    let newMembersCount = 0;
+    // Extract and create family members from current message (only in first 10 messages)
     if (messageCount <= 10) {
-      console.log(`🔍 Processing message ${messageCount}/10 for family extraction`);
-      console.log(`🔍 Extracting family members from: "${content}"`);
-      
       const newMembers = extractFamilyMembers(content);
-      newMembersCount = newMembers.length;
-      console.log(`🔍 Found ${newMembersCount} family members:`, newMembers);
-      
       if (newMembers.length > 0) {
         console.log(`🏗️ Creating ${newMembers.length} family profiles...`);
         for (const member of newMembers) {
           await this.createFamilyProfile(member.name, member.age, member.relationship);
-          console.log(`👶 Created profile: ${member.name} (${member.relationship})`);
         }
-        
-        // Verify profiles were created
-        const allProfilesAfter = await localStorage.getChildProfiles(this.userId);
-        console.log(`✅ Total profiles after creation: ${allProfilesAfter.length}`);
-        console.log(`✅ Profile names: ${allProfilesAfter.map(p => p.childName).join(', ')}`);
-      } else {
-        console.log(`ℹ️ No family members found in message ${messageCount}`);
       }
-    } else {
-      console.log(`ℹ️ Message ${messageCount} beyond discovery phase, skipping auto-extraction`);
     }
-    
-    // Call API for AI response with guided discovery context
+
+    // Get comprehensive context package (family + conversation summaries)
+    const contextPackage = await conversationContextManager.getContextPackage(this.userId, messageCount);
+    console.log('📦 Context package loaded:', {
+      familyMembers: contextPackage.familyContext ? 'YES' : 'NO',
+      summaryCount: contextPackage.conversationSummaries.length,
+      recentMessages: contextPackage.recentMessages.length
+    });
+
+    // Generate contextual system prompt with family and conversation context
+    const systemPrompt = conversationContextManager.generateContextualSystemPrompt(contextPackage);
+
+    // Check if we need to create summaries
+    const summaryNeeds = conversationContextManager.shouldCreateSummary(messageCount);
+    if (summaryNeeds.brief) {
+      console.log(`📝 Creating brief summary for messages ${messageCount - 9}-${messageCount}`);
+      // Create summary after API call to avoid delaying response
+      setTimeout(() => {
+        conversationContextManager.createBriefSummary(this.userId, messageCount);
+      }, 100);
+    }
+    if (summaryNeeds.meta) {
+      console.log(`📚 Creating meta-summary for first ${messageCount} messages`);
+      setTimeout(() => {
+        conversationContextManager.createMetaSummary(this.userId, messageCount);
+      }, 100);
+    }
+
+    // Call API with enhanced context
     const apiUrl = '/api/chat';
     
-    console.log('🌐 Making API call to:', apiUrl);
-    console.log('📝 Request data - Message count:', messageCount, 'Family members:', newMembersCount);
-    console.log('🔍 Child context being sent:', childContext ? 'YES - ' + childContext.substring(0, 200) + '...' : 'NO CONTEXT');
+    console.log('🌐 Making API call with enhanced context system');
+    console.log('🔍 Context details:', {
+      systemPromptLength: systemPrompt.length,
+      familyContext: contextPackage.familyContext ? 'INCLUDED' : 'NONE',
+      conversationSummaries: contextPackage.conversationSummaries.length,
+      recentMessages: contextPackage.recentMessages.length
+    });
     
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -118,12 +97,9 @@ export class LocalChatService {
       },
       body: JSON.stringify({
         message: content,
-        systemPrompt: systemPrompt, // Include guided discovery prompt
-        childContext: childContext, // Include context for personalized responses
-        recentContext: recentMessages.slice(-3).map(msg => ({
-          role: msg.role,
-          content: msg.content
-        })),
+        systemPrompt: systemPrompt, // Enhanced system prompt with full context
+        childContext: contextPackage.familyContext, // Family information
+        recentContext: contextPackage.recentMessages, // Recent messages only
         messageCount: messageCount,
         userId: this.userId,
         isPremium: subscriptionService.hasPremiumAccess()
@@ -140,7 +116,7 @@ export class LocalChatService {
     }
 
     const data = await response.json();
-    console.log('✅ API Response received:', data);
+    console.log('✅ Enhanced context AI response received');
     
     // Save AI response locally
     const aiMessage = await localStorage.saveMessage({
@@ -160,6 +136,12 @@ export class LocalChatService {
 
   async getMessageHistory(limit = 200): Promise<Message[]> {
     return await localStorage.getMessages(this.userId, limit);
+  }
+
+  // Get total message count for context management
+  async getMessageCount(): Promise<number> {
+    const messages = await localStorage.getMessages(this.userId);
+    return messages.length;
   }
 
   async loadConversationHistory(): Promise<Message[]> {
