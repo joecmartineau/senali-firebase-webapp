@@ -30,15 +30,32 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
+    // Try multiple methods to ensure scrolling works
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // Fallback method
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      } else {
+        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      }
     }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Add a small delay to ensure DOM has updated
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [messages]);
 
   const sendMessage = async () => {
@@ -186,6 +203,8 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
                   </div>
                 </div>
               )}
+              {/* Invisible element to scroll to */}
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
 
