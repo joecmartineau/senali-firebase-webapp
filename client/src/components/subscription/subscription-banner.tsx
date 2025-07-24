@@ -70,19 +70,28 @@ export function SubscriptionBanner({ onUpgrade }: SubscriptionBannerProps) {
     );
   }
 
-  // Show upgrade banner for free users
+  // Show upgrade banner if user is running low on trial messages
+  const trialCount = subscriptionService.getTrialMessageCount();
+  const remaining = subscriptionService.getRemainingTrialMessages();
+  
+  // Only show banner if user has used some messages and has 5 or fewer remaining
+  if (remaining > 5 || trialCount === 0) return null;
+
   return (
-    <Card className="mx-4 mb-4 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
+    <Card className="mx-4 mb-4 border-orange-200 bg-gradient-to-r from-orange-50 to-red-50">
       <CardContent className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center">
             <Crown className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                Premium Available
+              <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                Trial Ending Soon
               </Badge>
+              <span className="text-sm font-medium">
+                {remaining} messages left
+              </span>
             </div>
             <p className="text-sm text-muted-foreground">
               Unlock unlimited conversations and family profiles

@@ -42,9 +42,9 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
         const historyMessages = await localChatService.loadConversationHistory();
         setMessages(historyMessages);
         
-        // Get persistent message count (can't be reset by clearing chat)
-        const todaysCount = subscriptionService.getTodaysMessageCount();
-        setMessageCount(todaysCount);
+        // Get persistent trial message count (can't be reset by clearing chat)
+        const trialCount = subscriptionService.getTrialMessageCount();
+        setMessageCount(trialCount);
 
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -95,10 +95,11 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
 
     // Check subscription limits for free users using persistent counting
     if (!subscriptionService.canSendMessage()) {
+      const remaining = subscriptionService.getRemainingTrialMessages();
       // Add Senali's subscription prompt message
       const subscriptionPromptMessage: Message = {
         id: `subscription-prompt-${Date.now()}`,
-        content: "I'd love to keep chatting with you, but you've reached your 10 free messages for today! 😊 To continue our conversation and get unlimited access to all my features, would you like to upgrade to premium for just $9.99/month? You'll get unlimited messages, unlimited child profiles, and priority support. What do you think?",
+        content: `I'd love to keep chatting with you, but you've used all 25 of your trial messages! 😊 I hope I've been helpful so far. To continue our conversation and get unlimited access to all my features, would you like to upgrade to premium for just $9.99/month? You'll get unlimited messages, unlimited child profiles, and priority support. What do you think?`,
         role: 'assistant',
         timestamp: new Date(),
         userId: 'user-1'
@@ -120,10 +121,10 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
       // Update UI with both messages
       setMessages(prev => [...prev, userMessage, aiResponse]);
       
-      // Update persistent message count for free tier tracking
+      // Update persistent trial message count for free tier tracking
       if (!subscriptionService.hasPremiumAccess()) {
-        subscriptionService.incrementMessageCount();
-        setMessageCount(subscriptionService.getTodaysMessageCount());
+        subscriptionService.incrementTrialMessageCount();
+        setMessageCount(subscriptionService.getTrialMessageCount());
       }
     } catch (error) {
       console.error('Chat error details:', error);

@@ -136,47 +136,51 @@ export class SubscriptionService {
   }
 
   /**
-   * Get today's message count (persistent across chat clears)
+   * Get total trial message count (lifetime limit of 25)
    */
-  getTodaysMessageCount(): number {
-    const today = new Date().toDateString();
-    const messageData = localStorage.getItem('senali_daily_messages');
+  getTrialMessageCount(): number {
+    const messageData = localStorage.getItem('senali_trial_messages');
     
     if (messageData) {
       const data = JSON.parse(messageData);
-      if (data.date === today) {
-        return data.count || 0;
-      }
+      return data.count || 0;
     }
     
-    // New day, reset count
     return 0;
   }
 
   /**
-   * Increment today's message count
+   * Increment trial message count
    */
-  incrementMessageCount(): void {
-    const today = new Date().toDateString();
-    const currentCount = this.getTodaysMessageCount();
+  incrementTrialMessageCount(): void {
+    const currentCount = this.getTrialMessageCount();
     
     const messageData = {
-      date: today,
-      count: currentCount + 1
+      count: currentCount + 1,
+      lastUsed: new Date().toISOString()
     };
     
-    localStorage.setItem('senali_daily_messages', JSON.stringify(messageData));
+    localStorage.setItem('senali_trial_messages', JSON.stringify(messageData));
   }
 
   /**
-   * Check if user can send another message (for free users)
+   * Check if user can send another message
    */
   canSendMessage(): boolean {
     if (this.hasPremiumAccess()) {
       return true;
     }
     
-    return this.getTodaysMessageCount() < SUBSCRIPTION_LIMITS.free.dailyMessages;
+    // For free users, check if they have trial messages remaining
+    return this.getTrialMessageCount() < SUBSCRIPTION_LIMITS.free.trialMessages;
+  }
+
+  /**
+   * Get remaining trial messages
+   */
+  getRemainingTrialMessages(): number {
+    const used = this.getTrialMessageCount();
+    return Math.max(0, SUBSCRIPTION_LIMITS.free.trialMessages - used);
   }
 
   private saveStatus(): void {
@@ -184,17 +188,17 @@ export class SubscriptionService {
   }
 }
 
-// Premium feature limits for free vs premium users
+// Premium feature limits for trial vs premium users
 export const SUBSCRIPTION_LIMITS = {
   free: {
-    dailyMessages: 10,
+    trialMessages: 25, // One-time trial limit
     childProfiles: 1,
     exportData: false,
     prioritySupport: false,
     advancedTips: false
   },
   premium: {
-    dailyMessages: -1, // unlimited
+    trialMessages: -1, // unlimited
     childProfiles: -1, // unlimited
     exportData: true,
     prioritySupport: true,

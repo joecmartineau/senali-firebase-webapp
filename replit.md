@@ -158,7 +158,7 @@ This is a full-stack TypeScript application built with a privacy-first, local st
 
 ### App Store Monetization System (2025-01-24)
 - **Subscription-Based Revenue Model**: Implemented App Store and Play Store compliant subscription system
-  - **Free Tier**: 10 messages per day (GPT-3.5-turbo), 1 child profile, basic features
+  - **Free Tier**: 25 messages total trial (GPT-3.5-turbo), 1 child profile, basic features
   - **Premium Subscription**: 3,000 messages/month included (GPT-3.5-turbo), overage at $0.01/message, unlimited profiles, data export, priority support
   - **Pricing**: $9.99/month or $99.99/year (17% discount) with 7-day free trial
   - **Profit Protection**: Usage-based overage pricing ensures 100% profitability regardless of usage patterns
@@ -182,6 +182,14 @@ This is a full-stack TypeScript application built with a privacy-first, local st
   - **Persistent Memory**: Chat history, child profiles, and symptom checklists persist across sessions without external storage
   - **Server Role Reduction**: Server now only provides AI responses - no longer stores or processes sensitive user data
   - **Data Portability**: Export/import functionality allows users complete control over their information
+
+### Business Model Optimization (2025-01-24)
+- **25-Message Trial Model**: Eliminated daily free tier in favor of one-time 25-message trial
+  - **Cost Reduction**: 98% reduction in free user costs (from $0.90/month to $0.05 one-time)
+  - **Higher Conversion Pressure**: Users must decide to subscribe or stop using after 25 messages
+  - **Sustainable Economics**: Trial costs only $0.05 per user vs ongoing daily message costs
+  - **Break-even**: Just 1% conversion rate (10 of 1,000 users) generates profit within first month
+  - **LTV/CAC Ratio**: 12-24x with $5 customer acquisition cost and $60-120 lifetime value
 
 ### Major Role Change (2025-01-24)
 - **Senali Role Transformation**: Complete shift from neurodivergent parenting specialist to therapist/friend companion
