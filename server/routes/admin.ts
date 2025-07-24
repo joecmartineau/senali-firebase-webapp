@@ -2,23 +2,29 @@ import express from 'express';
 import { db } from '../db';
 import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
+import { isAuthenticated } from '../replitAuth';
 
 const router = express.Router();
 
 // Middleware to check if user is admin
 const requireAdmin = (req: any, res: any, next: any) => {
-  if (!req.user || req.user.email !== 'joecmartineau@gmail.com') {
-    return res.status(403).json({ error: 'Admin access required' });
+  console.log('Admin check - req.user:', req.user);
+  console.log('Admin check - user email:', req.user?.email);
+  console.log('Admin check - user claims:', req.user?.claims);
+  
+  const userEmail = req.user?.email || req.user?.claims?.email;
+  if (!req.user || userEmail !== 'joecmartineau@gmail.com') {
+    return res.status(403).json({ error: 'Admin access required', userEmail });
   }
   next();
 };
 
 // Get all users with their subscription info
-router.get('/users', requireAdmin, async (req, res) => {
+router.get('/users', isAuthenticated, requireAdmin, async (req, res) => {
   try {
     const allUsers = await db
       .select({
-        uid: users.uid,
+        uid: users.id, // Use id as uid for compatibility
         email: users.email,
         displayName: users.displayName,
         credits: users.credits,
@@ -29,9 +35,12 @@ router.get('/users', requireAdmin, async (req, res) => {
       .orderBy(users.createdAt);
 
     res.json(allUsers.map(user => ({
-      ...user,
+      uid: user.uid, // Map id to uid for frontend
+      email: user.email,
+      displayName: user.displayName || user.email?.split('@')[0] || 'Unknown',
       subscription: user.subscription || 'free',
-      credits: user.credits || 0,
+      credits: user.credits || 25, // Default 25 credits
+      lastActive: user.lastActive,
     })));
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -40,7 +49,7 @@ router.get('/users', requireAdmin, async (req, res) => {
 });
 
 // Update user credits
-router.post('/update-credits', requireAdmin, async (req, res) => {
+router.post('/update-credits', isAuthenticated, requireAdmin, async (req, res) => {
   try {
     const { userId, creditChange } = req.body;
 
@@ -52,13 +61,13 @@ router.post('/update-credits', requireAdmin, async (req, res) => {
     const [currentUser] = await db
       .select()
       .from(users)
-      .where(eq(users.uid, userId));
+      .where(eq(users.id, userId));
 
     if (!currentUser) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const currentCredits = currentUser.credits || 0;
+    const currentCredits = currentUser.credits || 25;
     const newCredits = Math.max(0, currentCredits + creditChange);
 
     // Update user credits
@@ -68,11 +77,11 @@ router.post('/update-credits', requireAdmin, async (req, res) => {
         credits: newCredits,
         updatedAt: new Date(),
       })
-      .where(eq(users.uid, userId))
+      .where(eq(users.id, userId))
       .returning();
 
     res.json({
-      uid: updatedUser.uid,
+      uid: updatedUser.id, // Return id as uid for frontend compatibility
       email: updatedUser.email,
       displayName: updatedUser.displayName,
       credits: updatedUser.credits,
@@ -84,7 +93,7 @@ router.post('/update-credits', requireAdmin, async (req, res) => {
 });
 
 // Get user statistics
-router.get('/stats', requireAdmin, async (req, res) => {
+router.get('/stats', isAuthenticated, requireAdmin, async (req, res) => {
   try {
     const totalUsers = await db.select().from(users);
     const premiumUsers = totalUsers.filter(user => user.subscription === 'premium');
