@@ -2,6 +2,7 @@ import { localStorage } from '../lib/local-storage';
 import { localAssessmentProcessor } from '../lib/local-assessment-processor';
 import { clearWrongProfiles } from '../lib/clear-wrong-profiles';
 import { debugProfiles } from '../lib/debug-profiles';
+import { subscriptionService } from './subscription-service';
 import type { Message } from '../lib/local-storage';
 
 export class LocalChatService {
@@ -85,7 +86,8 @@ export class LocalChatService {
           role: msg.role,
           content: msg.content
         })),
-        userId: this.userId // Allow server to request more context if needed
+        userId: this.userId, // Allow server to request more context if needed
+        isPremium: subscriptionService.hasPremiumAccess() // Send premium status for model selection
       }),
     }).catch(fetchError => {
       console.error('🚨 Fetch failed:', fetchError);

@@ -25,7 +25,7 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
         alert('🎉 Your 7-day free trial has started! Enjoy unlimited access to all premium features.');
       } else {
         // In mobile app, this would trigger App Store/Play Store purchase
-        alert(`📱 In the mobile app, this would open ${planType === 'monthly' ? 'monthly ($3.99)' : 'yearly ($34.99)'} subscription purchase through your device's app store.`);
+        alert(`📱 In the mobile app, this would open ${planType === 'monthly' ? 'monthly ($9.99)' : 'yearly ($99.99)'} subscription purchase through your device's app store.`);
         
         // For demo purposes, simulate successful purchase
         subscriptionService.activateSubscription(planType);
@@ -77,7 +77,7 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
               <CardContent className="space-y-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span className="text-sm">100 messages per day</span>
+                  <span className="text-sm">10 messages per day</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
@@ -128,12 +128,12 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
               </CardContent>
               <CardFooter className="flex flex-col gap-2">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-xl font-bold">$3.99</span>
+                  <span className="text-xl font-bold">$9.99</span>
                   <span className="text-gray-600 dark:text-gray-400">/month</span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-lg font-semibold text-green-600">$34.99</span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">/year (27% off)</span>
+                  <span className="text-lg font-semibold text-green-600">$99.99</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">/year (17% off)</span>
                 </div>
               </CardFooter>
             </Card>
@@ -158,7 +158,7 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
                 disabled={loading}
                 className="w-full"
               >
-                {loading ? 'Processing...' : 'Subscribe Monthly - $3.99'}
+                {loading ? 'Processing...' : 'Subscribe Monthly - $9.99'}
               </Button>
               <Button 
                 size="lg"
@@ -166,7 +166,7 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
               >
-                {loading ? 'Processing...' : 'Subscribe Yearly - $34.99'}
+                {loading ? 'Processing...' : 'Subscribe Yearly - $99.99'}
               </Button>
             </div>
 

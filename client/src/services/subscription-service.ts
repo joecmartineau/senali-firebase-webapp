@@ -187,7 +187,7 @@ export class SubscriptionService {
 // Premium feature limits for free vs premium users
 export const SUBSCRIPTION_LIMITS = {
   free: {
-    dailyMessages: 100,
+    dailyMessages: 10,
     childProfiles: 1,
     exportData: false,
     prioritySupport: false,

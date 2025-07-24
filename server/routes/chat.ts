@@ -48,7 +48,7 @@ Remember: You're here to listen, understand, and gently help people talk about t
 
 router.post('/', async (req, res) => {
   try {
-    const { message, childContext = '', recentContext = [], userId } = req.body;
+    const { message, childContext = '', recentContext = [], userId, isPremium = false } = req.body;
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: 'Message is required' });
@@ -78,10 +78,12 @@ router.post('/', async (req, res) => {
       console.log('🎯 System prompt includes family context:', systemPromptWithContext.substring(systemPromptWithContext.length - 200));
     }
 
-    console.log('Sending chat request to OpenAI...');
+    // Use GPT-4o for premium users, GPT-3.5-turbo for free users
+    const model = isPremium ? 'gpt-4o' : 'gpt-3.5-turbo';
+    console.log(`Sending chat request to OpenAI using ${model}...`);
     
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model,
       messages: messages as any,
       max_tokens: 1000,
       temperature: 0.7,
