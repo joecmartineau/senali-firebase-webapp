@@ -38,9 +38,9 @@ Begin with a warm greeting that makes them want to share what's on their mind.
 Remember: You're here to listen, understand, and gently help people talk about their family and feelings.`;
 
   try {
-    // Using GPT-3.5-turbo as requested by user
+    // Using GPT-4o for enhanced intelligence and better conversations
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         ...messageHistory.slice(-10).map(msg => ({ role: msg.role as 'user' | 'assistant', content: msg.content })), // Keep last 10 messages for context
@@ -79,9 +79,9 @@ Return your response as JSON with this exact format:
 }`;
 
   try {
-    // Using GPT-3.5-turbo as requested by user
+    // Using GPT-4o for enhanced intelligence and better tips
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: "Generate a helpful daily tip for parenting and family well-being." }
