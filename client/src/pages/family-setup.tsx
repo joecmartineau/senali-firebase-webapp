@@ -34,10 +34,12 @@ export default function FamilySetup() {
   }, [user]);
 
   const loadExistingProfiles = async () => {
-    if (!user?.id) return;
+    if (!user?.uid) return;
     
     try {
-      const profiles = await localStorage.getChildProfiles(user.id);
+      console.log('🔧 Loading profiles for user:', user.uid);
+      const profiles = await localStorage.getChildProfiles(user.uid);
+      console.log('🔧 Loaded profiles:', profiles);
       setExistingProfiles(profiles);
       
       // If user already has profiles, they can skip setup
@@ -50,7 +52,7 @@ export default function FamilySetup() {
         })));
       }
     } catch (error) {
-      console.error('Error loading existing profiles:', error);
+      console.error('🚨 Error loading existing profiles:', error);
     } finally {
       setLoading(false);
     }
@@ -72,28 +74,37 @@ export default function FamilySetup() {
   };
 
   const saveFamily = async () => {
-    if (!user?.id || familyMembers.length === 0) return;
+    if (!user?.uid || familyMembers.length === 0) return;
     
     try {
       setLoading(true);
+      console.log('🔧 Saving family members for user:', user.uid);
+      console.log('🔧 Family members to save:', familyMembers);
       
       // Save each family member as a profile
       for (const member of familyMembers) {
         const profile = {
           childName: member.name,
           age: member.age,
-          userId: user.id,
+          userId: user.uid, // Using Firebase UID
           relationshipToUser: member.relationship,
           gender: member.gender
         };
         
-        await localStorage.saveChildProfile(profile);
+        console.log('🔧 Saving profile:', profile);
+        const savedProfile = await localStorage.saveChildProfile(profile);
+        console.log('🔧 Profile saved successfully:', savedProfile);
       }
+      
+      // Verify profiles were saved
+      const allProfiles = await localStorage.getChildProfiles(user.uid);
+      console.log('🔧 All profiles after save:', allProfiles);
       
       // Redirect to chat
       setLocation('/chat');
     } catch (error) {
-      console.error('Error saving family profiles:', error);
+      console.error('🚨 Error saving family profiles:', error);
+      alert('Failed to save family profiles. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -20,10 +20,10 @@ export default function Questionnaires() {
   }, [user]);
 
   const loadProfiles = async () => {
-    if (!user?.id) return;
+    if (!user?.uid) return;
     
     try {
-      const familyProfiles = await localStorage.getChildProfiles(user.id);
+      const familyProfiles = await localStorage.getChildProfiles(user.uid);
       setProfiles(familyProfiles);
       
       if (familyProfiles.length === 0) {

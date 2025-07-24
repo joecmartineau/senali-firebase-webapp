@@ -229,15 +229,18 @@ function AuthenticatedApp({ user, onSignOut }: { user: any; onSignOut: () => voi
 
   const checkUserProfiles = async () => {
     try {
+      console.log('🔧 Checking profiles for user UID:', user.uid);
       const profiles = await localStorage.getChildProfiles(user.uid);
+      console.log('🔧 Found profiles in App:', profiles);
       setHasProfiles(profiles.length > 0);
       
       // If no profiles and on root path, redirect to family setup
       if (profiles.length === 0 && window.location.pathname === '/') {
+        console.log('🔧 No profiles found, redirecting to family setup');
         setLocation('/family-setup');
       }
     } catch (error) {
-      console.error('Error checking profiles:', error);
+      console.error('🚨 Error checking profiles in App:', error);
       setHasProfiles(false);
     }
   };

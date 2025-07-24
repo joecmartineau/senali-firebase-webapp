@@ -25,10 +25,12 @@ export function FamilySidebar({ isOpen, onClose, userId }: FamilySidebarProps) {
 
   const loadProfiles = async () => {
     try {
+      console.log('🔧 Family sidebar loading profiles for user:', userId);
       const familyProfiles = await localStorage.getChildProfiles(userId);
+      console.log('🔧 Family sidebar loaded profiles:', familyProfiles);
       setProfiles(familyProfiles);
     } catch (error) {
-      console.error('Error loading profiles:', error);
+      console.error('🚨 Error loading profiles in family sidebar:', error);
     } finally {
       setLoading(false);
     }
@@ -36,9 +38,9 @@ export function FamilySidebar({ isOpen, onClose, userId }: FamilySidebarProps) {
 
   const getProfileCompletionStatus = (profile: ChildProfile) => {
     // Check if diagnostic questionnaire is completed
-    const hasSymptoms = profile.symptomTracking && Object.keys(profile.symptomTracking).length > 0;
+    const hasSymptoms = profile.symptoms && Object.keys(profile.symptoms).length > 0;
     const totalQuestions = 27; // Total diagnostic questions
-    const answeredQuestions = hasSymptoms ? Object.values(profile.symptomTracking).filter(v => v !== undefined).length : 0;
+    const answeredQuestions = hasSymptoms ? Object.values(profile.symptoms || {}).filter(v => v !== undefined).length : 0;
     
     if (answeredQuestions === 0) return { status: 'not_started', percentage: 0 };
     if (answeredQuestions < totalQuestions) return { status: 'in_progress', percentage: Math.round((answeredQuestions / totalQuestions) * 100) };
