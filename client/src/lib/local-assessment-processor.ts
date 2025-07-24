@@ -1,5 +1,6 @@
 // Client-side assessment processor for local storage
 import { localStorage } from './local-storage';
+import { enhancedPatternMatcher } from './enhanced-pattern-matcher';
 import type { ChildProfile, SymptomChecklist } from './local-storage';
 
 export class LocalAssessmentProcessor {
@@ -196,37 +197,53 @@ export class LocalAssessmentProcessor {
     return profile;
   }
 
-  // Process message and extract information
-  async processMessage(userId: string, message: string): Promise<void> {
-    console.log(`🔄 Processing message for local assessments: ${message.substring(0, 100)}...`);
+
+  // COST-EFFICIENT: Process message using enhanced local pattern matching (NO API CALLS)
+  async processMessageEfficient(userId: string, message: string): Promise<void> {
+    console.log(`💰 Cost-efficient processing: ${message.substring(0, 100)}...`);
     
-    // Extract all names mentioned in the message
-    const nameData = this.extractAllNames(message);
-    const childNames = nameData.children;
-    const adultNames = nameData.adults;
-    console.log(`👶 Children mentioned: ${childNames.join(', ')}`);
-    console.log(`👨 Adults mentioned: ${adultNames.join(', ')}`);
+    // Get existing family member names for context
+    const existingProfiles = await localStorage.getChildProfiles(userId);
+    const existingNames = existingProfiles.map(p => p.childName);
     
-    // Process each child mentioned
-    for (const childName of childNames) {
-      const profile = await this.getOrCreateChildProfile(userId, childName);
-      
-      // Extract and update child profile information
-      await this.extractAndUpdateProfileInfo(userId, childName, message);
-      
-      // Process symptom checklist updates based on conversation
-      await this.updateSymptomChecklist(profile.id, message, childName);
+    // Use enhanced pattern matcher to extract comprehensive info in one pass
+    const extracted = enhancedPatternMatcher.extractFamilyInfo(message, existingNames);
+    
+    console.log('📊 Extracted comprehensive info:', {
+      newAges: Object.keys(extracted.ages).length,
+      newGrades: Object.keys(extracted.grades).length,
+      newDiagnoses: Object.keys(extracted.diagnoses).length,
+      symptoms: Object.keys(extracted.symptoms).length
+    });
+    
+    // Update all profiles efficiently 
+    for (const [name, age] of Object.entries(extracted.ages)) {
+      const profile = await this.getOrCreateChildProfile(userId, name);
+      await this.updateChildProfile(userId, name, { age });
     }
     
-    // Process each adult mentioned (Mom, Dad, spouse)
-    for (const adultName of adultNames) {
-      const profile = await this.getOrCreateFamilyMemberProfile(userId, adultName, 'other');
-      
-      // Extract and update adult profile information
-      await this.extractAndUpdateProfileInfo(userId, adultName, message);
-      
-      // Process symptom checklist updates for adults too
-      await this.updateSymptomChecklist(profile.id, message, adultName);
+    for (const [name, grade] of Object.entries(extracted.grades)) {
+      await this.updateChildProfile(userId, name, { schoolGrade: grade });
+    }
+    
+    for (const [name, school] of Object.entries(extracted.schools)) {
+      await this.updateChildProfile(userId, name, { schoolType: school });
+    }
+    
+    for (const [name, activities] of Object.entries(extracted.activities)) {
+      await this.updateChildProfile(userId, name, { currentStrengths: activities });
+    }
+    
+    for (const [name, diagnoses] of Object.entries(extracted.diagnoses)) {
+      await this.updateChildProfile(userId, name, { existingDiagnoses: diagnoses });
+    }
+    
+    // Process symptoms for all mentioned family members
+    for (const name of [...existingNames, ...Object.keys(extracted.ages)]) {
+      if (message.toLowerCase().includes(name.toLowerCase())) {
+        const profile = await this.getOrCreateChildProfile(userId, name);
+        await this.updateSymptomChecklist(profile.id, message, name);
+      }
     }
   }
 
@@ -235,12 +252,34 @@ export class LocalAssessmentProcessor {
     const lowerMessage = message.toLowerCase();
     const updates: any = {};
     
-    // Extract age information
-    const ageMatch = message.match(new RegExp(`${childName}.*?is\\s*(\\d+)\\s*(?:years?\\s*old)`, 'i')) ||
-                     message.match(/(?:he|she) is (\d+)\s*(?:years?\s*old)/i) ||
-                     message.match(/(\d+)\s*year-old/i);
+    // Extract age information - comprehensive patterns for "Sam is 12 and Noah is 5"
+    const nameAgePatterns = [
+      // Primary pattern: "Sam is 12" or "Sam who is 12"
+      new RegExp(`${childName}\\s+(?:is|who is)\\s+(\\d+)\\s*(?:years?\\s*old)?`, 'i'),
+      // Specific pattern to avoid cross-matching: "Sam is 12 and Noah"
+      new RegExp(`${childName}\\s+is\\s+(\\d+)(?=\\s*(?:years?\\s*old)?\\s*(?:and|,|\\.|$))`, 'i'),
+      // Age before name: "12 year old Sam"
+      new RegExp(`(\\d+)\\s*year[s]?[\\s-]*old\\s+${childName}`, 'i'),
+      // Age context: "Sam age 12"
+      new RegExp(`${childName}.*?age\\s+(\\d+)`, 'i')
+    ];
+    
+    let ageMatch = null;
+    for (const pattern of nameAgePatterns) {
+      const match = message.match(pattern);
+      if (match) {
+        ageMatch = match;
+        console.log(`🎯 Age pattern matched for ${childName}: "${match[0]}" -> ${match[1]}`);
+        break;
+      }
+    }
+    
     if (ageMatch) {
-      updates.age = parseInt(ageMatch[1]);
+      const age = parseInt(ageMatch[1]);
+      if (age > 0 && age < 25) { // Reasonable age range
+        updates.age = age;
+        console.log(`📅 Successfully extracted age ${age} for ${childName}`);
+      }
     }
     
     // Extract gender information
@@ -250,20 +289,45 @@ export class LocalAssessmentProcessor {
       updates.gender = 'female';
     }
     
-    // Extract existing diagnoses
+    // Extract existing diagnoses with comprehensive patterns
     const diagnoses = [];
-    if (lowerMessage.includes('diagnosed with adhd') || lowerMessage.includes('has adhd')) {
+    
+    // ADHD patterns
+    const adhdPatterns = [
+      /diagnosed with adhd/i, /has adhd/i, /adhd diagnosis/i, /attention deficit/i,
+      /add diagnosis/i, /\badd\b/i, /hyperactivity disorder/i
+    ];
+    if (adhdPatterns.some(pattern => pattern.test(lowerMessage))) {
       diagnoses.push('ADHD');
     }
-    if (lowerMessage.includes('diagnosed with autism') || lowerMessage.includes('has autism') || lowerMessage.includes('on the spectrum')) {
+    
+    // Autism patterns
+    const autismPatterns = [
+      /diagnosed with autism/i, /has autism/i, /autism diagnosis/i, /on the spectrum/i,
+      /asd diagnosis/i, /autism spectrum/i, /asperger/i, /pervasive developmental/i
+    ];
+    if (autismPatterns.some(pattern => pattern.test(lowerMessage))) {
       diagnoses.push('Autism Spectrum Disorder');
     }
-    if (lowerMessage.includes('anxiety') && lowerMessage.includes('diagnosed')) {
+    
+    // Anxiety patterns
+    const anxietyPatterns = [
+      /anxiety disorder/i, /diagnosed with anxiety/i, /has anxiety/i, /panic disorder/i,
+      /social anxiety/i, /generalized anxiety/i, /separation anxiety/i
+    ];
+    if (anxietyPatterns.some(pattern => pattern.test(lowerMessage))) {
       diagnoses.push('Anxiety Disorder');
     }
-    if (lowerMessage.includes('odd') && lowerMessage.includes('diagnosed')) {
+    
+    // ODD patterns
+    const oddPatterns = [
+      /odd diagnosis/i, /oppositional defiant/i, /diagnosed with odd/i, /has odd/i,
+      /defiant disorder/i, /conduct disorder/i
+    ];
+    if (oddPatterns.some(pattern => pattern.test(lowerMessage))) {
       diagnoses.push('Oppositional Defiant Disorder');
     }
+    
     if (diagnoses.length > 0) {
       updates.existingDiagnoses = diagnoses;
     }
@@ -338,41 +402,63 @@ export class LocalAssessmentProcessor {
     }
   }
 
-  // Extract symptom updates from natural conversation
+  // Extract symptom updates from natural conversation - COST-EFFICIENT LOCAL PROCESSING
   extractSymptomUpdates(message: string, childName: string): Array<{field: string, value: boolean, reason: string}> {
     const updates: Array<{field: string, value: boolean, reason: string}> = [];
     const lowerMessage = message.toLowerCase();
     const childLower = childName.toLowerCase();
     
-    // Define symptom patterns with their corresponding fields
+    // Comprehensive symptom patterns - NO API CALLS NEEDED
     const symptomPatterns = [
-      // Attention & Focus
-      { patterns: ['can\'t focus', 'trouble focusing', 'loses focus', 'difficulty paying attention', 'doesn\'t pay attention'], field: 'difficultyPayingAttention', positive: true },
-      { patterns: ['focuses well', 'pays attention', 'good focus', 'concentrates well'], field: 'difficultyPayingAttention', positive: false },
-      { patterns: ['easily distracted', 'gets distracted', 'distracted by', 'can\'t concentrate'], field: 'easilyDistracted', positive: true },
-      { patterns: ['not easily distracted', 'stays focused', 'not distracted'], field: 'easilyDistracted', positive: false },
-      { patterns: ['doesn\'t finish', 'trouble finishing', 'gives up', 'starts but doesn\'t complete'], field: 'difficultyFinishingTasks', positive: true },
-      { patterns: ['finishes tasks', 'completes work', 'follows through'], field: 'difficultyFinishingTasks', positive: false },
-      { patterns: ['forgets things', 'forgetful', 'can\'t remember', 'loses track'], field: 'forgetfulInDailyActivities', positive: true },
-      { patterns: ['remembers well', 'good memory', 'doesn\'t forget'], field: 'forgetfulInDailyActivities', positive: false },
-      { patterns: ['loses things', 'can\'t find', 'misplaces', 'always losing'], field: 'losesThingsFrequently', positive: true },
-      { patterns: ['keeps track', 'doesn\'t lose', 'organized with belongings'], field: 'losesThingsFrequently', positive: false },
+      // === ATTENTION & FOCUS SYMPTOMS ===
+      { patterns: ['can\'t focus', 'trouble focusing', 'loses focus', 'difficulty paying attention', 'doesn\'t pay attention', 'attention problems', 'poor concentration', 'spacing out', 'daydreaming constantly'], field: 'difficultyPayingAttention', positive: true },
+      { patterns: ['focuses well', 'pays attention', 'good focus', 'concentrates well', 'good attention', 'stays on task'], field: 'difficultyPayingAttention', positive: false },
       
-      // Hyperactivity & Impulsivity
-      { patterns: ['fidgets', 'squirms', 'can\'t sit still', 'always moving hands'], field: 'fidgetsOrSquirms', positive: true },
-      { patterns: ['sits still', 'calm hands', 'doesn\'t fidget'], field: 'fidgetsOrSquirms', positive: false },
-      { patterns: ['gets up', 'leaves seat', 'won\'t stay seated', 'stands up'], field: 'difficultyStayingSeated', positive: true },
-      { patterns: ['stays seated', 'sits well', 'remains in seat'], field: 'difficultyStayingSeated', positive: false },
-      { patterns: ['talks too much', 'non-stop talking', 'excessive talking', 'talks constantly'], field: 'talksExcessively', positive: true },
-      { patterns: ['talks appropriately', 'good conversation', 'doesn\'t talk too much'], field: 'talksExcessively', positive: false },
+      { patterns: ['easily distracted', 'gets distracted', 'distracted by', 'can\'t concentrate', 'attention wanders', 'mind elsewhere'], field: 'easilyDistracted', positive: true },
+      { patterns: ['not easily distracted', 'stays focused', 'not distracted', 'good concentration'], field: 'easilyDistracted', positive: false },
       
-      // Emotional Regulation
-      { patterns: ['meltdowns', 'tantrums', 'explosive', 'can\'t control emotions'], field: 'frequentMeltdowns', positive: true },
-      { patterns: ['calm', 'good emotional control', 'handles emotions well'], field: 'frequentMeltdowns', positive: false },
-      { patterns: ['always angry', 'mad all the time', 'angry child', 'rage'], field: 'chronicAngerIrritability', positive: true },
-      { patterns: ['not angry', 'happy child', 'pleasant mood', 'calm temperament'], field: 'chronicAngerIrritability', positive: false },
-      { patterns: ['argues constantly', 'defiant', 'oppositional', 'fights everything'], field: 'argumentativeDefiantBehavior', positive: true },
-      { patterns: ['compliant', 'doesn\'t argue', 'cooperative'], field: 'argumentativeDefiantBehavior', positive: false },
+      { patterns: ['doesn\'t finish', 'trouble finishing', 'gives up', 'starts but doesn\'t complete', 'leaves things unfinished', 'quits halfway'], field: 'difficultyFinishingTasks', positive: true },
+      { patterns: ['finishes tasks', 'completes work', 'follows through', 'sees things through'], field: 'difficultyFinishingTasks', positive: false },
+      
+      { patterns: ['forgets things', 'forgetful', 'can\'t remember', 'loses track', 'memory problems', 'forgets homework', 'forgets chores'], field: 'forgetfulInDailyActivities', positive: true },
+      { patterns: ['remembers well', 'good memory', 'doesn\'t forget', 'remembers tasks'], field: 'forgetfulInDailyActivities', positive: false },
+      
+      { patterns: ['loses things', 'can\'t find', 'misplaces', 'always losing', 'loses homework', 'loses toys', 'loses backpack'], field: 'losesThingsFrequently', positive: true },
+      { patterns: ['keeps track', 'doesn\'t lose', 'organized with belongings', 'takes care of things'], field: 'losesThingsFrequently', positive: false },
+      
+      // === HYPERACTIVITY & IMPULSIVITY ===
+      { patterns: ['fidgets', 'squirms', 'can\'t sit still', 'always moving hands', 'restless', 'wiggles', 'taps fingers'], field: 'fidgetsOrSquirms', positive: true },
+      { patterns: ['sits still', 'calm hands', 'doesn\'t fidget', 'stays calm'], field: 'fidgetsOrSquirms', positive: false },
+      
+      { patterns: ['gets up', 'leaves seat', 'won\'t stay seated', 'stands up', 'out of seat', 'wanders around'], field: 'difficultyStayingSeated', positive: true },
+      { patterns: ['stays seated', 'sits well', 'remains in seat', 'stays put'], field: 'difficultyStayingSeated', positive: false },
+      
+      { patterns: ['talks too much', 'non-stop talking', 'excessive talking', 'talks constantly', 'never stops talking', 'chatters endlessly'], field: 'talksExcessively', positive: true },
+      { patterns: ['talks appropriately', 'good conversation', 'doesn\'t talk too much', 'quiet'], field: 'talksExcessively', positive: false },
+      
+      // === EMOTIONAL REGULATION ===
+      { patterns: ['meltdowns', 'tantrums', 'explosive', 'can\'t control emotions', 'emotional outbursts', 'rages', 'loses it'], field: 'frequentMeltdowns', positive: true },
+      { patterns: ['calm', 'good emotional control', 'handles emotions well', 'emotionally stable'], field: 'frequentMeltdowns', positive: false },
+      
+      { patterns: ['always angry', 'mad all the time', 'angry child', 'rage', 'irritable', 'quick to anger', 'bad temper'], field: 'chronicAngerIrritability', positive: true },
+      { patterns: ['not angry', 'happy child', 'pleasant mood', 'calm temperament', 'even-tempered'], field: 'chronicAngerIrritability', positive: false },
+      
+      { patterns: ['argues constantly', 'defiant', 'oppositional', 'fights everything', 'won\'t follow rules', 'refuses to listen'], field: 'argumentativeDefiantBehavior', positive: true },
+      { patterns: ['compliant', 'doesn\'t argue', 'cooperative', 'follows rules', 'listens well'], field: 'argumentativeDefiantBehavior', positive: false },
+      
+      // === SOCIAL COMMUNICATION ===
+      { patterns: ['doesn\'t make eye contact', 'avoids eye contact', 'won\'t look at me', 'looks away'], field: 'poorEyeContact', positive: true },
+      { patterns: ['good eye contact', 'looks at me', 'maintains eye contact'], field: 'poorEyeContact', positive: false },
+      
+      { patterns: ['doesn\'t share', 'won\'t share toys', 'possessive', 'hoards things'], field: 'failureToShareEnjoyment', positive: true },
+      { patterns: ['shares well', 'likes to share', 'generous with toys'], field: 'failureToShareEnjoyment', positive: false },
+      
+      // === SENSORY PROCESSING ===
+      { patterns: ['sensitive to noise', 'covers ears', 'hates loud sounds', 'bothered by noise'], field: 'auditoryHypersensitivity', positive: true },
+      { patterns: ['not bothered by noise', 'handles loud sounds', 'enjoys music'], field: 'auditoryHypersensitivity', positive: false },
+      
+      { patterns: ['picky eater', 'won\'t try new foods', 'texture issues', 'gags on food'], field: 'sensoryFoodAversions', positive: true },
+      { patterns: ['eats everything', 'not picky', 'tries new foods'], field: 'sensoryFoodAversions', positive: false }
     ];
     
     // Look for correction patterns

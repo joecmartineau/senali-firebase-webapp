@@ -34,25 +34,10 @@ export class LocalChatService {
     // ALWAYS extract and save names from every message FIRST
     let childContext = '';
     try {
-      // Step 1: Extract names from current message and create profiles
+      // Step 1: Cost-efficient comprehensive profile processing (NO EXTRA API CALLS)
       if (content) {
-        const nameData = localAssessmentProcessor.extractAllNames(content);
-        
-        // Create child profiles for detected children
-        if (nameData.children.length > 0) {
-          console.log(`🧒 Creating profiles for children: ${nameData.children.join(', ')}`);
-          for (const name of nameData.children) {
-            await localAssessmentProcessor.getOrCreateChildProfile(this.userId, name);
-          }
-        }
-        
-        // Create child profiles for detected adults (treat all names as potential children for now)
-        if (nameData.adults.length > 0) {
-          console.log(`👤 Creating profiles for adults: ${nameData.adults.join(', ')}`);
-          for (const name of nameData.adults) {
-            await localAssessmentProcessor.getOrCreateChildProfile(this.userId, name);
-          }
-        }
+        // Use the enhanced pattern matcher instead of separate processes
+        await localAssessmentProcessor.processMessageEfficient(this.userId, content);
       }
       
       // Step 2: ALWAYS load all existing child context (regardless of current message)
