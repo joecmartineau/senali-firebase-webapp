@@ -65,14 +65,24 @@ router.post('/chat', async (req, res) => {
       role: 'user'
     });
 
-    // Get conversation history from database (last 20 messages for better context)
-    const dbMessages = await storage.getUserMessages(userId, 20);
+    // Get conversation history from database (last 200 messages for comprehensive context)
+    const dbMessages = await storage.getUserMessages(userId, 200);
     const conversationHistory = dbMessages
       .reverse() // Reverse to get chronological order
       .map(msg => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content
       }));
+
+    // Process message for profile and symptom updates
+    try {
+      const { assessmentProcessor } = await import('../services/assessment-processor');
+      await assessmentProcessor.processMessage(userId, message);
+      console.log('📊 Profile and symptom data processed for user:', userId);
+    } catch (error) {
+      console.error('Assessment processing error:', error);
+      // Don't fail the chat if assessment processing fails
+    }
 
     // Get child context for personalized responses
     let childContext = '';
@@ -152,7 +162,7 @@ router.get('/history', async (req, res) => {
     }
 
     const { storage } = await import('../storage');
-    const dbMessages = await storage.getUserMessages(userId, 50);
+    const dbMessages = await storage.getUserMessages(userId, 200);
     
     // Convert to frontend format and reverse to chronological order
     const messages = dbMessages.reverse().map(msg => ({

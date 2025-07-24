@@ -160,6 +160,21 @@ This is a full-stack TypeScript application built with a modern web architecture
   - Simplified branding to show just "Senali" without descriptive text
   - Implemented personalized questioning strategy to learn about users' families and build connections
 
+### Enhanced Memory & Profile System (2025-01-24)
+- **Conversation Memory**: Increased message history context from 20 to 200 messages for comprehensive conversation continuity
+- **Database-Driven Chat History**: Chat now loads full conversation history from database on startup
+- **Dynamic Symptom Tracking**: Senali automatically updates symptom checklists based on natural conversation
+  - Tracks 60+ symptoms across attention, hyperactivity, social communication, sensory processing, and emotional regulation
+  - Recognizes positive/negative statements ("Sam is always angry" vs "Sam was angry today but isn't always angry")
+  - Handles corrections and clarifications ("Actually, I misspoke" or "Let me clarify")
+  - Updates symptom status in real-time during chat interactions
+- **Comprehensive Profile Management**: Senali remembers and updates:
+  - Child names, ages, genders, diagnoses, strengths, and challenges
+  - School information, therapies, medications, and family structure
+  - Parent goals, observations, and ongoing notes
+  - Dynamic profile updates when user provides corrections or new information
+- **Persistent Context**: All family information persists across chat sessions and informs therapeutic responses
+
 ### Previous Updates (2025-01-24)
 - **Assessment System**: Implemented professional diagnostic assessment tracking system
   - Real DSM-5 criteria for ADHD, Autism, and ODD assessments  

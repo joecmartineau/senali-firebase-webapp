@@ -8,6 +8,8 @@ import { z } from "zod";
 import { db } from "./db";
 import { childProfiles, symptomChecklists } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
+import profilesRouter from './routes/profiles';
+import chatRouter from './routes/chat';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -433,6 +435,10 @@ Remember: You are not a replacement for professional medical or therapeutic advi
       res.status(500).json({ message: "Failed to fetch children" });
     }
   });
+
+  // Use modular routes  
+  app.use('/api/chat', chatRouter);
+  app.use('/api/profiles', profilesRouter);
 
   const httpServer = createServer(app);
   return httpServer;
