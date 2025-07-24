@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle, Lightbulb, Heart } from "lucide-react";
+import { ParentingQuote } from "@/components/ParentingQuote";
 import { InfinityIcon } from "@/components/ui/infinity-icon";
 import { useState, useEffect } from "react";
 import { ChatInterface } from "@/components/chat/chat-interface";
@@ -170,55 +171,9 @@ function SenaliApp() {
             Your AI parenting companion. Get personalized guidance, daily tips, and supportive conversations.
           </p>
 
-          {/* Features */}
-          <div className="space-y-4 mb-8">
-            <Card className="bg-gray-900 border-gray-700">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-500 bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <MessageCircle className="h-5 w-5 text-green-500" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-semibold text-white">AI Chat Support</h3>
-                    <p className="text-sm text-gray-300">
-                      Get instant guidance for ADHD, autism, and other neurodivergent needs
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900 border-gray-700">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-500 bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <Lightbulb className="h-5 w-5 text-green-500" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-semibold text-white">Daily Tips</h3>
-                    <p className="text-sm text-gray-300">
-                      Personalized parenting strategies delivered every day
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900 border-gray-700">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-500 bg-opacity-20 rounded-lg flex items-center justify-center">
-                    <Heart className="h-5 w-5 text-green-500" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-semibold text-white">Community Support</h3>
-                    <p className="text-sm text-gray-300">
-                      Connect with other parents on similar journeys
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Inspirational Quote */}
+          <div className="mb-8">
+            <ParentingQuote />
           </div>
 
           {/* Sign In Button */}
