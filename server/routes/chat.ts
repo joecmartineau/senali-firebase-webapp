@@ -44,55 +44,29 @@ Remember: You're here to listen, understand, and gently help people talk about t
 
 router.post('/chat', async (req, res) => {
   try {
-    const { message, childContext = '' } = req.body;
-    const userId = (req.user as any)?.id; // Get user ID from session
+    const { message, childContext = '', conversationHistory = [] } = req.body;
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
-
-    // Import storage after we know we need it
-    const { storage } = await import('../storage');
-
-    // Save user message to database
-    await storage.createMessage({
-      userId,
-      content: message,
-      role: 'user'
-    });
-
-    // Get conversation history from database (last 200 messages for comprehensive context)
-    const dbMessages = await storage.getUserMessages(userId, 200);
-    const conversationHistory = dbMessages
-      .reverse() // Reverse to get chronological order
-      .map(msg => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content
-      }));
-
-    // Note: Assessment processing now happens on the client side with local storage
-    // The server no longer processes or stores sensitive family data
+    // Note: No authentication or database storage required
+    // All data is managed locally on the client side
     
-    // Child context is now passed from client (stored locally for privacy)
+    // Child context is passed from client (stored locally for privacy)
     // Build system prompt with child context
     const systemPromptWithContext = childContext ? 
       `${SYSTEM_PROMPT}\n\n${childContext}` : 
       SYSTEM_PROMPT;
 
-    // Prepare conversation history for OpenAI
+    // Build conversation with history from client (kept locally)
     const messages = [
       { role: 'system', content: systemPromptWithContext },
-      // Use database conversation history instead of client-sent history
-      ...conversationHistory,
-      // Add current message
+      ...conversationHistory, // Recent conversation context from client
       { role: 'user', content: message }
     ];
 
-    console.log('Sending chat request to OpenAI with', conversationHistory.length, 'previous messages...');
+    console.log('Sending chat request to OpenAI...');
     
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
@@ -107,14 +81,7 @@ router.post('/chat', async (req, res) => {
       throw new Error('No response from OpenAI');
     }
 
-    // Save AI response to database
-    await storage.createMessage({
-      userId,
-      content: response,
-      role: 'assistant'
-    });
-
-    console.log('OpenAI response received and saved to database');
+    console.log('OpenAI response received');
     
     res.json({ response });
   } catch (error: any) {
@@ -136,31 +103,6 @@ router.post('/chat', async (req, res) => {
   }
 });
 
-// Get conversation history
-router.get('/history', async (req, res) => {
-  try {
-    const userId = (req.user as any)?.id;
-    
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
-
-    const { storage } = await import('../storage');
-    const dbMessages = await storage.getUserMessages(userId, 200);
-    
-    // Convert to frontend format and reverse to chronological order
-    const messages = dbMessages.reverse().map(msg => ({
-      id: msg.id.toString(),
-      content: msg.content,
-      role: msg.role,
-      timestamp: msg.timestamp
-    }));
-
-    res.json({ messages });
-  } catch (error) {
-    console.error('Error fetching chat history:', error);
-    res.status(500).json({ error: 'Failed to load chat history' });
-  }
-});
+// Note: Chat history endpoint removed - all data is now stored locally on client
 
 export default router;

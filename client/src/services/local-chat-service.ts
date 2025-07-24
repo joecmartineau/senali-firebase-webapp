@@ -35,10 +35,10 @@ export class LocalChatService {
       console.error('Error loading child context:', error);
     }
 
-    // Get conversation history for context
-    const messageHistory = await this.getMessageHistory(200);
+    // Get conversation history for context (last 10 messages to include in API call)
+    const messageHistory = await this.getMessageHistory(10);
     
-    // Call the server API for AI response (without sending sensitive data)
+    // Call the server API for AI response with conversation context
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: {
@@ -46,7 +46,11 @@ export class LocalChatService {
       },
       body: JSON.stringify({
         message: content,
-        childContext: childContext // Include context for personalized responses
+        childContext: childContext, // Include context for personalized responses
+        conversationHistory: messageHistory.slice(-10).map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))
       }),
     });
 

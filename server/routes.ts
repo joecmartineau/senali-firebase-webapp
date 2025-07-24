@@ -12,6 +12,9 @@ import profilesRouter from './routes/profiles';
 import chatRouter from './routes/chat';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup chat routes first (before auth middleware) for local storage compatibility
+  app.use('/api/chat', chatRouter);
+
   // Auth middleware
   await setupAuth(app);
 
@@ -24,128 +27,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
-  // Firebase-compatible Chat API route
-  app.post('/api/chat', async (req, res) => {
-    try {
-      const { message, context = [] } = req.body;
-
-      if (!message || typeof message !== 'string') {
-        return res.status(400).json({ error: 'Message is required' });
-      }
-
-      if (!process.env.OPENAI_API_KEY) {
-        return res.status(500).json({ error: 'OpenAI API key not configured' });
-      }
-
-      // System prompt for neurodivergent parenting support
-      const SYSTEM_PROMPT = `You are Senali, a specialized AI assistant dedicated to supporting parents of neurodivergent children, including those with ADHD, autism, ADD, ODD, and other neurological differences.
-
-Your role is to provide:
-- Evidence-based parenting strategies and behavioral management techniques
-- Emotional support and validation for parenting challenges
-- Practical daily tips and actionable advice
-- Resources and information about neurodivergent conditions
-- Compassionate guidance without judgment
-
-Key principles:
-- Always respond with empathy and understanding
-- Provide specific, actionable advice when possible
-- Acknowledge that every child is unique
-- Encourage professional support when appropriate
-- Use simple, clear language that's easy to understand
-- Focus on strengths-based approaches
-- Validate parental feelings and experiences
-
-Remember: You are not a replacement for professional medical or therapeutic advice, but a supportive companion in the parenting journey.`;
-
-      // Build conversation context
-      const messages = [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...context.slice(-10), // Limit context to last 10 messages
-        { role: 'user', content: message }
-      ];
-
-      const startTime = Date.now();
-
-      // Get response from OpenAI
-      const completion = await generateChatResponse(message, context.slice(-5));
-
-      const processingTime = Date.now() - startTime;
-
-      res.json({
-        response: completion,
-        model: 'gpt-3.5-turbo',
-        processingTime
-      });
-
-    } catch (error) {
-      console.error('Chat API error:', error);
-      res.status(500).json({ 
-        error: 'Failed to process chat message',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Legacy Chat routes (keeping for compatibility)
-  app.post('/api/chat/message', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { content } = insertMessageSchema.parse(req.body);
-
-      // Save user message
-      await storage.createMessage({
-        userId,
-        content,
-        role: "user"
-      });
-
-      // Get recent message history for context
-      const recentMessages = await storage.getUserMessages(userId, 10);
-      const messageHistory = recentMessages
-        .reverse()
-        .map(msg => ({
-          role: msg.role,
-          content: msg.content
-        }));
-
-      // Generate AI response
-      const aiResponse = await generateChatResponse(content, messageHistory);
-
-      // Save AI response
-      const assistantMessage = await storage.createMessage({
-        userId,
-        content: aiResponse,
-        role: "assistant"
-      });
-
-      res.json({
-        userMessage: { content, role: "user", timestamp: new Date() },
-        assistantMessage
-      });
-    } catch (error) {
-      console.error("Error processing chat message:", error);
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: "Invalid message format" });
-      } else {
-        res.status(500).json({ message: "Failed to process message" });
-      }
-    }
-  });
-
-  app.get('/api/chat/history', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const limit = parseInt(req.query.limit as string) || 50;
-      
-      const messages = await storage.getUserMessages(userId, limit);
-      res.json(messages.reverse()); // Return in chronological order
-    } catch (error) {
-      console.error("Error fetching chat history:", error);
-      res.status(500).json({ message: "Failed to fetch chat history" });
     }
   });
 
@@ -167,76 +48,27 @@ Remember: You are not a replacement for professional medical or therapeutic advi
     }
   });
 
-  // Firebase-compatible Tips generation API route
-  app.post('/api/tips/generate', async (req, res) => {
-    try {
-      const { userId, preferences = {} } = req.body;
-
-      if (!userId) {
-        return res.status(400).json({ error: 'User ID is required' });
-      }
-
-      if (!process.env.OPENAI_API_KEY) {
-        return res.status(500).json({ error: 'OpenAI API key not configured' });
-      }
-
-      // Generate tip using existing function but return Firebase-compatible format
-      const generatedTip = await generateDailyTip();
-      
-      // Format for Firebase frontend
-      const tipData = {
-        title: generatedTip.title,
-        content: generatedTip.content,
-        category: generatedTip.category || 'general',
-        targetAge: getAgeRange(preferences.childAge),
-        difficulty: 'beginner',
-        estimatedTime: '5-15 minutes',
-        tags: ['parenting', 'neurodivergent', generatedTip.category].filter(Boolean)
-      };
-
-      res.json(tipData);
-
-    } catch (error) {
-      console.error('Tip generation error:', error);
-      res.status(500).json({ 
-        error: 'Failed to generate tip',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Legacy tips route (keeping for compatibility)  
-  app.post('/api/tips/generate-legacy', isAuthenticated, async (req: any, res) => {
+  // Generate new tip
+  app.post('/api/tips/generate', isAuthenticated, async (req: any, res) => {
     try {
       const generatedTip = await generateDailyTip();
-      const tip = await storage.createDailyTip(generatedTip);
-      res.json(tip);
+      const newTip = await storage.createDailyTip(generatedTip);
+      res.json(newTip);
     } catch (error) {
       console.error("Error generating new tip:", error);
       res.status(500).json({ message: "Failed to generate new tip" });
     }
   });
 
-  app.get('/api/tips/recent', isAuthenticated, async (req: any, res) => {
-    try {
-      const limit = parseInt(req.query.limit as string) || 10;
-      const tips = await storage.getRecentTips(limit);
-      res.json(tips);
-    } catch (error) {
-      console.error("Error fetching recent tips:", error);
-      res.status(500).json({ message: "Failed to fetch recent tips" });
-    }
-  });
-
+  // Tip interactions
   app.post('/api/tips/:tipId/interact', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const tipId = parseInt(req.params.tipId);
-      const { isHelpful } = insertTipInteractionSchema.parse(req.body);
+      const { tipId } = req.params;
+      const { type } = insertTipInteractionSchema.parse(req.body);
 
-      // Check if interaction already exists
+      // Check if user already interacted with this tip
       const existingInteraction = await storage.getUserTipInteraction(userId, tipId);
-      
       if (existingInteraction) {
         return res.status(400).json({ message: "Already interacted with this tip" });
       }
@@ -244,7 +76,7 @@ Remember: You are not a replacement for professional medical or therapeutic advi
       const interaction = await storage.createTipInteraction({
         userId,
         tipId,
-        isHelpful
+        type
       });
 
       res.json(interaction);
@@ -253,162 +85,189 @@ Remember: You are not a replacement for professional medical or therapeutic advi
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid interaction data" });
       } else {
-        res.status(500).json({ message: "Failed to save tip interaction" });
+        res.status(500).json({ message: "Failed to record interaction" });
       }
     }
   });
 
-  // Symptom Checklist Management Routes
-  
-  // Get or create child profile
+  // Child profile routes  
+  app.post('/api/children/profiles', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const profileData = insertChildProfileSchema.parse(req.body);
+
+      const profile = await db.insert(childProfiles).values({
+        ...profileData,
+        userId
+      }).returning();
+
+      res.json(profile[0]);
+    } catch (error) {
+      console.error("Error creating child profile:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid profile data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create profile" });
+      }
+    }
+  });
+
+  // Get child profile
   app.get('/api/children/:childName/profile', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const childName = req.params.childName;
+      const { childName } = req.params;
       
-      const [profile] = await db.select()
+      const profile = await db.select()
         .from(childProfiles)
         .where(and(
           eq(childProfiles.userId, userId),
           eq(childProfiles.childName, childName)
-        ));
+        ))
+        .limit(1);
       
-      if (!profile) {
-        return res.status(404).json({ message: "Child profile not found" });
+      if (profile.length === 0) {
+        return res.status(404).json({ message: "Profile not found" });
       }
       
-      res.json(profile);
+      res.json(profile[0]);
     } catch (error) {
       console.error("Error fetching child profile:", error);
-      res.status(500).json({ message: "Failed to fetch child profile" });
+      res.status(500).json({ message: "Failed to fetch profile" });
     }
   });
-  
-  // Create or update child profile
-  app.post('/api/children/profile', isAuthenticated, async (req: any, res) => {
+
+  // Update child profile
+  app.put('/api/children/:childId/profile', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const profileData = insertChildProfileSchema.parse({
-        ...req.body,
-        userId
-      });
+      const { childId } = req.params;
+      const updateData = req.body;
       
-      // Check if profile exists
-      const [existingProfile] = await db.select()
-        .from(childProfiles)
-        .where(and(
-          eq(childProfiles.userId, userId),
-          eq(childProfiles.childName, profileData.childName)
-        ));
-      
-      if (existingProfile) {
-        // Update existing profile
-        const [updatedProfile] = await db.update(childProfiles)
-          .set({ ...profileData, updatedAt: new Date() })
-          .where(eq(childProfiles.id, existingProfile.id))
-          .returning();
-        
-        res.json(updatedProfile);
-      } else {
-        // Create new profile
-        const [newProfile] = await db.insert(childProfiles)
-          .values(profileData)
-          .returning();
-        
-        // Initialize empty symptom checklist
-        await db.insert(symptomChecklists)
-          .values({ childId: newProfile.id })
-          .onConflictDoNothing();
-        
-        res.json(newProfile);
-      }
-    } catch (error) {
-      console.error("Error creating/updating child profile:", error);
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: "Invalid profile data", errors: error.errors });
-      } else {
-        res.status(500).json({ message: "Failed to save child profile" });
-      }
-    }
-  });
-  
-  // Get symptom checklist for a child
-  app.get('/api/children/:childId/symptoms', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const childId = parseInt(req.params.childId);
-      
-      // Verify child belongs to user
-      const [profile] = await db.select()
+      // Verify ownership
+      const existing = await db.select()
         .from(childProfiles)
         .where(and(
           eq(childProfiles.id, childId),
           eq(childProfiles.userId, userId)
-        ));
+        ))
+        .limit(1);
       
-      if (!profile) {
+      if (existing.length === 0) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
+      const updated = await db.update(childProfiles)
+        .set({
+          ...updateData,
+          updatedAt: new Date()
+        })
+        .where(eq(childProfiles.id, childId))
+        .returning();
+      
+      res.json(updated[0]);
+    } catch (error) {
+      console.error("Error updating child profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  // Symptom checklist routes
+  app.post('/api/children/:childId/symptoms', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { childId } = req.params;
+      const symptomData = insertSymptomChecklistSchema.parse(req.body);
+
+      // Verify child ownership
+      const childProfile = await db.select()
+        .from(childProfiles)
+        .where(and(
+          eq(childProfiles.id, childId),
+          eq(childProfiles.userId, userId)
+        ))
+        .limit(1);
+      
+      if (childProfile.length === 0) {
+        return res.status(404).json({ message: "Child not found" });
+      }
+
+      const symptoms = await db.insert(symptomChecklists).values({
+        ...symptomData,
+        childId
+      }).returning();
+
+      res.json(symptoms[0]);
+    } catch (error) {
+      console.error("Error creating symptom checklist:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid symptom data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create symptoms" });
+      }
+    }
+  });
+
+  // Get symptom checklist
+  app.get('/api/children/:childId/symptoms', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { childId } = req.params;
+      
+      // Verify child ownership
+      const childProfile = await db.select()
+        .from(childProfiles)
+        .where(and(
+          eq(childProfiles.id, childId),
+          eq(childProfiles.userId, userId)
+        ))
+        .limit(1);
+      
+      if (childProfile.length === 0) {
         return res.status(404).json({ message: "Child not found" });
       }
       
-      // Get symptom checklist
-      const [symptoms] = await db.select()
+      const symptoms = await db.select()
         .from(symptomChecklists)
-        .where(eq(symptomChecklists.childId, childId));
+        .where(eq(symptomChecklists.childId, childId))
+        .limit(1);
       
-      res.json({
-        childProfile: profile,
-        symptoms: symptoms || {}
-      });
+      res.json(symptoms[0] || null);
     } catch (error) {
       console.error("Error fetching symptoms:", error);
       res.status(500).json({ message: "Failed to fetch symptoms" });
     }
   });
-  
-  // Update symptom checklist for a child
-  app.post('/api/children/:childId/symptoms', isAuthenticated, async (req: any, res) => {
+
+  // Update symptom checklist
+  app.put('/api/children/:childId/symptoms', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const childId = parseInt(req.params.childId);
+      const { childId } = req.params;
+      const updateData = req.body;
       
-      // Verify child belongs to user
-      const [profile] = await db.select()
+      // Verify child ownership
+      const childProfile = await db.select()
         .from(childProfiles)
         .where(and(
           eq(childProfiles.id, childId),
           eq(childProfiles.userId, userId)
-        ));
+        ))
+        .limit(1);
       
-      if (!profile) {
+      if (childProfile.length === 0) {
         return res.status(404).json({ message: "Child not found" });
       }
       
-      const symptomData = insertSymptomChecklistSchema.parse({
-        ...req.body,
-        childId
-      });
+      const updated = await db.update(symptomChecklists)
+        .set({
+          ...updateData,
+          lastUpdated: new Date()
+        })
+        .where(eq(symptomChecklists.childId, childId))
+        .returning();
       
-      // Check if symptom checklist exists
-      const [existingSymptoms] = await db.select()
-        .from(symptomChecklists)
-        .where(eq(symptomChecklists.childId, childId));
-      
-      if (existingSymptoms) {
-        // Update existing checklist
-        const [updatedSymptoms] = await db.update(symptomChecklists)
-          .set({ ...symptomData, lastUpdated: new Date() })
-          .where(eq(symptomChecklists.childId, childId))
-          .returning();
-        
-        res.json(updatedSymptoms);
-      } else {
-        // Create new checklist
-        const [newSymptoms] = await db.insert(symptomChecklists)
-          .values(symptomData)
-          .returning();
-        
-        res.json(newSymptoms);
-      }
+      res.json(updated[0]);
     } catch (error) {
       console.error("Error updating symptoms:", error);
       if (error instanceof z.ZodError) {
@@ -436,8 +295,7 @@ Remember: You are not a replacement for professional medical or therapeutic advi
     }
   });
 
-  // Use modular routes  
-  app.use('/api/chat', chatRouter);
+  // Use remaining modular routes
   app.use('/api/profiles', profilesRouter);
 
   const httpServer = createServer(app);
