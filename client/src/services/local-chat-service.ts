@@ -193,6 +193,8 @@ export class LocalChatService {
   // Create family profile from discovered information
   private async createFamilyProfile(name: string, age?: number, relationship: 'self' | 'spouse' | 'child' | 'other' = 'child'): Promise<void> {
     try {
+      console.log(`🔄 Attempting to create profile for ${name} (${relationship})`);
+      
       // Check if profile already exists
       const existing = await localStorage.getChildProfile(this.userId, name);
       if (existing) {
@@ -200,20 +202,30 @@ export class LocalChatService {
         return;
       }
 
-      // Create new profile with correct schema
+      // Create new profile with minimal required fields based on ChildProfile interface
       const profile = {
         childName: name,
         age: age ? age.toString() : undefined,
         userId: this.userId,
-        symptomTracking: {},
-        relationshipToUser: relationship // Use correct field name
+        relationshipToUser: relationship
       };
       
-      await localStorage.saveChildProfile(profile);
-
-      console.log(`✅ Created new family profile: ${name} (${relationship})`);
+      console.log(`📝 Creating profile with data:`, profile);
+      const savedProfile = await localStorage.saveChildProfile(profile);
+      console.log(`✅ Successfully created family profile: ${name} (${relationship})`);
+      console.log(`✅ Profile saved with ID: ${savedProfile.id}`);
+      
+      // Verify the profile was saved by reading it back
+      const verification = await localStorage.getChildProfile(this.userId, name);
+      if (verification) {
+        console.log(`✅ Profile verification successful: ${verification.childName}`);
+      } else {
+        console.error(`❌ Profile verification failed: could not retrieve ${name}`);
+      }
     } catch (error) {
-      console.error(`Error creating profile for ${name}:`, error);
+      console.error(`❌ Error creating profile for ${name}:`, error);
+      console.error(`❌ Error details:`, error instanceof Error ? error.message : 'Unknown error');
+      console.error(`❌ Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
     }
   }
 }
