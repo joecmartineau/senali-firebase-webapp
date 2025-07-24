@@ -174,12 +174,12 @@ export default function SubscriptionPage() {
             </CardContent>
             <CardFooter className="flex flex-col gap-3">
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold">$9.99</span>
+                <span className="text-2xl font-bold">$5.99</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-lg font-semibold text-green-600">$79.99</span>
-                <span className="text-sm text-muted-foreground">/year (33% off)</span>
+                <span className="text-lg font-semibold text-green-600">$49.99</span>
+                <span className="text-sm text-muted-foreground">/year (31% off)</span>
               </div>
             </CardFooter>
           </Card>
@@ -210,14 +210,14 @@ export default function SubscriptionPage() {
                 onClick={() => handleSubscribe('monthly')}
                 className="px-8"
               >
-                Subscribe Monthly - $9.99
+                Subscribe Monthly - $5.99
               </Button>
               <Button 
                 size="lg"
                 onClick={() => handleSubscribe('yearly')}
                 className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-8"
               >
-                Subscribe Yearly - $79.99
+                Subscribe Yearly - $49.99
               </Button>
             </div>
           )}
