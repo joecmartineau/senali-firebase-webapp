@@ -25,7 +25,7 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
         alert('🎉 Your 7-day free trial has started! Enjoy unlimited access to all premium features.');
       } else {
         // In mobile app, this would trigger App Store/Play Store purchase
-        alert(`📱 In the mobile app, this would open ${planType === 'monthly' ? 'monthly ($9.99)' : 'yearly ($99.99)'} subscription purchase through your device's app store.`);
+        alert(`📱 In the mobile app, this would open ${planType === 'monthly' ? 'monthly ($7.99)' : 'yearly ($79.99)'} subscription purchase through your device's app store.`);
         
         // For demo purposes, simulate successful purchase
         subscriptionService.activateSubscription(planType);
@@ -81,7 +81,7 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span className="text-sm">1 child profile</span>
+                  <span className="text-sm">Basic family profiles</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500" />
