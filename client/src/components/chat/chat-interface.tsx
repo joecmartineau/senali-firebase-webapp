@@ -114,7 +114,7 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
         // Free user reached trial limit
         const subscriptionPromptMessage: Message = {
           id: `subscription-prompt-${Date.now()}`,
-          content: `I'd love to keep chatting with you, but you've used all 25 of your trial messages! I hope I've been helpful so far. To continue our conversation, would you like to upgrade to premium for $14.99/month? You'll get 1,000 credits per month, unlimited child profiles, and priority support. What do you think?`,
+          content: `I'd love to keep chatting with you, but you've used all 25 of your trial messages! I hope I've been helpful so far. To continue our conversation, would you like to upgrade to premium for $7.99/month? You'll get 1,000 credits per month, unlimited child profiles, and priority support. What do you think?`,
           role: 'assistant',
           timestamp: new Date(),
           userId: 'user-1'

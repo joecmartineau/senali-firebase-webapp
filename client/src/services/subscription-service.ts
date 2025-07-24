@@ -261,14 +261,14 @@ export const SUBSCRIPTION_LIMITS = {
     advancedTips: true
   },
   
-  // Pricing structure
+  // Pricing structure - optimized for $5 average profit per user
   pricing: {
-    monthlySubscription: 14.99,
-    yearlySubscription: 149.99, // 2 months free
+    monthlySubscription: 7.99,
+    yearlySubscription: 79.99, // 2 months free
     creditPacks: {
-      small: { credits: 500, price: 9.99 },
-      medium: { credits: 1000, price: 17.99 },
-      large: { credits: 2500, price: 39.99 }
+      small: { credits: 500, price: 6.99 },
+      medium: { credits: 1000, price: 12.99 },
+      large: { credits: 2500, price: 29.99 }
     }
   }
 };

@@ -128,12 +128,12 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
               </CardContent>
               <CardFooter className="flex flex-col gap-2">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-xl font-bold">$9.99</span>
+                  <span className="text-xl font-bold">$7.99</span>
                   <span className="text-gray-600 dark:text-gray-400">/month</span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-lg font-semibold text-green-600">$99.99</span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">/year (17% off)</span>
+                  <span className="text-lg font-semibold text-green-600">$79.99</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">/year (2 months free)</span>
                 </div>
               </CardFooter>
             </Card>
@@ -158,7 +158,7 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
                 disabled={loading}
                 className="w-full"
               >
-                {loading ? 'Processing...' : 'Subscribe Monthly - $9.99'}
+                {loading ? 'Processing...' : 'Subscribe Monthly - $7.99'}
               </Button>
               <Button 
                 size="lg"
@@ -166,7 +166,7 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
               >
-                {loading ? 'Processing...' : 'Subscribe Yearly - $99.99'}
+                {loading ? 'Processing...' : 'Subscribe Yearly - $79.99'}
               </Button>
             </div>
 
