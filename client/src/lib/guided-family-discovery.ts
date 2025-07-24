@@ -138,11 +138,14 @@ export const extractFamilyMembers = (message: string): Array<{
     /make (?:a )?profile for (\w+)/gi
   ];
 
-  // Child patterns
+  // Child patterns - Enhanced to catch more variations
   const childPatterns = [
-    /my (?:son|daughter|child|kid|boy|girl) (?:is )?(\w+)(?:.*?(?:is |'s |, )?(\d+))?/gi,
+    /my (?:son|daughter|child|kid|boy|girl|kids|children) (?:is |are )?(?:named )?(\w+)(?:.*?(?:is |'s |, )?(\d+))?/gi,
     /(\w+) is my (?:son|daughter|child|kid|boy|girl)(?:.*?(?:is |'s |, )?(\d+))?/gi,
-    /(\w+)(?:,)? (?:who is |is )?(\d+) years? old/gi
+    /(\w+)(?:,)? (?:who is |is )?(\d+) years? old/gi,
+    /(\w+) (?:who is |is )?(\d+)/gi, // Simple "Sam is 12" or "Sam who is 12"
+    /my kids are (\w+)(?:.*?(\d+))?/gi, // "my kids are Sam and Noah"
+    /(?:my )?(?:kids|children) (?:are |named )?(\w+)/gi // "kids are Sam" or "children named Sam"
   ];
 
   // Spouse patterns
@@ -170,7 +173,7 @@ export const extractFamilyMembers = (message: string): Array<{
     }
   }
 
-  // Extract children
+  // Extract children - Enhanced logic for multiple kids in one message
   for (const pattern of childPatterns) {
     let match;
     while ((match = pattern.exec(message)) !== null) {
@@ -178,6 +181,32 @@ export const extractFamilyMembers = (message: string): Array<{
       const age = match[2] ? parseInt(match[2]) : undefined;
       if (name && name.length > 2) {
         members.push({ name, age, relationship: 'child' });
+      }
+    }
+  }
+
+  // Special case: Multiple children mentioned together like "Sam and Noah" or "Emma, Jake and Lucy"
+  const multipleChildPattern = /(?:my )?(?:kids|children) (?:are |named )?(?:called )?([^.!?]+)/gi;
+  let multiMatch;
+  while ((multiMatch = multipleChildPattern.exec(message)) !== null) {
+    const namesText = multiMatch[1];
+    // Extract individual names from "Sam who is 12 and Noah who is 5" format
+    const nameAgeMatches = namesText.match(/(\w+)(?:\s+who\s+is\s+(\d+))?/gi);
+    if (nameAgeMatches) {
+      // Filter out common words that aren't names
+      const skipWords = ['and', 'or', 'also', 'but', 'the', 'are', 'is', 'who', 'old', 'years', 'year'];
+      
+      for (const nameAge of nameAgeMatches) {
+        const nameAgeMatch = nameAge.match(/(\w+)(?:\s+who\s+is\s+(\d+))?/i);
+        if (nameAgeMatch && nameAgeMatch[1] && nameAgeMatch[1].length > 2) {
+          const name = nameAgeMatch[1];
+          const age = nameAgeMatch[2] ? parseInt(nameAgeMatch[2]) : undefined;
+          
+          // Skip common words and duplicates
+          if (!skipWords.includes(name.toLowerCase()) && !members.some(m => m.name === name)) {
+            members.push({ name, age, relationship: 'child' });
+          }
+        }
       }
     }
   }

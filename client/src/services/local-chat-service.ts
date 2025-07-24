@@ -79,8 +79,11 @@ export class LocalChatService {
     // Extract and create family members from current message (only if in first 10 messages or explicit request)
     let newMembersCount = 0;
     if (messageCount <= 10) {
+      console.log(`🔍 Extracting family members from: "${content}"`);
       const newMembers = extractFamilyMembers(content);
       newMembersCount = newMembers.length;
+      console.log(`🔍 Extraction results:`, newMembers);
+      
       for (const member of newMembers) {
         await this.createFamilyProfile(member.name, member.age, member.relationship);
         console.log(`👶 Auto-created profile for ${member.name} (${member.relationship}) in discovery phase`);
