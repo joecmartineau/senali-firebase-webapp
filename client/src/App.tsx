@@ -171,20 +171,35 @@ function SenaliApp() {
 
   // Authenticated user view
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl mb-4">Welcome, {user.email}!</h1>
-          <p className="text-gray-300 mb-6">You are successfully signed in.</p>
-          <Button 
-            onClick={onSignOut}
-            className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded"
-          >
-            Sign Out
-          </Button>
-        </div>
-      </div>
-    </div>
+    <Router>
+      <Switch>
+        <Route path="/family-setup">
+          <FamilySetup />
+        </Route>
+        <Route path="/family-profiles">
+          <FamilyProfiles user={user} />
+        </Route>
+        <Route path="/questionnaires">
+          <Questionnaires />
+        </Route>
+        <Route path="/assessment/:profileId">
+          {(params) => <Questionnaires profileId={params.profileId} />}
+        </Route>
+        <Route path="/admin">
+          <AdminPanel />
+        </Route>
+        <Route path="/chat">
+          <ChatInterface user={user} onSignOut={onSignOut} />
+        </Route>
+        <Route path="/">
+          {hasProfiles ? (
+            <ChatInterface user={user} onSignOut={onSignOut} />
+          ) : (
+            <FamilySetup />
+          )}
+        </Route>
+      </Switch>
+    </Router>
   );
 }
 
