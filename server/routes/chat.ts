@@ -48,38 +48,46 @@ Remember: You're here to listen, understand, and gently help people talk about t
 
 router.post('/', async (req, res) => {
   try {
-    const { message, childContext = '', recentContext = [], userId, isPremium = false } = req.body;
+    const { 
+      message, 
+      childContext = '', 
+      recentContext = [], 
+      systemPrompt = '', 
+      messageCount = 0,
+      userId, 
+      isPremium = false 
+    } = req.body;
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    // Note: No authentication or database storage required
-    // All data is managed locally on the client side
+    console.log(`📝 Chat request - Message ${messageCount}, Premium: ${isPremium}`);
     
-    // Child context is passed from client (stored locally for privacy)
-    // Build system prompt with child context
-    const systemPromptWithContext = childContext ? 
-      `${SYSTEM_PROMPT}\n\n**CRITICAL FAMILY CONTEXT - USE EXACT INFORMATION ONLY:**\n${childContext}\n\n**ABSOLUTELY CRITICAL: Use ONLY the exact information shown above. Never guess or make up ages, names, or details. If the context shows specific ages like "Sam is 12" and "Noah is 5", use those EXACT ages. Never say "Sam is 8" or "Noah is 6" or any other made-up information. Only reference what is explicitly provided in the context above.**` : 
-      SYSTEM_PROMPT;
+    // Use guided discovery system prompt if provided, otherwise use default
+    let finalSystemPrompt = systemPrompt || SYSTEM_PROMPT;
+    
+    // Add family context if available
+    if (childContext) {
+      finalSystemPrompt += `\n\n**FAMILY CONTEXT:**\n${childContext}\n\nIMPORTANT: Use ONLY the exact information provided. Never guess ages, names, or details.`;
+    }
 
-    // Use minimal context approach - only recent messages
-    // If AI needs more context, it can ask clarifying questions
+    // Build minimal message context for cost efficiency
     const messages = [
-      { role: 'system', content: systemPromptWithContext },
+      { role: 'system', content: finalSystemPrompt },
       ...recentContext.slice(-3), // Only last 3 messages for immediate context
       { role: 'user', content: message }
     ];
 
-    console.log(`Sending ${recentContext.length} recent messages to OpenAI (efficient context)`);
+    console.log(`Sending ${recentContext.length} recent messages to OpenAI (cost-efficient context)`);
     
     // Debug log the system prompt being sent to OpenAI
     if (childContext) {
-      console.log('🎯 System prompt includes family context:', systemPromptWithContext.substring(systemPromptWithContext.length - 200));
+      console.log('🎯 System prompt includes family context:', finalSystemPrompt.substring(finalSystemPrompt.length - 200));
     }
 
-    // Use GPT-3.5-turbo for all users (cost-effective for sustainable business model)
-    const model = 'gpt-3.5-turbo';
+    // Select model based on premium status for cost efficiency
+    const model = isPremium ? 'gpt-4o' : 'gpt-3.5-turbo';
     console.log(`Sending chat request to OpenAI using ${model}...`);
     
     const completion = await openai.chat.completions.create({

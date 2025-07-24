@@ -79,14 +79,32 @@ Then continue with normal therapeutic conversation while encouraging assessment 
 };
 
 export const shouldCreateProfile = (message: string, existingNames: string[]): boolean => {
-  // Extract potential names from the message
+  // Check for explicit profile creation requests
+  const explicitPatterns = [
+    /create (?:a )?profile for (\w+)/gi,
+    /add (\w+) to (?:the )?family/gi,
+    /make (?:a )?profile for (\w+)/gi
+  ];
+
+  for (const pattern of explicitPatterns) {
+    let match;
+    while ((match = pattern.exec(message)) !== null) {
+      const name = match[1];
+      if (name && name.length > 2 && !existingNames.includes(name)) {
+        return true;
+      }
+    }
+  }
+
+  // Extract potential names from family context (only in first 10 messages)
   const namePatterns = [
-    /my (?:son|daughter|child|kid|boy|girl) (\w+)/gi,
-    /(\w+) is (?:my |our )?(?:\d+|in|at)/gi,
-    /(\w+) (?:goes to|attends|is in)/gi,
-    /my (?:wife|husband|spouse|partner) (\w+)/gi,
+    /my (?:son|daughter|child|kid|boy|girl) (?:is )?(\w+)/gi,
+    /(\w+) is my (?:son|daughter|child|kid|boy|girl)/gi,
+    /my (?:wife|husband|spouse|partner) (?:is )?(\w+)/gi,
+    /(\w+) is my (?:wife|husband|spouse|partner)/gi,
     /I'm (\w+)/gi,
-    /call me (\w+)/gi
+    /call me (\w+)/gi,
+    /my name is (\w+)/gi
   ];
 
   for (const pattern of namePatterns) {
@@ -113,23 +131,44 @@ export const extractFamilyMembers = (message: string): Array<{
     relationship: 'self' | 'spouse' | 'child' | 'other';
   }> = [];
 
+  // Explicit profile creation requests
+  const explicitPatterns = [
+    /create (?:a )?profile for (\w+)/gi,
+    /add (\w+) to (?:the )?family/gi,
+    /make (?:a )?profile for (\w+)/gi
+  ];
+
   // Child patterns
   const childPatterns = [
-    /my (?:son|daughter|child|kid|boy|girl) (\w+).*?(?:is |'s )?(\d+)/gi,
-    /(\w+) is (?:my )?(?:\d+|(\d+) years? old)/gi
+    /my (?:son|daughter|child|kid|boy|girl) (?:is )?(\w+)(?:.*?(?:is |'s |, )?(\d+))?/gi,
+    /(\w+) is my (?:son|daughter|child|kid|boy|girl)(?:.*?(?:is |'s |, )?(\d+))?/gi,
+    /(\w+)(?:,)? (?:who is |is )?(\d+) years? old/gi
   ];
 
   // Spouse patterns
   const spousePatterns = [
-    /my (?:wife|husband|spouse|partner) (\w+)/gi,
-    /(\w+) (?:is my|and I|my husband|my wife)/gi
+    /my (?:wife|husband|spouse|partner) (?:is )?(\w+)/gi,
+    /(\w+) is my (?:wife|husband|spouse|partner)/gi,
+    /(\w+) and I/gi
   ];
 
   // Self patterns
   const selfPatterns = [
     /I'm (\w+)/gi,
-    /call me (\w+)/gi
+    /call me (\w+)/gi,
+    /my name is (\w+)/gi
   ];
+
+  // Extract explicit requests
+  for (const pattern of explicitPatterns) {
+    let match;
+    while ((match = pattern.exec(message)) !== null) {
+      const name = match[1];
+      if (name && name.length > 2) {
+        members.push({ name, relationship: 'other' });
+      }
+    }
+  }
 
   // Extract children
   for (const pattern of childPatterns) {

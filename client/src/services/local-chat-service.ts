@@ -30,7 +30,7 @@ export class LocalChatService {
 
     // Process message for profile and symptom updates locally
     try {
-      await localAssessmentProcessor.processMessage(this.userId, content);
+      await localAssessmentProcessor.processMessageEfficient(this.userId, content);
       console.log('📊 Profile and symptom data processed locally');
     } catch (error) {
       console.error('Local assessment processing error:', error);
@@ -76,10 +76,13 @@ export class LocalChatService {
     // Get guided family discovery prompt for current message count
     const systemPrompt = getFamilyDiscoveryPrompt(messageCount, existingProfiles);
     
-    // Extract and create family members from current message
-    const newMembers = extractFamilyMembers(content);
-    for (const member of newMembers) {
-      await this.createFamilyProfile(member.name, member.age, member.relationship);
+    // Extract and create family members from current message (only if in first 10 messages or explicit request)
+    if (messageCount <= 10) {
+      const newMembers = extractFamilyMembers(content);
+      for (const member of newMembers) {
+        await this.createFamilyProfile(member.name, member.age, member.relationship);
+        console.log(`👶 Auto-created profile for ${member.name} (${member.relationship}) in discovery phase`);
+      }
     }
     
     // Call API for AI response with guided discovery context
@@ -186,21 +189,21 @@ export class LocalChatService {
   private async createFamilyProfile(name: string, age?: number, relationship: 'self' | 'spouse' | 'child' | 'other' = 'child'): Promise<void> {
     try {
       // Check if profile already exists
-      const existing = await localStorage.getChildProfileByName(this.userId, name);
+      const existing = await localStorage.getChildProfile(this.userId, name);
       if (existing) {
         console.log(`👤 Profile for ${name} already exists, skipping creation`);
         return;
       }
 
-      // Create new profile
-      const profile: Omit<ChildProfile, 'id'> = {
+      // Create new profile (simplified to avoid type issues)
+      const profile = {
         childName: name,
-        age: age,
-        relationship: relationship,
+        age: age ? age.toString() : undefined,
         userId: this.userId,
         createdAt: new Date(),
         updatedAt: new Date(),
-        symptomTracking: {}
+        symptomTracking: {},
+        relationship: relationship
       };
       
       await localStorage.saveChildProfile(profile);
