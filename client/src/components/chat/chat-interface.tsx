@@ -410,7 +410,7 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
       <FamilySidebar
         isOpen={showFamilySidebar}
         onClose={() => setShowFamilySidebar(false)}
-        userId="user-1"
+        userId={user?.uid || user?.id || 'user-1'}
       />
     </div>
   );

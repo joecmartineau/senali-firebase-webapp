@@ -20,8 +20,10 @@ export function FamilySidebar({ isOpen, onClose, userId }: FamilySidebarProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadProfiles();
-  }, [userId]);
+    if (isOpen) {
+      loadProfiles();
+    }
+  }, [userId, isOpen]);
 
   const loadProfiles = async () => {
     try {
@@ -75,8 +77,7 @@ export function FamilySidebar({ isOpen, onClose, userId }: FamilySidebarProps) {
         {selectedProfile ? (
           <ProfileQuestionnaire
             profile={selectedProfile}
-            onBack={() => setSelectedProfile(null)}
-            onUpdate={loadProfiles}
+            onClose={() => setSelectedProfile(null)}
           />
         ) : (
           <ScrollArea className="h-full p-4">
@@ -105,12 +106,12 @@ export function FamilySidebar({ isOpen, onClose, userId }: FamilySidebarProps) {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <span className="text-2xl">
-                              {getRelationshipIcon(profile.relationship)}
+                              {getRelationshipIcon(profile.relationshipToUser)}
                             </span>
                             <div>
                               <div className="font-medium">{profile.childName}</div>
                               <div className="text-sm text-muted-foreground capitalize">
-                                {profile.relationship}
+                                {profile.relationshipToUser}
                                 {profile.age && ` • ${profile.age} years old`}
                               </div>
                             </div>

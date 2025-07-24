@@ -268,8 +268,11 @@ class LocalStorage {
   async saveChildProfile(profile: Omit<ChildProfile, 'id' | 'createdAt' | 'updatedAt'>): Promise<ChildProfile> {
     const db = await this.ensureDB();
     
+    console.log('🔧 saveChildProfile called with:', profile);
+    
     // Check if profile exists
     const existing = await this.getChildProfile(profile.userId, profile.childName);
+    console.log('🔧 Existing profile found:', existing);
     
     if (existing) {
       // Update existing
@@ -301,8 +304,14 @@ class LocalStorage {
         const store = transaction.objectStore('childProfiles');
         const request = store.add(newProfile);
         
-        request.onsuccess = () => resolve(newProfile);
-        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          console.log('🔧 Profile successfully added to IndexedDB:', newProfile);
+          resolve(newProfile);
+        };
+        request.onerror = () => {
+          console.error('🚨 Error adding profile to IndexedDB:', request.error);
+          reject(request.error);
+        };
       });
     }
   }
@@ -327,6 +336,8 @@ class LocalStorage {
   async getChildProfiles(userId: string): Promise<ChildProfile[]> {
     const db = await this.ensureDB();
     
+    console.log('🔧 getChildProfiles called for userId:', userId);
+    
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(['childProfiles'], 'readonly');
       const store = transaction.objectStore('childProfiles');
@@ -337,9 +348,13 @@ class LocalStorage {
         const profiles = request.result.sort((a, b) => 
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
+        console.log('🔧 getChildProfiles result:', profiles);
         resolve(profiles);
       };
-      request.onerror = () => reject(request.error);
+      request.onerror = () => {
+        console.error('🚨 Error getting profiles from IndexedDB:', request.error);
+        reject(request.error);
+      };
     });
   }
 
