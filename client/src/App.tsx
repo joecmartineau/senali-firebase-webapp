@@ -11,36 +11,51 @@ import Questionnaires from "@/pages/questionnaires";
 import { FamilyProfiles } from "@/pages/family-profiles";
 import { AdminPanel } from "@/components/admin/admin-panel";
 import { localStorage } from "@/lib/local-storage";
-// Removed problematic AuthProvider import
+import { auth, googleProvider } from "@/lib/firebase";
+import { signInWithPopup, onAuthStateChanged, signOut, User } from 'firebase/auth';
 
 
 
 function SenaliApp() {
-  // Simple state management
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  // Firebase authentication state
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   
-  // Initialize loading state
+  // Initialize Firebase auth listener
   useEffect(() => {
-    setLoading(false);
+    console.log('Setting up Firebase auth listener...');
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      console.log('Auth state changed:', firebaseUser?.email || 'No user');
+      setUser(firebaseUser);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
   
-  // Simple sign in function
+  // Real Firebase Google sign in
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
-      console.log('Signing in with Google...');
-      // Simulate Firebase auth
-      setTimeout(() => {
-        setUser({ 
-          email: 'test@example.com', 
-          displayName: 'Test User',
-          uid: 'test-uid-123'
-        } as any);
-        setLoading(false);
-      }, 1000);
-    } catch (error) {
-      console.error('Error:', error);
+      console.log('Starting Firebase Google sign-in...');
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('Sign-in successful:', result.user.email);
+    } catch (error: any) {
+      console.error('Firebase sign-in error:', error);
+      
+      // Handle specific Firebase auth errors
+      let errorMessage = 'Sign-in failed. ';
+      if (error.code === 'auth/unauthorized-domain') {
+        errorMessage += 'This domain is not authorized. Please add your domain to Firebase Console.';
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage += 'Popup was blocked. Please allow popups for this site.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage += 'Google sign-in is not enabled in Firebase Console.';
+      } else {
+        errorMessage += error.message;
+      }
+      
+      alert(errorMessage);
       setLoading(false);
     }
   };
@@ -64,8 +79,8 @@ function SenaliApp() {
 
   const onSignOut = async () => {
     try {
-      setUser(null);
-      console.log('User signed out');
+      await signOut(auth);
+      console.log('User signed out successfully');
     } catch (error) {
       console.error('Error signing out:', error);
     }
