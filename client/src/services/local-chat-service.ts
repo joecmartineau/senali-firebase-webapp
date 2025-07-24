@@ -79,11 +79,30 @@ export class LocalChatService {
       }, 100);
     }
 
+    // CRITICAL: Debug family context before sending to API
+    console.log('🔍 PRE-API DEBUG - Family Context Check:');
+    console.log('Family Context Length:', contextPackage.familyContext ? contextPackage.familyContext.length : 0);
+    if (contextPackage.familyContext) {
+      console.log('Family Context Preview:', contextPackage.familyContext.substring(0, 500) + '...');
+      const familyNames = contextPackage.familyContext.match(/\*\*([^*]+)\*\*/g);
+      console.log('Family Names Detected in Context:', familyNames);
+    } else {
+      console.log('❌ NO FAMILY CONTEXT - This is why Senali is hallucinating!');
+      
+      // Emergency fallback - load family context directly
+      const emergencyContext = await localAssessmentProcessor.getChildContext(this.userId);
+      console.log('🚨 Emergency context load:', emergencyContext ? 'SUCCESS' : 'FAILED');
+      if (emergencyContext) {
+        contextPackage.familyContext = emergencyContext;
+        console.log('✅ Using emergency family context');
+      }
+    }
+
     // Call API with enhanced context
     const apiUrl = '/api/chat';
     
     console.log('🌐 Making API call with enhanced context system');
-    console.log('🔍 Context details:', {
+    console.log('🔍 Final context details:', {
       systemPromptLength: systemPrompt.length,
       familyContext: contextPackage.familyContext ? 'INCLUDED' : 'NONE',
       conversationSummaries: contextPackage.conversationSummaries.length,
@@ -98,7 +117,7 @@ export class LocalChatService {
       body: JSON.stringify({
         message: content,
         systemPrompt: systemPrompt, // Enhanced system prompt with full context
-        childContext: contextPackage.familyContext, // Family information
+        childContext: contextPackage.familyContext, // Family information - CRITICAL
         recentContext: contextPackage.recentMessages, // Recent messages only
         messageCount: messageCount,
         userId: this.userId,

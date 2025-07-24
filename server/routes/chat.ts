@@ -67,15 +67,27 @@ router.post('/', async (req, res) => {
     console.log(`📝 Chat request - Message ${messageCount}, Premium: ${isPremium}`);
     console.log(`🔍 Family context received:`, childContext ? 'YES - Length: ' + childContext.length : 'NO CONTEXT PROVIDED');
     
+    // CRITICAL DEBUG: Log the actual family context content
+    if (childContext && childContext.trim().length > 0) {
+      console.log('👨‍👩‍👧‍👦 FAMILY CONTEXT CONTENT PREVIEW:');
+      console.log(childContext.substring(0, 800) + '...');
+      const nameMatches = childContext.match(/\*\*([^*]+)\*\*/g);
+      console.log('🎯 Family names detected in context:', nameMatches || 'NONE FOUND');
+    } else {
+      console.log('🚨 CRITICAL: NO FAMILY CONTEXT - This will cause hallucination!');
+    }
+    
     // Use guided discovery system prompt if provided, otherwise use default
     let finalSystemPrompt = systemPrompt || SYSTEM_PROMPT;
     
     // Add comprehensive family context if available
     if (childContext && childContext.trim().length > 0) {
-      finalSystemPrompt += `\n\n**FAMILY CONTEXT:**\n${childContext}\n\nIMPORTANT: You now have full access to this family information. Use ONLY the exact information provided. Never guess ages, names, or details not specifically mentioned. When referring to family members, use their exact names and details as provided. DO NOT hallucinate or make up family member names that are not in this context.`;
-      console.log(`✅ Added family context to system prompt. Context preview: ${childContext.substring(0, 200)}...`);
+      finalSystemPrompt += `\n\n**CRITICAL FAMILY INFORMATION - USE THESE EXACT NAMES:**\n${childContext}\n\n**STRICT INSTRUCTIONS:**\n- These family members are REAL and already known to you\n- Use ONLY the exact names provided: Never invent names like "Lily" or other made-up names\n- When referring to family members, use their exact names from the context above\n- Ask specific questions about the family members listed in the context\n- DO NOT hallucinate or make up family member names that are not explicitly listed above\n- If no family context is provided, admit you don't know their family yet`;
+      console.log(`✅ Added STRICT family context to system prompt. Context preview: ${childContext.substring(0, 200)}...`);
+      console.log(`🎯 System prompt now includes family context: ${finalSystemPrompt.includes('CRITICAL FAMILY INFORMATION') ? 'YES' : 'NO'}`);
     } else {
-      console.log(`❌ No family context provided - Senali will not have family information`);
+      finalSystemPrompt += `\n\n**NO FAMILY INFORMATION PROVIDED:**\nYou do not have information about this user's family yet. Do not make up or guess family member names. Ask them to tell you about their family members.`;
+      console.log(`❌ No family context provided - Added explicit no-context instruction`);
     }
 
     // Build minimal message context for cost efficiency

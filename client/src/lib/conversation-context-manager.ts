@@ -26,14 +26,35 @@ class ConversationContextManager {
    * Get comprehensive context package for AI - includes family + conversation context
    */
   async getContextPackage(userId: string, messageCount: number): Promise<ContextPackage> {
-    // Always get family context
+    console.log(`📦 Creating context package for message ${messageCount}`);
+    
+    // Get family context with detailed debugging
     const familyContext = await localAssessmentProcessor.getChildContext(userId);
+    console.log(`👨‍👩‍👧‍👦 Family context loaded:`, familyContext ? `${familyContext.length} chars` : 'None');
+    
+    if (familyContext) {
+      console.log('🔍 CONTEXT MANAGER - Family context preview:', familyContext.substring(0, 300) + '...');
+      const familyNames = familyContext.match(/\*\*([^*]+)\*\*/g);
+      console.log('🎯 CONTEXT MANAGER - Family names found:', familyNames || 'NONE');
+    } else {
+      console.log('🚨 CONTEXT MANAGER - NO FAMILY CONTEXT! This is the root problem.');
+      
+      // Debug: Check if profiles exist but context loading failed
+      const allProfiles = await localStorage.getChildProfiles(userId);
+      console.log('🔍 DEBUG - Direct profile check:', allProfiles.length, 'profiles found');
+      if (allProfiles.length > 0) {
+        console.log('🔍 DEBUG - Profile names:', allProfiles.map(p => p.childName).join(', '));
+        console.log('🚨 CRITICAL: Profiles exist but context is empty - localAssessmentProcessor.getChildContext() is broken!');
+      }
+    }
     
     // Get recent messages (last 3 for immediate context)
     const recentMessages = await localStorage.getRecentMessages(userId, 3);
+    console.log(`💬 Loaded ${recentMessages.length} recent messages`);
     
     // Get conversation summaries for broader context
     const conversationSummaries = await this.getActiveSummaries(userId);
+    console.log(`📚 Loaded ${conversationSummaries.length} conversation summaries`);
     
     return {
       familyContext,
