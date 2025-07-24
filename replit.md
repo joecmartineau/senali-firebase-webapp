@@ -7,7 +7,7 @@ Senali is an AI-powered companion designed to act as both a therapist and a frie
 ## User Preferences
 
 ```
-Preferred communication style: Simple, everyday language.
+Preferred communication style: Simple, everyday language at 7th grade reading level.
 ```
 
 ## System Architecture
