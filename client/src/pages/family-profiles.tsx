@@ -146,32 +146,33 @@ export function FamilyProfiles({ user }: FamilyProfilesProps) {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            <Link href="/chat">
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Link to="/chat">
               <Button variant="outline" size="sm" className="flex-shrink-0">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Chat
               </Button>
             </Link>
-            <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
-                <Users className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3 text-emerald-600" />
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
                 Family Profiles
               </h1>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 Manage your family member information and details
               </p>
             </div>
           </div>
-          
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-            <DialogTrigger asChild>
-              <Button className="bg-emerald-600 hover:bg-emerald-700 whitespace-nowrap">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Family Member
-              </Button>
-            </DialogTrigger>
+          <div className="flex justify-center sm:justify-end">
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogTrigger asChild>
+                <Button className="bg-emerald-600 hover:bg-emerald-700 whitespace-nowrap">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Family Member
+                </Button>
+              </DialogTrigger>
+
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New Family Member</DialogTitle>
@@ -267,7 +268,8 @@ export function FamilyProfiles({ user }: FamilyProfilesProps) {
                 </div>
               </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         {/* Family Profiles Grid */}

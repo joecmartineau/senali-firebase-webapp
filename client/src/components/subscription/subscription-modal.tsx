@@ -93,47 +93,47 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
               </CardFooter>
             </Card>
 
-            <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+            <Card className="border-green-400 bg-gray-900 dark:bg-gray-800">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Crown className="w-5 h-5 text-green-600" />
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Crown className="w-5 h-5 text-green-400" />
                   Premium Plan
-                  <Badge className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                  <Badge className="bg-green-600 text-white">
                     Most Popular
                   </Badge>
                 </CardTitle>
-                <CardDescription>For families who want the full experience</CardDescription>
+                <CardDescription className="text-gray-300">For families who want the full experience</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span className="text-sm">1,000 credits per month</span>
+                  <CheckCircle className="w-4 h-4 text-green-400" />
+                  <span className="text-sm text-white">1,000 credits per month</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-green-500" />
-                  <span className="text-sm">Unlimited child profiles</span>
+                  <Users className="w-4 h-4 text-green-400" />
+                  <span className="text-sm text-white">Unlimited child profiles</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Download className="w-4 h-4 text-green-500" />
-                  <span className="text-sm">Export your family data</span>
+                  <Download className="w-4 h-4 text-green-400" />
+                  <span className="text-sm text-white">Export your family data</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-green-500" />
-                  <span className="text-sm">Advanced parenting insights</span>
+                  <Zap className="w-4 h-4 text-green-400" />
+                  <span className="text-sm text-white">Advanced parenting insights</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-green-500" />
-                  <span className="text-sm">Priority support</span>
+                  <Shield className="w-4 h-4 text-green-400" />
+                  <span className="text-sm text-white">Priority support</span>
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col gap-2">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-xl font-bold">$7.99</span>
-                  <span className="text-gray-600 dark:text-gray-400">/month</span>
+                  <span className="text-xl font-bold text-white">$7.99</span>
+                  <span className="text-gray-300">/month</span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-lg font-semibold text-green-600">$79.99</span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">/year (2 months free)</span>
+                  <span className="text-lg font-semibold text-green-400">$79.99</span>
+                  <span className="text-sm text-gray-300">/year (2 months free)</span>
                 </div>
               </CardFooter>
             </Card>
