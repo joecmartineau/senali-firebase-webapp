@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import OpenAI from 'openai';
+import { assessmentProcessor } from '../services/assessment-processor';
 
 const router = Router();
 
@@ -47,9 +48,21 @@ Keep responses helpful, warm, professional, and focused on empowering parents wi
 router.post('/chat', async (req, res) => {
   try {
     const { message, history = [] } = req.body;
+    const userId = (req.user as any)?.id; // Get user ID from session
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Process message for assessment information (background task)
+    if (userId) {
+      try {
+        await assessmentProcessor.processMessage(userId, message);
+        console.log('📊 Assessment data processed for user:', userId);
+      } catch (error) {
+        console.error('Assessment processing error:', error);
+        // Don't fail the chat if assessment processing fails
+      }
     }
 
     // Prepare conversation history for OpenAI

@@ -2,13 +2,15 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import chatRoutes from "./routes/chat";
+import assessmentRoutes from "./routes/assessments";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add chat API route
+// Add API routes
 app.use('/api', chatRoutes);
+app.use('/api/assessments', assessmentRoutes);
 
 app.use((req, res, next) => {
   const start = Date.now();
