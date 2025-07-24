@@ -264,6 +264,19 @@ class LocalStorage {
     });
   }
 
+  async deleteChildProfile(profileId: string): Promise<void> {
+    const db = await this.ensureDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['childProfiles'], 'readwrite');
+      const store = transaction.objectStore('childProfiles');
+      const request = store.delete(profileId);
+      
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   // Symptom checklist methods
   async saveSymptomChecklist(symptoms: Omit<SymptomChecklist, 'id' | 'lastUpdated'>): Promise<SymptomChecklist> {
     const db = await this.ensureDB();

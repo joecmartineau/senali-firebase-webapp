@@ -1,5 +1,6 @@
 import { localStorage } from '../lib/local-storage';
 import { localAssessmentProcessor } from '../lib/local-assessment-processor';
+import { clearWrongProfiles } from '../lib/clear-wrong-profiles';
 import type { Message } from '../lib/local-storage';
 
 export class LocalChatService {
@@ -7,6 +8,9 @@ export class LocalChatService {
 
   async init(): Promise<void> {
     await localStorage.init();
+    
+    // Clean up any incorrectly detected profiles on startup
+    await clearWrongProfiles(this.userId);
   }
 
   async sendMessage(content: string): Promise<{ userMessage: Message; aiResponse: Message }> {

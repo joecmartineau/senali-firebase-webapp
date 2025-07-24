@@ -8,21 +8,22 @@ export class LocalAssessmentProcessor {
     const childNames: string[] = [];
     const adultNames: string[] = [];
     
-    // Enhanced patterns for child names - aggressive detection
+    // Enhanced patterns for child names - more precise detection
     const childPatterns = [
-      // Direct child references
+      // Direct child references with names
       /(?:my (?:son|daughter|child|kid|baby|toddler|boy|girl))\s+([A-Z][a-z]+)/gi,
       /(?:my (?:sons?|daughters?|children|kids))\s+(?:are\s+)?([A-Z][a-z]+)/gi,
-      /(?:my (?:kids?'?|children'?s?)) names? (?:are|is)?\s*([A-Z][a-z]+)/gi,
       
-      // Name patterns with actions/descriptions
+      // Name patterns with actions/descriptions (but not generic words)
       /([A-Z][a-z]+)\s+(?:is|was|has|does|can't|won't|will|would|should|could|loves|likes|hates|enjoys|struggles|needs|goes|attends|started|finished)/gi,
       
-      // Question patterns
-      /(?:what are my kids? names?|what are my child(?:ren)?'?s? names?)/gi,
+      // Explicit name statements
+      /(?:his|her|their) name is ([A-Z][a-z]+)/gi,
+      /(?:called|named)\s+([A-Z][a-z]+)/gi,
+      /([A-Z][a-z]+) is (?:my|our) (?:son|daughter|child|kid)/gi,
       
-      // Simple name mentions in context
-      /\b([A-Z][a-z]{2,})\b/g  // Any capitalized word 3+ letters
+      // When correcting or clarifying names
+      /(?:not|isn't)\s+([A-Z][a-z]+)[.,]\s+(?:it|his name|her name) is ([A-Z][a-z]+)/gi
     ];
     
     // Patterns for adult names (parents, spouses)
@@ -40,14 +41,16 @@ export class LocalAssessmentProcessor {
       while ((match = regex.exec(message)) !== null) {
         const name = match[1];
         if (name && name.length > 2 && !childNames.includes(name)) {
-          // Comprehensive filter for non-names
+          // Comprehensive filter for non-names - including common question words
           const nonNames = [
             // Pronouns and common words
             'He', 'She', 'They', 'This', 'That', 'Then', 'When', 'Where', 'What', 'How', 'Why', 'The', 'And', 'But', 'Or', 'So', 'If', 'As', 'To', 'At', 'In', 'On', 'Up', 'By', 'For', 'From', 'With', 'About', 'Over', 'Under', 'Through', 'During', 'Before', 'After', 'Above', 'Below', 'Between', 'Among', 'Against', 'Across', 'Behind', 'Beyond', 'Beside', 'Near', 'Around', 'Inside', 'Outside', 'Without', 'Within', 'Upon', 'Since', 'Until', 'While', 'Although', 'Because', 'Unless', 'Whether', 'Though', 'Whereas', 'However', 'Therefore', 'Moreover', 'Furthermore', 'Nevertheless', 'Nonetheless', 'Consequently', 'Otherwise', 'Meanwhile', 'Similarly', 'Likewise', 'Instead', 'Rather', 'Indeed', 'Actually', 'Really', 'Quite', 'Very', 'Too', 'Also', 'Even', 'Just', 'Only', 'Still', 'Yet', 'Already', 'Soon', 'Now', 'Then', 'Here', 'There', 'Everywhere', 'Anywhere', 'Somewhere', 'Nowhere',
             // App/tech terms
             'Senali', 'Chat', 'Message', 'App', 'Screen', 'Phone', 'Browser', 'Website', 'Internet', 'Premium', 'Free', 'Trial', 'Subscribe', 'Upgrade',
             // Common verbs/adjectives that get capitalized
-            'Are', 'Were', 'Been', 'Being', 'Have', 'Has', 'Had', 'Will', 'Would', 'Could', 'Should', 'Must', 'Might', 'May', 'Can', 'Cannot', 'Does', 'Did', 'Done', 'Make', 'Made', 'Take', 'Took', 'Give', 'Gave', 'Get', 'Got', 'Come', 'Came', 'Go', 'Went', 'See', 'Saw', 'Know', 'Knew', 'Think', 'Thought', 'Feel', 'Felt', 'Look', 'Looked', 'Want', 'Wanted', 'Need', 'Needed', 'Help', 'Helped', 'Try', 'Tried', 'Work', 'Worked', 'Play', 'Played', 'Live', 'Lived', 'Love', 'Loved', 'Like', 'Liked', 'Hate', 'Hated', 'Hope', 'Hoped', 'Wish', 'Wished', 'Good', 'Bad', 'Great', 'Best', 'Worst', 'Better', 'Worse', 'Big', 'Small', 'Large', 'Little', 'Old', 'New', 'Young', 'Happy', 'Sad', 'Angry', 'Mad', 'Glad', 'Nice', 'Mean', 'Kind', 'Smart', 'Dumb', 'Funny', 'Silly', 'Cute', 'Pretty', 'Ugly', 'Fast', 'Slow', 'Easy', 'Hard', 'Difficult', 'Simple', 'Right', 'Wrong', 'True', 'False'
+            'Are', 'Were', 'Been', 'Being', 'Have', 'Has', 'Had', 'Will', 'Would', 'Could', 'Should', 'Must', 'Might', 'May', 'Can', 'Cannot', 'Does', 'Did', 'Done', 'Make', 'Made', 'Take', 'Took', 'Give', 'Gave', 'Get', 'Got', 'Come', 'Came', 'Go', 'Went', 'See', 'Saw', 'Know', 'Knew', 'Think', 'Thought', 'Feel', 'Felt', 'Look', 'Looked', 'Want', 'Wanted', 'Need', 'Needed', 'Help', 'Helped', 'Try', 'Tried', 'Work', 'Worked', 'Play', 'Played', 'Live', 'Lived', 'Love', 'Loved', 'Like', 'Liked', 'Hate', 'Hated', 'Hope', 'Hoped', 'Wish', 'Wished', 'Good', 'Bad', 'Great', 'Best', 'Worst', 'Better', 'Worse', 'Big', 'Small', 'Large', 'Little', 'Old', 'New', 'Young', 'Happy', 'Sad', 'Angry', 'Mad', 'Glad', 'Nice', 'Mean', 'Kind', 'Smart', 'Dumb', 'Funny', 'Silly', 'Cute', 'Pretty', 'Ugly', 'Fast', 'Slow', 'Easy', 'Hard', 'Difficult', 'Simple', 'Right', 'Wrong', 'True', 'False',
+            // CRITICAL: Words commonly used in questions about names
+            'Name', 'Names', 'Called', 'Call', 'Known', 'Calling', 'Title', 'Titled'
           ];
           
           if (!nonNames.includes(name)) {
