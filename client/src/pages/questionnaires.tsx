@@ -8,7 +8,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { useLocation } from 'wouter';
 import { ProfileQuestionnaire } from '@/components/profile-questionnaire';
 
-export default function Questionnaires() {
+interface QuestionnairesProps {
+  profileId?: string;
+}
+
+export default function Questionnaires({ profileId }: QuestionnairesProps) {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [profiles, setProfiles] = useState<ChildProfile[]>([]);
@@ -17,7 +21,7 @@ export default function Questionnaires() {
 
   useEffect(() => {
     loadProfiles();
-  }, [user]);
+  }, [user, profileId]);
 
   const loadProfiles = async () => {
     if (!user?.uid) return;
@@ -30,6 +34,14 @@ export default function Questionnaires() {
         // No family members, redirect to setup
         setLocation('/family-setup');
         return;
+      }
+      
+      // If a specific profileId is provided, auto-select that profile
+      if (profileId) {
+        const targetProfile = familyProfiles.find(p => p.id === profileId);
+        if (targetProfile) {
+          setSelectedProfile(targetProfile);
+        }
       }
     } catch (error) {
       console.error('Error loading profiles:', error);
@@ -85,18 +97,19 @@ export default function Questionnaires() {
 
   if (selectedProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="p-4">
-          <Button variant="ghost" onClick={goBack} className="mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Family List
-          </Button>
-        </div>
-        <ProfileQuestionnaire
-          profile={selectedProfile}
-          onClose={() => setSelectedProfile(null)}
-        />
-      </div>
+      <ProfileQuestionnaire 
+        profile={selectedProfile}
+        onComplete={handleProfileUpdate}
+        onBack={() => {
+          if (profileId) {
+            // If came from specific profile link, go back to family profiles
+            setLocation('/family-profiles');
+          } else {
+            // Otherwise, go back to questionnaire selection
+            setSelectedProfile(null);
+          }
+        }}
+      />
     );
   }
 

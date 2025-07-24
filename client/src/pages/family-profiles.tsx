@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Users, Plus, Edit, Trash2, Save, X, ArrowLeft } from "lucide-react";
+import { Users, Plus, Edit, Trash2, Save, X, ArrowLeft, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { localStorage } from "@/lib/local-storage";
 import type { ChildProfile } from "@/lib/local-storage";
@@ -306,9 +306,19 @@ export function FamilyProfiles({ user }: FamilyProfilesProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => setEditingProfile(profile)}
+                        title="Edit Profile"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
+                      <Link to={`/assessment/${profile.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="Complete Questionnaires"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </Button>
+                      </Link>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
@@ -359,6 +369,15 @@ export function FamilyProfiles({ user }: FamilyProfilesProps) {
                       <span className="font-medium">Diagnoses:</span> {profile.existingDiagnoses.join(', ')}
                     </p>
                   )}
+                  
+                  <div className="pt-2 border-t">
+                    <Link to={`/assessment/${profile.id}`}>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <FileText className="w-4 h-4 mr-2" />
+                        Complete Questionnaires
+                      </Button>
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
             ))}

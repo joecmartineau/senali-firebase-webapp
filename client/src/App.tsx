@@ -269,6 +269,9 @@ function AuthenticatedApp({ user, onSignOut }: { user: any; onSignOut: () => voi
       <Route path="/questionnaires">
         <Questionnaires />
       </Route>
+      <Route path="/assessment/:profileId">
+        {(params) => <Questionnaires profileId={params.profileId} />}
+      </Route>
       <Route path="/chat">
         <ChatInterface user={user} onSignOut={onSignOut} />
       </Route>
