@@ -300,6 +300,7 @@ export class LocalAssessmentProcessor {
     }
     
     if (Object.keys(updates).length > 0) {
+      console.log(`📝 Updating profile for ${childName}:`, updates);
       await this.updateChildProfile(userId, childName, updates);
     }
   }
@@ -437,6 +438,7 @@ export class LocalAssessmentProcessor {
       if (profile.height) context += `   Height: ${profile.height}\n`;
       if (profile.gender && profile.gender !== 'prefer_not_to_say') context += `   Gender: ${profile.gender}\n`;
       if (profile.workInfo) context += `   Work: ${profile.workInfo}\n`;
+      if (profile.medicalDiagnoses) context += `   Medical: ${profile.medicalDiagnoses}\n`;
       
       if (profile.existingDiagnoses && profile.existingDiagnoses.length > 0) {
         context += `   Diagnosed conditions: ${profile.existingDiagnoses.join(', ')}\n`;
