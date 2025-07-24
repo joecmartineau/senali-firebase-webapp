@@ -259,18 +259,19 @@ export class AssessmentProcessor {
     const lowerMessage = message.toLowerCase();
     const updates: any = {};
     
-    // Extract age information
-    const ageMatch = message.match(new RegExp(`${childName}.*?(\\d+)\\s*(?:years?\\s*old|year-old)`, 'i')) ||
-                     message.match(/(\d+)\s*(?:years?\s*old|year-old)/i);
+    // Extract age information - ONLY from explicit age statements
+    const ageMatch = message.match(new RegExp(`${childName}.*?is\\s*(\\d+)\\s*(?:years?\\s*old)`, 'i')) ||
+                     message.match(/(?:he|she) is (\d+)\s*(?:years?\s*old)/i) ||
+                     message.match(/(\d+)\s*year-old/i);
     if (ageMatch) {
-      updates.age = ageMatch[1];
+      updates.age = parseInt(ageMatch[1]);
       console.log(`📝 Age extracted: ${updates.age}`);
     }
     
-    // Extract gender information
-    if (lowerMessage.includes('my son') || lowerMessage.includes('he ') || lowerMessage.includes('his ')) {
+    // Extract gender information - ONLY from explicit parent statements
+    if (lowerMessage.includes('my son') && lowerMessage.includes(childName.toLowerCase())) {
       updates.gender = 'male';
-    } else if (lowerMessage.includes('my daughter') || lowerMessage.includes('she ') || lowerMessage.includes('her ')) {
+    } else if (lowerMessage.includes('my daughter') && lowerMessage.includes(childName.toLowerCase())) {
       updates.gender = 'female';
     }
     
@@ -293,21 +294,22 @@ export class AssessmentProcessor {
       console.log(`📝 Diagnoses extracted: ${diagnoses.join(', ')}`);
     }
     
-    // Extract challenges
+    // Extract challenges - ONLY from explicit parent statements about difficulties
     const challenges = [];
-    if (lowerMessage.includes('trouble focusing') || lowerMessage.includes('can\'t focus') || lowerMessage.includes('attention')) {
-      challenges.push('attention and focus');
+    if (lowerMessage.includes('has trouble focusing') || lowerMessage.includes('can\'t focus') || lowerMessage.includes('struggles with attention')) {
+      challenges.push('attention and focus difficulties');
     }
-    if (lowerMessage.includes('social') && (lowerMessage.includes('difficult') || lowerMessage.includes('struggle'))) {
-      challenges.push('social skills');
+    if (lowerMessage.includes('social') && (lowerMessage.includes('difficult') || lowerMessage.includes('struggle') || lowerMessage.includes('hard time'))) {
+      challenges.push('social interaction challenges');
     }
-    if (lowerMessage.includes('sensory') || lowerMessage.includes('noise') || lowerMessage.includes('texture')) {
-      challenges.push('sensory processing');
+    if ((lowerMessage.includes('sensory') && (lowerMessage.includes('issues') || lowerMessage.includes('problems') || lowerMessage.includes('difficulties'))) ||
+        (lowerMessage.includes('sensitive to') && (lowerMessage.includes('noise') || lowerMessage.includes('texture') || lowerMessage.includes('sounds')))) {
+      challenges.push('sensory processing difficulties');
     }
-    if (lowerMessage.includes('meltdown') || lowerMessage.includes('tantrum')) {
-      challenges.push('emotional regulation');
+    if (lowerMessage.includes('meltdown') || lowerMessage.includes('tantrum') || lowerMessage.includes('emotional outburst')) {
+      challenges.push('emotional regulation challenges');
     }
-    if (lowerMessage.includes('sleep') && (lowerMessage.includes('problem') || lowerMessage.includes('difficult'))) {
+    if (lowerMessage.includes('sleep') && (lowerMessage.includes('problem') || lowerMessage.includes('difficult') || lowerMessage.includes('trouble sleeping'))) {
       challenges.push('sleep difficulties');
     }
     if (challenges.length > 0) {
@@ -315,22 +317,18 @@ export class AssessmentProcessor {
       console.log(`📝 Challenges extracted: ${challenges.join(', ')}`);
     }
     
-    // Extract strengths
+    // Extract strengths - ONLY from explicit statements
     const strengths = [];
-    if (lowerMessage.includes('good at') || lowerMessage.includes('excellent at') || lowerMessage.includes('talented')) {
-      const strengthMatch = message.match(/(?:good at|excellent at|talented in|great with)\s+([^.!?]+)/i);
+    if (lowerMessage.includes('good at') || lowerMessage.includes('excellent at') || lowerMessage.includes('talented') || lowerMessage.includes('great with')) {
+      const strengthMatch = message.match(/(?:good at|excellent at|talented in|great with|excels at)\s+([^.!?]+)/i);
       if (strengthMatch) {
         strengths.push(strengthMatch[1].trim());
       }
     }
-    if (lowerMessage.includes('creative') || lowerMessage.includes('artistic')) {
-      strengths.push('creative and artistic');
-    }
-    if (lowerMessage.includes('smart') || lowerMessage.includes('intelligent') || lowerMessage.includes('bright')) {
-      strengths.push('intellectually gifted');  
-    }
-    if (lowerMessage.includes('kind') || lowerMessage.includes('caring') || lowerMessage.includes('empathetic')) {
-      strengths.push('empathetic and caring');
+    // Only add generic strengths if explicitly stated by parent
+    if ((lowerMessage.includes('he is creative') || lowerMessage.includes('she is creative') || lowerMessage.includes(`${childName} is creative`)) || 
+        (lowerMessage.includes('he is artistic') || lowerMessage.includes('she is artistic') || lowerMessage.includes(`${childName} is artistic`))) {
+      strengths.push('creative and artistic abilities');
     }
     if (strengths.length > 0) {
       updates.currentStrengths = strengths;
@@ -695,7 +693,7 @@ export class AssessmentProcessor {
       context += `\n`;
     });
     
-    context += `Use this information to provide personalized, contextual responses that acknowledge what you already know about each child. Reference their specific challenges, strengths, and circumstances naturally in your advice.`;
+    context += `CRITICAL: This information represents ONLY what parents have explicitly shared about their children in previous conversations. Never add assumptions, typical characteristics, or details not directly provided by the parent. Only reference information that was specifically mentioned by the parent about their child.`;
     
     return context;
   }
