@@ -38,10 +38,9 @@ export class LocalChatService {
     // Only send minimal context - let AI request more if needed
     const recentMessages = await this.getMessageHistory(3); // Just last 3 messages for immediate context
     
-    // Call Firebase Functions API for AI response with minimal context
-    const apiUrl = import.meta.env.PROD 
-      ? 'https://us-central1-senali-235fb.cloudfunctions.net/chat'
-      : '/api/chat';
+    // Call API for AI response with minimal context
+    // For now, always use local dev API since we're still in development
+    const apiUrl = '/api/chat';
     
     console.log('🌐 Making API call to:', apiUrl);
     console.log('📝 Request data:', { message: content, childContext, recentContextLength: recentMessages.length });
@@ -60,6 +59,9 @@ export class LocalChatService {
         })),
         userId: this.userId // Allow server to request more context if needed
       }),
+    }).catch(fetchError => {
+      console.error('🚨 Fetch failed:', fetchError);
+      throw new Error(`Network error: ${fetchError.message}`);
     });
 
     if (!response.ok) {
@@ -69,6 +71,7 @@ export class LocalChatService {
     }
 
     const data = await response.json();
+    console.log('✅ API Response received:', data);
     
     // Save AI response locally
     const aiMessage = await localStorage.saveMessage({
@@ -77,6 +80,8 @@ export class LocalChatService {
       userId: this.userId,
       timestamp: new Date()
     });
+    
+    console.log('💾 AI message saved to local storage');
 
     return {
       userMessage,

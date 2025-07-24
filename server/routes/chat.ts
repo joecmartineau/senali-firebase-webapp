@@ -46,7 +46,7 @@ Begin with a warm greeting that makes them want to share what's on their mind.
 
 Remember: You're here to listen, understand, and gently help people talk about their family and feelings. It's better to ask for clarification than to assume context you don't have.`;
 
-router.post('/chat', async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { message, childContext = '', recentContext = [], userId } = req.body;
 
