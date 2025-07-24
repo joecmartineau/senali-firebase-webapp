@@ -161,6 +161,23 @@ This is a full-stack TypeScript application built with a modern web architecture
   - Natural language extraction from parent conversations
   - Persistent context across conversations - Senali remembers each child's details
   - Professional notes and observations tracking over time
+- **Comprehensive Symptom Checklist System**: Added detailed yes/no/unknown symptom tracking
+  - 60+ standardized symptoms across all major neurodivergent categories
+  - Attention & Focus (9 symptoms) - ADHD inattentive criteria
+  - Hyperactivity & Impulsivity (9 symptoms) - ADHD hyperactive-impulsive criteria
+  - Social Communication (9 symptoms) - Autism social interaction criteria
+  - Restricted Interests & Repetitive Behaviors (7 symptoms) - Autism restricted behaviors
+  - Sensory Processing (8 symptoms) - Common sensory challenges
+  - Emotional Regulation (8 symptoms) - Emotional and behavioral challenges
+  - Database schema with symptomChecklists table for persistent storage
+  - API endpoints for symptom management (/api/children/:childId/symptoms)
+  - Integrated into Senali's context - AI can reference parent-reported symptoms during conversations
+  - Child profile management with symptom data integration
+- **Enhanced AI Context**: Senali now has access to comprehensive symptom profiles
+  - Displays symptom information organized by category during conversations
+  - Shows "Present" and "Not present" symptoms for each category
+  - Professional formatting for easy reference during parenting discussions
+  - Critical safeguards to only reference explicitly parent-provided information
 - **Firebase Hosting Ready**: Configured app for Firebase hosting deployment with stable domains
 - **Domain Stability**: Optimized for Firebase hosting with senali-235fb.firebaseapp.com and senali-235fb.web.app domains
 - **Mobile Optimization**: Enhanced PWA configuration for iOS and Android deployment

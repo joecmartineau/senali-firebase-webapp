@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { childProfiles, adhdAssessments, autismAssessments, oddAssessments } from '@shared/schema';
+import { childProfiles, adhdAssessments, autismAssessments, oddAssessments, symptomChecklists } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 
 // Maps for converting natural language to assessment values
@@ -643,7 +643,7 @@ export class AssessmentProcessor {
     return profiles;
   }
 
-  // Get comprehensive child context for chat
+  // Get comprehensive child context for chat  
   async getChildContext(userId: string): Promise<string> {
     const profiles = await this.getAllChildProfiles(userId);
     
@@ -653,7 +653,8 @@ export class AssessmentProcessor {
     
     let context = `Child Profiles Context:\n\n`;
     
-    profiles.forEach((profile, index) => {
+    for (let index = 0; index < profiles.length; index++) {
+      const profile = profiles[index];
       context += `${index + 1}. ${profile.childName}:\n`;
       
       if (profile.age) context += `   Age: ${profile.age}\n`;
@@ -681,6 +682,8 @@ export class AssessmentProcessor {
       
       if (profile.currentMedications && profile.currentMedications.length > 0) {
         context += `   Medications: ${profile.currentMedications.join(', ')}\n`;
+      } else if (profile.currentMedications && profile.currentMedications.length === 0) {
+        context += `   Medications: None\n`;
       }
       
       if (profile.parentGoals && profile.parentGoals.length > 0) {
@@ -690,12 +693,122 @@ export class AssessmentProcessor {
       if (profile.sensoryNeeds) context += `   Sensory needs: ${profile.sensoryNeeds}\n`;
       if (profile.communicationStyle) context += `   Communication style: ${profile.communicationStyle}\n`;
       
+      // Get symptom checklist data
+      const [symptomData] = await db.select()
+        .from(symptomChecklists)
+        .where(eq(symptomChecklists.childId, profile.id));
+      
+      if (symptomData) {
+        context += `   Symptom Profile (parent-reported):\n`;
+        
+        // Attention & Focus symptoms
+        const attentionSymptoms = this.formatSymptomGroup([
+          { label: 'Difficulty paying attention', value: symptomData.difficultyPayingAttention },
+          { label: 'Easily distracted', value: symptomData.easilyDistracted },
+          { label: 'Difficulty finishing tasks', value: symptomData.difficultyFinishingTasks },
+          { label: 'Forgetful in daily activities', value: symptomData.forgetfulInDailyActivities },
+          { label: 'Loses things frequently', value: symptomData.losesThingsFrequently },
+          { label: 'Avoids tasks requiring mental effort', value: symptomData.avoidsTasksRequiringMentalEffort },
+          { label: 'Difficulty listening when spoken to', value: symptomData.difficultyListeningWhenSpokenTo },
+          { label: 'Difficulty following instructions', value: symptomData.difficultyFollowingInstructions },
+          { label: 'Difficulty organizing tasks', value: symptomData.difficultyOrganizingTasks }
+        ]);
+        if (attentionSymptoms) context += `      Attention/Focus: ${attentionSymptoms}\n`;
+        
+        // Hyperactivity & Impulsivity symptoms  
+        const hyperactivitySymptoms = this.formatSymptomGroup([
+          { label: 'Fidgets or squirms', value: symptomData.fidgetsOrSquirms },
+          { label: 'Difficulty staying seated', value: symptomData.difficultyStayingSeated },
+          { label: 'Excessive running/climbing', value: symptomData.excessiveRunningOrClimbing },
+          { label: 'Difficulty playing quietly', value: symptomData.difficultyPlayingQuietly },
+          { label: 'Talks excessively', value: symptomData.talksExcessively },
+          { label: 'Blurts out answers', value: symptomData.blurtsOutAnswers },
+          { label: 'Difficulty waiting turn', value: symptomData.difficultyWaitingTurn },
+          { label: 'Interrupts or intrudes', value: symptomData.interruptsOrIntrudes },
+          { label: 'Always on the go', value: symptomData.alwaysOnTheGo }
+        ]);
+        if (hyperactivitySymptoms) context += `      Hyperactivity/Impulsivity: ${hyperactivitySymptoms}\n`;
+        
+        // Social Communication symptoms
+        const socialSymptoms = this.formatSymptomGroup([
+          { label: 'Difficulty making eye contact', value: symptomData.difficultyMakingEyeContact },
+          { label: 'Difficulty understanding nonverbal cues', value: symptomData.difficultyUnderstandingNonverbalCues },
+          { label: 'Difficulty making friends', value: symptomData.difficultyMakingFriends },
+          { label: 'Difficulty initiating conversations', value: symptomData.difficultyInitiatingConversations },
+          { label: 'Difficulty understanding social situations', value: symptomData.difficultyUnderstandingSocialSituations },
+          { label: 'Difficulty with back-and-forth conversation', value: symptomData.difficultyWithBackAndForthConversation },
+          { label: 'Difficulty showing emotions', value: symptomData.difficultyShowingEmotions },
+          { label: 'Limited facial expressions', value: symptomData.limitedFacialExpressions },
+          { label: 'Difficulty understanding others emotions', value: symptomData.difficultyUnderstandingOthersEmotions }
+        ]);
+        if (socialSymptoms) context += `      Social Communication: ${socialSymptoms}\n`;
+        
+        // Restricted Interests & Repetitive Behaviors
+        const repetitiveSymptoms = this.formatSymptomGroup([
+          { label: 'Intense focus on specific topics', value: symptomData.intenseFocusOnSpecificTopics },
+          { label: 'Repetitive movements', value: symptomData.repetitiveMovements },
+          { label: 'Insistence on sameness', value: symptomData.insistenceOnSameness },
+          { label: 'Difficulty with changes in routine', value: symptomData.difficultyWithChangesInRoutine },
+          { label: 'Unusual attachment to objects', value: symptomData.unusualAttachmentToObjects },
+          { label: 'Repetitive use of language', value: symptomData.repetitiveUseOfLanguage },
+          { label: 'Preoccupation with parts of objects', value: symptomData.preoccupationWithPartsOfObjects }
+        ]);
+        if (repetitiveSymptoms) context += `      Repetitive Behaviors: ${repetitiveSymptoms}\n`;
+        
+        // Sensory Processing symptoms
+        const sensorySymptoms = this.formatSymptomGroup([
+          { label: 'Oversensitive to sounds', value: symptomData.oversensitiveToSounds },
+          { label: 'Oversensitive to textures', value: symptomData.oversensitiveToTextures },
+          { label: 'Oversensitive to light', value: symptomData.oversensitiveToLight },
+          { label: 'Undersensitive to temperature', value: symptomData.undersensitiveToTemperature },
+          { label: 'Seeks out sensory input', value: symptomData.seeksOutSensoryInput },
+          { label: 'Avoids messy play', value: symptomData.avoidsMessyPlay },
+          { label: 'Difficulty with certain clothing textures', value: symptomData.difficultyWithCertainClothingTextures },
+          { label: 'Unusual reaction to pain', value: symptomData.unusualReactionToPain }
+        ]);
+        if (sensorySymptoms) context += `      Sensory Processing: ${sensorySymptoms}\n`;
+        
+        // Emotional Regulation symptoms
+        const emotionalSymptoms = this.formatSymptomGroup([
+          { label: 'Frequent meltdowns', value: symptomData.frequentMeltdowns },
+          { label: 'Difficulty controlling emotions', value: symptomData.difficultyControllingEmotions },
+          { label: 'Frequent temper tantrums', value: symptomData.frequentTemperTantrums },
+          { label: 'Difficulty with transitions', value: symptomData.difficultyWithTransitions },
+          { label: 'Extreme reactions to disappointment', value: symptomData.extremeReactionsToDisappointment },
+          { label: 'Difficulty calming down when upset', value: symptomData.difficultyCalminDownWhenUpset },
+          { label: 'Mood swings', value: symptomData.moodSwings },
+          { label: 'Anxiety or worrying', value: symptomData.anxietyOrWorrying }
+        ]);
+        if (emotionalSymptoms) context += `      Emotional Regulation: ${emotionalSymptoms}\n`;
+      }
+      
       context += `\n`;
-    });
+    }
     
     context += `CRITICAL: This information represents ONLY what parents have explicitly shared about their children in previous conversations. Never add assumptions, typical characteristics, or details not directly provided by the parent. Only reference information that was specifically mentioned by the parent about their child.`;
     
     return context;
+  }
+  
+  // Helper method to format symptom groups
+  private formatSymptomGroup(symptoms: { label: string; value: string | null }[]): string | null {
+    const presentSymptoms = symptoms.filter(s => s.value === 'yes').map(s => s.label);
+    const absentSymptoms = symptoms.filter(s => s.value === 'no').map(s => s.label);
+    
+    if (presentSymptoms.length === 0 && absentSymptoms.length === 0) {
+      return null; // No data to show
+    }
+    
+    let result = '';
+    if (presentSymptoms.length > 0) {
+      result += `Present: ${presentSymptoms.join(', ')}`;
+    }
+    if (absentSymptoms.length > 0) {
+      if (result) result += '; ';
+      result += `Not present: ${absentSymptoms.join(', ')}`;
+    }
+    
+    return result;
   }
 }
 

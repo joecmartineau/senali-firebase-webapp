@@ -209,6 +209,118 @@ export const oddAssessments = pgTable("odd_assessments", {
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
+// Comprehensive Neurodivergent Symptom Checklist
+export const symptomChecklists = pgTable("symptom_checklists", {
+  id: serial("id").primaryKey(),
+  childId: serial("child_id").notNull().references(() => childProfiles.id),
+  
+  // Attention & Focus Symptoms (ADHD-related)
+  difficultyPayingAttention: varchar("difficulty_paying_attention", { enum: ["yes", "no", "unknown"] }),
+  easilyDistracted: varchar("easily_distracted", { enum: ["yes", "no", "unknown"] }),
+  difficultyFinishingTasks: varchar("difficulty_finishing_tasks", { enum: ["yes", "no", "unknown"] }),
+  forgetfulInDailyActivities: varchar("forgetful_in_daily_activities", { enum: ["yes", "no", "unknown"] }),
+  losesThingsFrequently: varchar("loses_things_frequently", { enum: ["yes", "no", "unknown"] }),
+  avoidsTasksRequiringMentalEffort: varchar("avoids_tasks_requiring_mental_effort", { enum: ["yes", "no", "unknown"] }),
+  difficultyListeningWhenSpokenTo: varchar("difficulty_listening_when_spoken_to", { enum: ["yes", "no", "unknown"] }),
+  difficultyFollowingInstructions: varchar("difficulty_following_instructions", { enum: ["yes", "no", "unknown"] }),
+  difficultyOrganizingTasks: varchar("difficulty_organizing_tasks", { enum: ["yes", "no", "unknown"] }),
+  
+  // Hyperactivity & Impulsivity Symptoms
+  fidgetsOrSquirms: varchar("fidgets_or_squirms", { enum: ["yes", "no", "unknown"] }),
+  difficultyStayingSeated: varchar("difficulty_staying_seated", { enum: ["yes", "no", "unknown"] }),
+  excessiveRunningOrClimbing: varchar("excessive_running_or_climbing", { enum: ["yes", "no", "unknown"] }),
+  difficultyPlayingQuietly: varchar("difficulty_playing_quietly", { enum: ["yes", "no", "unknown"] }),
+  talksExcessively: varchar("talks_excessively", { enum: ["yes", "no", "unknown"] }),
+  blurtsOutAnswers: varchar("blurts_out_answers", { enum: ["yes", "no", "unknown"] }),
+  difficultyWaitingTurn: varchar("difficulty_waiting_turn", { enum: ["yes", "no", "unknown"] }),
+  interruptsOrIntrudes: varchar("interrupts_or_intrudes", { enum: ["yes", "no", "unknown"] }),
+  alwaysOnTheGo: varchar("always_on_the_go", { enum: ["yes", "no", "unknown"] }),
+  
+  // Social Communication Symptoms (Autism-related)
+  difficultyMakingEyeContact: varchar("difficulty_making_eye_contact", { enum: ["yes", "no", "unknown"] }),
+  difficultyUnderstandingNonverbalCues: varchar("difficulty_understanding_nonverbal_cues", { enum: ["yes", "no", "unknown"] }),
+  difficultyMakingFriends: varchar("difficulty_making_friends", { enum: ["yes", "no", "unknown"] }),
+  difficultyInitiatingConversations: varchar("difficulty_initiating_conversations", { enum: ["yes", "no", "unknown"] }),
+  difficultyUnderstandingSocialSituations: varchar("difficulty_understanding_social_situations", { enum: ["yes", "no", "unknown"] }),
+  difficultyWithBackAndForthConversation: varchar("difficulty_with_back_and_forth_conversation", { enum: ["yes", "no", "unknown"] }),
+  difficultyShowingEmotions: varchar("difficulty_showing_emotions", { enum: ["yes", "no", "unknown"] }),
+  limitedFacialExpressions: varchar("limited_facial_expressions", { enum: ["yes", "no", "unknown"] }),
+  difficultyUnderstandingOthersEmotions: varchar("difficulty_understanding_others_emotions", { enum: ["yes", "no", "unknown"] }),
+  
+  // Restricted Interests & Repetitive Behaviors
+  intenseFocusOnSpecificTopics: varchar("intense_focus_on_specific_topics", { enum: ["yes", "no", "unknown"] }),
+  repetitiveMovements: varchar("repetitive_movements", { enum: ["yes", "no", "unknown"] }),
+  insistenceOnSameness: varchar("insistence_on_sameness", { enum: ["yes", "no", "unknown"] }),
+  difficultyWithChangesInRoutine: varchar("difficulty_with_changes_in_routine", { enum: ["yes", "no", "unknown"] }),
+  unusualAttachmentToObjects: varchar("unusual_attachment_to_objects", { enum: ["yes", "no", "unknown"] }),
+  repetitiveUseOfLanguage: varchar("repetitive_use_of_language", { enum: ["yes", "no", "unknown"] }),
+  preoccupationWithPartsOfObjects: varchar("preoccupation_with_parts_of_objects", { enum: ["yes", "no", "unknown"] }),
+  
+  // Sensory Processing Symptoms
+  oversensitiveToSounds: varchar("oversensitive_to_sounds", { enum: ["yes", "no", "unknown"] }),
+  oversensitiveToTextures: varchar("oversensitive_to_textures", { enum: ["yes", "no", "unknown"] }),
+  oversensitiveToLight: varchar("oversensitive_to_light", { enum: ["yes", "no", "unknown"] }),
+  undersensitiveToTemperature: varchar("undersensitive_to_temperature", { enum: ["yes", "no", "unknown"] }),
+  seeksOutSensoryInput: varchar("seeks_out_sensory_input", { enum: ["yes", "no", "unknown"] }),
+  avoidsMessyPlay: varchar("avoids_messy_play", { enum: ["yes", "no", "unknown"] }),
+  difficultyWithCertainClothingTextures: varchar("difficulty_with_certain_clothing_textures", { enum: ["yes", "no", "unknown"] }),
+  unusualReactionToPain: varchar("unusual_reaction_to_pain", { enum: ["yes", "no", "unknown"] }),
+  
+  // Emotional Regulation & Behavioral Symptoms
+  frequentMeltdowns: varchar("frequent_meltdowns", { enum: ["yes", "no", "unknown"] }),
+  difficultyControllingEmotions: varchar("difficulty_controlling_emotions", { enum: ["yes", "no", "unknown"] }),
+  frequentTemperTantrums: varchar("frequent_temper_tantrums", { enum: ["yes", "no", "unknown"] }),
+  difficultyWithTransitions: varchar("difficulty_with_transitions", { enum: ["yes", "no", "unknown"] }),
+  extremeReactionsToDisappointment: varchar("extreme_reactions_to_disappointment", { enum: ["yes", "no", "unknown"] }),
+  difficultyCalminDownWhenUpset: varchar("difficulty_calming_down_when_upset", { enum: ["yes", "no", "unknown"] }),
+  moodSwings: varchar("mood_swings", { enum: ["yes", "no", "unknown"] }),
+  anxietyOrWorrying: varchar("anxiety_or_worrying", { enum: ["yes", "no", "unknown"] }),
+  
+  // Communication & Language Symptoms
+  delayedSpeechDevelopment: varchar("delayed_speech_development", { enum: ["yes", "no", "unknown"] }),
+  difficultyExpressingNeeds: varchar("difficulty_expressing_needs", { enum: ["yes", "no", "unknown"] }),
+  echolalia: varchar("echolalia", { enum: ["yes", "no", "unknown"] }),
+  difficultyUnderstandingInstructions: varchar("difficulty_understanding_instructions", { enum: ["yes", "no", "unknown"] }),
+  literalUnderstandingOfLanguage: varchar("literal_understanding_of_language", { enum: ["yes", "no", "unknown"] }),
+  difficultyWithAbstractConcepts: varchar("difficulty_with_abstract_concepts", { enum: ["yes", "no", "unknown"] }),
+  
+  // Motor Skills & Coordination
+  difficultyWithFineMotorSkills: varchar("difficulty_with_fine_motor_skills", { enum: ["yes", "no", "unknown"] }),
+  difficultyWithGrossMotorSkills: varchar("difficulty_with_gross_motor_skills", { enum: ["yes", "no", "unknown"] }),
+  poorHandwriting: varchar("poor_handwriting", { enum: ["yes", "no", "unknown"] }),
+  clumsiness: varchar("clumsiness", { enum: ["yes", "no", "unknown"] }),
+  difficultyTyingShoes: varchar("difficulty_tying_shoes", { enum: ["yes", "no", "unknown"] }),
+  difficultyRidingBicycle: varchar("difficulty_riding_bicycle", { enum: ["yes", "no", "unknown"] }),
+  
+  // Executive Function Symptoms
+  difficultyPlanningAhead: varchar("difficulty_planning_ahead", { enum: ["yes", "no", "unknown"] }),
+  difficultyWithTimeManagement: varchar("difficulty_with_time_management", { enum: ["yes", "no", "unknown"] }),
+  difficultyPrioritizingTasks: varchar("difficulty_prioritizing_tasks", { enum: ["yes", "no", "unknown"] }),
+  difficultyWithWorkingMemory: varchar("difficulty_with_working_memory", { enum: ["yes", "no", "unknown"] }),
+  difficultyShiftingBetweenTasks: varchar("difficulty_shifting_between_tasks", { enum: ["yes", "no", "unknown"] }),
+  difficultyWithProblemSolving: varchar("difficulty_with_problem_solving", { enum: ["yes", "no", "unknown"] }),
+  
+  // Sleep & Daily Living
+  difficultyFallingAsleep: varchar("difficulty_falling_asleep", { enum: ["yes", "no", "unknown"] }),
+  frequentNightWaking: varchar("frequent_night_waking", { enum: ["yes", "no", "unknown"] }),
+  earlyWaking: varchar("early_waking", { enum: ["yes", "no", "unknown"] }),
+  nightmares: varchar("nightmares", { enum: ["yes", "no", "unknown"] }),
+  bedwetting: varchar("bedwetting", { enum: ["yes", "no", "unknown"] }),
+  difficultyWithSelfCare: varchar("difficulty_with_self_care", { enum: ["yes", "no", "unknown"] }),
+  pickyEating: varchar("picky_eating", { enum: ["yes", "no", "unknown"] }),
+  
+  // Academic & Learning Symptoms
+  difficultyWithReading: varchar("difficulty_with_reading", { enum: ["yes", "no", "unknown"] }),
+  difficultyWithWriting: varchar("difficulty_with_writing", { enum: ["yes", "no", "unknown"] }),
+  difficultyWithMath: varchar("difficulty_with_math", { enum: ["yes", "no", "unknown"] }),
+  difficultyMemorizingFacts: varchar("difficulty_memorizing_facts", { enum: ["yes", "no", "unknown"] }),
+  difficultyCompletingHomework: varchar("difficulty_completing_homework", { enum: ["yes", "no", "unknown"] }),
+  perfectionism: varchar("perfectionism", { enum: ["yes", "no", "unknown"] }),
+  avoidanceOfSchoolWork: varchar("avoidance_of_school_work", { enum: ["yes", "no", "unknown"] }),
+  
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   messages: many(messages),
@@ -224,6 +336,7 @@ export const childProfilesRelations = relations(childProfiles, ({ one, many }) =
   adhdAssessment: one(adhdAssessments),
   autismAssessment: one(autismAssessments),
   oddAssessment: one(oddAssessments),
+  symptomChecklist: one(symptomChecklists),
 }));
 
 export const adhdAssessmentsRelations = relations(adhdAssessments, ({ one }) => ({
@@ -243,6 +356,13 @@ export const autismAssessmentsRelations = relations(autismAssessments, ({ one })
 export const oddAssessmentsRelations = relations(oddAssessments, ({ one }) => ({
   child: one(childProfiles, {
     fields: [oddAssessments.childId],
+    references: [childProfiles.id],
+  }),
+}));
+
+export const symptomChecklistsRelations = relations(symptomChecklists, ({ one }) => ({
+  child: one(childProfiles, {
+    fields: [symptomChecklists.childId],
     references: [childProfiles.id],
   }),
 }));
@@ -307,6 +427,11 @@ export const insertOddAssessmentSchema = createInsertSchema(oddAssessments).omit
   lastUpdated: true,
 });
 
+export const insertSymptomChecklistSchema = createInsertSchema(symptomChecklists).omit({
+  id: true,
+  lastUpdated: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -325,3 +450,5 @@ export type InsertAutismAssessment = z.infer<typeof insertAutismAssessmentSchema
 export type AutismAssessment = typeof autismAssessments.$inferSelect;
 export type InsertOddAssessment = z.infer<typeof insertOddAssessmentSchema>;
 export type OddAssessment = typeof oddAssessments.$inferSelect;
+export type InsertSymptomChecklist = z.infer<typeof insertSymptomChecklistSchema>;
+export type SymptomChecklist = typeof symptomChecklists.$inferSelect;

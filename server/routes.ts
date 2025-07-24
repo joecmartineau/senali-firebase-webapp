@@ -3,8 +3,11 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateChatResponse, generateDailyTip } from "./openai";
-import { insertMessageSchema, insertTipInteractionSchema } from "@shared/schema";
+import { insertMessageSchema, insertTipInteractionSchema, insertSymptomChecklistSchema, insertChildProfileSchema } from "@shared/schema";
 import { z } from "zod";
+import { db } from "./db";
+import { childProfiles, symptomChecklists } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -250,6 +253,184 @@ Remember: You are not a replacement for professional medical or therapeutic advi
       } else {
         res.status(500).json({ message: "Failed to save tip interaction" });
       }
+    }
+  });
+
+  // Symptom Checklist Management Routes
+  
+  // Get or create child profile
+  app.get('/api/children/:childName/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const childName = req.params.childName;
+      
+      const [profile] = await db.select()
+        .from(childProfiles)
+        .where(and(
+          eq(childProfiles.userId, userId),
+          eq(childProfiles.childName, childName)
+        ));
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Child profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching child profile:", error);
+      res.status(500).json({ message: "Failed to fetch child profile" });
+    }
+  });
+  
+  // Create or update child profile
+  app.post('/api/children/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const profileData = insertChildProfileSchema.parse({
+        ...req.body,
+        userId
+      });
+      
+      // Check if profile exists
+      const [existingProfile] = await db.select()
+        .from(childProfiles)
+        .where(and(
+          eq(childProfiles.userId, userId),
+          eq(childProfiles.childName, profileData.childName)
+        ));
+      
+      if (existingProfile) {
+        // Update existing profile
+        const [updatedProfile] = await db.update(childProfiles)
+          .set({ ...profileData, updatedAt: new Date() })
+          .where(eq(childProfiles.id, existingProfile.id))
+          .returning();
+        
+        res.json(updatedProfile);
+      } else {
+        // Create new profile
+        const [newProfile] = await db.insert(childProfiles)
+          .values(profileData)
+          .returning();
+        
+        // Initialize empty symptom checklist
+        await db.insert(symptomChecklists)
+          .values({ childId: newProfile.id })
+          .onConflictDoNothing();
+        
+        res.json(newProfile);
+      }
+    } catch (error) {
+      console.error("Error creating/updating child profile:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid profile data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to save child profile" });
+      }
+    }
+  });
+  
+  // Get symptom checklist for a child
+  app.get('/api/children/:childId/symptoms', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const childId = parseInt(req.params.childId);
+      
+      // Verify child belongs to user
+      const [profile] = await db.select()
+        .from(childProfiles)
+        .where(and(
+          eq(childProfiles.id, childId),
+          eq(childProfiles.userId, userId)
+        ));
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Child not found" });
+      }
+      
+      // Get symptom checklist
+      const [symptoms] = await db.select()
+        .from(symptomChecklists)
+        .where(eq(symptomChecklists.childId, childId));
+      
+      res.json({
+        childProfile: profile,
+        symptoms: symptoms || {}
+      });
+    } catch (error) {
+      console.error("Error fetching symptoms:", error);
+      res.status(500).json({ message: "Failed to fetch symptoms" });
+    }
+  });
+  
+  // Update symptom checklist for a child
+  app.post('/api/children/:childId/symptoms', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const childId = parseInt(req.params.childId);
+      
+      // Verify child belongs to user
+      const [profile] = await db.select()
+        .from(childProfiles)
+        .where(and(
+          eq(childProfiles.id, childId),
+          eq(childProfiles.userId, userId)
+        ));
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Child not found" });
+      }
+      
+      const symptomData = insertSymptomChecklistSchema.parse({
+        ...req.body,
+        childId
+      });
+      
+      // Check if symptom checklist exists
+      const [existingSymptoms] = await db.select()
+        .from(symptomChecklists)
+        .where(eq(symptomChecklists.childId, childId));
+      
+      if (existingSymptoms) {
+        // Update existing checklist
+        const [updatedSymptoms] = await db.update(symptomChecklists)
+          .set({ ...symptomData, lastUpdated: new Date() })
+          .where(eq(symptomChecklists.childId, childId))
+          .returning();
+        
+        res.json(updatedSymptoms);
+      } else {
+        // Create new checklist
+        const [newSymptoms] = await db.insert(symptomChecklists)
+          .values(symptomData)
+          .returning();
+        
+        res.json(newSymptoms);
+      }
+    } catch (error) {
+      console.error("Error updating symptoms:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid symptom data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to update symptoms" });
+      }
+    }
+  });
+
+  // Get all children for a user
+  app.get('/api/children', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      const children = await db.select()
+        .from(childProfiles)
+        .where(eq(childProfiles.userId, userId))
+        .orderBy(childProfiles.createdAt);
+      
+      res.json(children);
+    } catch (error) {
+      console.error("Error fetching children:", error);
+      res.status(500).json({ message: "Failed to fetch children" });
     }
   });
 
