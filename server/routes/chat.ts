@@ -1,5 +1,8 @@
 import { Router } from 'express';
 import OpenAI from 'openai';
+import { db } from '../db';
+import { users } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 const router = Router();
 
@@ -10,10 +13,28 @@ const openai = new OpenAI({
 
 router.post('/chat', async (req, res) => {
   try {
-    const { message, familyContext } = req.body;
+    const { message, familyContext, userUid } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Check user credits before processing chat
+    if (userUid) {
+      const [user] = await db.select().from(users).where(eq(users.id, userUid)).limit(1);
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      if (user.credits <= 0) {
+        return res.status(403).json({ 
+          error: 'No credits remaining',
+          message: 'You have no credits left. Please upgrade to continue chatting.' 
+        });
+      }
+      
+      console.log(`User ${user.email} has ${user.credits} credits before chat`);
     }
 
     // Build system prompt with family context
@@ -57,7 +78,25 @@ Guidelines:
 
     const response = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response right now.";
 
-    res.json({ response });
+    // Deduct 1 credit after successful chat
+    if (userUid) {
+      const [updatedUser] = await db.update(users)
+        .set({ 
+          credits: Math.max(0, (await db.select().from(users).where(eq(users.id, userUid)).limit(1))[0]?.credits - 1 || 0),
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userUid))
+        .returning();
+      
+      console.log(`Credit deducted. User ${updatedUser?.email} now has ${updatedUser?.credits} credits`);
+      
+      res.json({ 
+        response,
+        creditsRemaining: updatedUser?.credits || 0
+      });
+    } else {
+      res.json({ response });
+    }
   } catch (error) {
     console.error('Chat API error:', error);
     res.status(500).json({ 

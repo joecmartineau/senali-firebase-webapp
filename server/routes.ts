@@ -48,20 +48,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingUser = await db.select().from(users).where(eq(users.id, uid)).limit(1);
       
       if (existingUser.length === 0) {
-        // Create new user record
+        // Create new user record with trial credits
         await db.insert(users).values({
           id: uid,
           email,
           displayName: displayName || email.split('@')[0],
           profileImageUrl: photoURL || null,
-          credits: 25, // Trial credits
+          credits: 25, // Trial credits for new users only
           subscription: 'trial',
           createdAt: new Date(),
           updatedAt: new Date()
         });
         console.log('Created new user record for:', email);
       } else {
-        // Update last active time
+        // Update last active time but DO NOT reset credits
         await db.update(users)
           .set({ 
             displayName: displayName || existingUser[0].displayName,
@@ -69,7 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             updatedAt: new Date() 
           })
           .where(eq(users.id, uid));
-        console.log('Updated existing user record for:', email);
+        console.log('Updated existing user record for:', email, 'Credits preserved:', existingUser[0].credits);
       }
       
       res.json({ success: true });

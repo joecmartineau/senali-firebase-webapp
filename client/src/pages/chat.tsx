@@ -30,6 +30,7 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [familyProfiles, setFamilyProfiles] = useState<any[]>([]);
+  const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,7 +43,41 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
     } catch (error) {
       console.error('Error loading family profiles:', error);
     }
-  }, []);
+
+    // Load initial credit count
+    const loadCredits = async () => {
+      try {
+        const response = await fetch('/api/auth/firebase-signin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL
+          })
+        });
+        
+        if (response.ok) {
+          // Fetch user credits from admin endpoint to display current count
+          const userResponse = await fetch(`/api/test-admin-users`);
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            const currentUser = userData.find((u: any) => u.uid === user.uid);
+            if (currentUser) {
+              setCreditsRemaining(currentUser.credits);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading credits:', error);
+      }
+    };
+
+    loadCredits();
+  }, [user]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -71,7 +106,8 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
         },
         body: JSON.stringify({
           message: inputMessage,
-          familyContext: familyProfiles
+          familyContext: familyProfiles,
+          userUid: user.uid
         })
       });
 
@@ -84,6 +120,22 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
           timestamp: new Date()
         };
         setMessages(prev => [...prev, aiMessage]);
+        
+        // Update credits if provided
+        if (typeof data.creditsRemaining === 'number') {
+          setCreditsRemaining(data.creditsRemaining);
+        }
+      } else if (response.status === 403) {
+        // Handle no credits error
+        const errorData = await response.json();
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: errorData.message || "You have no credits left. Please upgrade to continue chatting.",
+          role: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorMessage]);
+        setCreditsRemaining(0);
       } else {
         throw new Error('Failed to get AI response');
       }
@@ -126,7 +178,14 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
             </div>
             <div>
               <h1 className="text-xl font-bold">Senali</h1>
-              <p className="text-sm text-gray-400">Your AI therapist and friend</p>
+              <p className="text-sm text-gray-400">
+                Your AI therapist and friend
+                {creditsRemaining !== null && (
+                  <span className="ml-2 px-2 py-1 bg-green-500 text-black rounded text-xs font-medium">
+                    {creditsRemaining} credits
+                  </span>
+                )}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
