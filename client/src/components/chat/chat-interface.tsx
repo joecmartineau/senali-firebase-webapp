@@ -39,8 +39,9 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
         await subscriptionService.initialize();
         setSubscriptionStatus(subscriptionService.getStatus());
 
-        // Load chat history
-        await localChatService.init();
+        // Initialize chat service with authenticated user ID
+        console.log('🔧 Initializing chat service with user:', user?.uid);
+        await localChatService.init(user?.uid || 'anonymous');
         const historyMessages = await localChatService.loadConversationHistory();
         setMessages(historyMessages);
         

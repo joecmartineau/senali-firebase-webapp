@@ -9,9 +9,12 @@ import { getFamilyDiscoveryPrompt, extractFamilyMembers } from '../lib/guided-fa
 import type { Message } from '../lib/local-storage';
 
 export class LocalChatService {
-  private userId: string = 'user-1'; // Simple user ID for local storage
+  private userId: string | null = null; // Will be set from Firebase auth
 
-  async init(): Promise<void> {
+  async init(userId: string): Promise<void> {
+    this.userId = userId;
+    console.log('🔧 LocalChatService initialized with userId:', userId);
+    
     await localStorage.init();
     
     // Clean up any incorrectly detected profiles on startup
@@ -22,6 +25,12 @@ export class LocalChatService {
   }
 
   async sendMessage(content: string): Promise<{ userMessage: Message; aiResponse: Message }> {
+    if (!this.userId) {
+      throw new Error('User not authenticated. Please sign in first.');
+    }
+
+    console.log('💬 Sending message with userId:', this.userId);
+
     // Save user message locally
     const userMessage = await localStorage.saveMessage({
       content,
@@ -36,7 +45,7 @@ export class LocalChatService {
 
     // Process message for profile and symptom updates locally
     try {
-      await localAssessmentProcessor.processMessageEfficient(this.userId, content);
+      await localAssessmentProcessor.processMessageEfficient(this.userId!, content);
       console.log('📊 Profile and symptom data processed locally');
     } catch (error) {
       console.error('Local assessment processing error:', error);
@@ -54,9 +63,9 @@ export class LocalChatService {
     }
 
     // Build comprehensive family context with all member details
-    const directFamilyContext = await familyContextBuilder.buildFamilyContext(this.userId);
-    const familyMemberCount = await familyContextBuilder.getFamilyMemberCount(this.userId);
-    const familyNames = await familyContextBuilder.getFamilyMemberNames(this.userId);
+    const directFamilyContext = await familyContextBuilder.buildFamilyContext(this.userId!);
+    const familyMemberCount = await familyContextBuilder.getFamilyMemberCount(this.userId!);
+    const familyNames = await familyContextBuilder.getFamilyMemberNames(this.userId!);
     
     console.log('👨‍👩‍👧‍👦 Direct family context built:', {
       memberCount: familyMemberCount,
@@ -65,7 +74,7 @@ export class LocalChatService {
     });
 
     // Get conversation summaries for memory
-    const contextPackage = await conversationContextManager.getContextPackage(this.userId, messageCount);
+    const contextPackage = await conversationContextManager.getContextPackage(this.userId!, messageCount);
     console.log('📦 Context package loaded:', {
       familyMembers: directFamilyContext ? 'YES - DIRECT BUILD' : 'NO',
       summaryCount: contextPackage.conversationSummaries.length,
@@ -131,7 +140,7 @@ export class LocalChatService {
         childContext: directFamilyContext, // DIRECT family information with names, ages, genders, relations, diagnoses
         recentContext: contextPackage.recentMessages, // Recent messages only
         messageCount: messageCount,
-        userId: this.userId,
+        userId: this.userId!,
         isPremium: subscriptionService.hasPremiumAccess()
       }),
     }).catch(fetchError => {
@@ -152,7 +161,7 @@ export class LocalChatService {
     const aiMessage = await localStorage.saveMessage({
       content: data.response,
       role: 'assistant',
-      userId: this.userId,
+      userId: this.userId!,
       timestamp: new Date()
     });
     
@@ -165,12 +174,12 @@ export class LocalChatService {
   }
 
   async getMessageHistory(limit = 200): Promise<Message[]> {
-    return await localStorage.getMessages(this.userId, limit);
+    return await localStorage.getMessages(this.userId!, limit);
   }
 
   // Get total message count for context management
   async getMessageCount(): Promise<number> {
-    const messages = await localStorage.getMessages(this.userId);
+    const messages = await localStorage.getMessages(this.userId!);
     return messages.length;
   }
 
@@ -184,7 +193,7 @@ export class LocalChatService {
         content: "Hi! I'm Senali, and I'm here to support you and your family. I'd love to get to know your family better. Can you tell me a bit about yourself - are you a parent or caregiver?",
         role: 'assistant',
         timestamp: new Date(),
-        userId: this.userId
+        userId: this.userId!
       };
       return [welcomeMessage];
     }
@@ -194,7 +203,7 @@ export class LocalChatService {
   }
 
   async getChildProfiles() {
-    return await localStorage.getChildProfiles(this.userId);
+    return await localStorage.getChildProfiles(this.userId!);
   }
 
   async getSymptomChecklist(childId: string) {
@@ -202,7 +211,7 @@ export class LocalChatService {
   }
 
   async updateChildProfile(childName: string, updates: any) {
-    return await localAssessmentProcessor.updateChildProfile(this.userId, childName, updates);
+    return await localAssessmentProcessor.updateChildProfile(this.userId!, childName, updates);
   }
 
   async exportData() {
@@ -223,7 +232,7 @@ export class LocalChatService {
       console.log(`🔄 Attempting to create profile for ${name} (${relationship})`);
       
       // Check if profile already exists
-      const existing = await localStorage.getChildProfile(this.userId, name);
+      const existing = await localStorage.getChildProfile(this.userId!, name);
       if (existing) {
         console.log(`👤 Profile for ${name} already exists, skipping creation`);
         return;
@@ -233,7 +242,7 @@ export class LocalChatService {
       const profile = {
         childName: name,
         age: age ? age.toString() : undefined,
-        userId: this.userId,
+        userId: this.userId!,
         relationshipToUser: relationship
       };
       
@@ -243,7 +252,7 @@ export class LocalChatService {
       console.log(`✅ Profile saved with ID: ${savedProfile.id}`);
       
       // Verify the profile was saved by reading it back
-      const verification = await localStorage.getChildProfile(this.userId, name);
+      const verification = await localStorage.getChildProfile(this.userId!, name);
       if (verification) {
         console.log(`✅ Profile verification successful: ${verification.childName}`);
       } else {
