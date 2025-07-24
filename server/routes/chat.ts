@@ -65,13 +65,17 @@ router.post('/', async (req, res) => {
     }
 
     console.log(`📝 Chat request - Message ${messageCount}, Premium: ${isPremium}`);
+    console.log(`🔍 Family context received:`, childContext ? 'YES - Length: ' + childContext.length : 'NO CONTEXT PROVIDED');
     
     // Use guided discovery system prompt if provided, otherwise use default
     let finalSystemPrompt = systemPrompt || SYSTEM_PROMPT;
     
     // Add comprehensive family context if available
-    if (childContext) {
-      finalSystemPrompt += `\n\n**FAMILY CONTEXT:**\n${childContext}\n\nIMPORTANT: You now have full access to this family information. Use ONLY the exact information provided. Never guess ages, names, or details not specifically mentioned. When referring to family members, use their exact names and details as provided.`;
+    if (childContext && childContext.trim().length > 0) {
+      finalSystemPrompt += `\n\n**FAMILY CONTEXT:**\n${childContext}\n\nIMPORTANT: You now have full access to this family information. Use ONLY the exact information provided. Never guess ages, names, or details not specifically mentioned. When referring to family members, use their exact names and details as provided. DO NOT hallucinate or make up family member names that are not in this context.`;
+      console.log(`✅ Added family context to system prompt. Context preview: ${childContext.substring(0, 200)}...`);
+    } else {
+      console.log(`❌ No family context provided - Senali will not have family information`);
     }
 
     // Build minimal message context for cost efficiency
@@ -85,7 +89,11 @@ router.post('/', async (req, res) => {
     
     // Debug log the system prompt being sent to OpenAI
     if (childContext) {
-      console.log('🎯 System prompt includes family context:', finalSystemPrompt.substring(finalSystemPrompt.length - 200));
+      console.log('🎯 Final system prompt length:', finalSystemPrompt.length);
+      console.log('🎯 System prompt preview:', finalSystemPrompt.substring(0, 300) + '...');
+      console.log('🎯 Family context in prompt:', finalSystemPrompt.includes('FAMILY CONTEXT') ? 'YES' : 'NO');
+    } else {
+      console.log('⚠️ No family context - sending basic system prompt only');
     }
 
     // Select model based on premium status for cost efficiency

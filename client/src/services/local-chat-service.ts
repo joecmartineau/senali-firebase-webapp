@@ -109,6 +109,7 @@ export class LocalChatService {
     
     console.log('🌐 Making API call to:', apiUrl);
     console.log('📝 Request data - Message count:', messageCount, 'Family members:', newMembersCount);
+    console.log('🔍 Child context being sent:', childContext ? 'YES - ' + childContext.substring(0, 200) + '...' : 'NO CONTEXT');
     
     const response = await fetch(apiUrl, {
       method: 'POST',
