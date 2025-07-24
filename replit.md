@@ -48,7 +48,7 @@ This is a full-stack TypeScript application built with a privacy-first, local st
 - **Authorization**: Protected routes with isAuthenticated middleware
 
 ### AI Integration
-- **Provider**: OpenAI GPT-3.5-turbo model  
+- **Provider**: OpenAI GPT-4o model  
 - **AI Personality**: Senali - therapist and friend companion with empathetic conversation style
 - **Specialization**: Custom system prompt for therapeutic support and active listening without medical advice
 - **Features**: 

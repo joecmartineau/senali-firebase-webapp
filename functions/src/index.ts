@@ -86,7 +86,7 @@ export const chat = onRequest((request, response) => {
       console.log(`Sending ${recentContext.length} recent messages to OpenAI (efficient context)`);
       
       const completion = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o',
         messages: messages as any,
         max_tokens: 1000,
         temperature: 0.7,
@@ -150,7 +150,7 @@ export const generateTip = onRequest((request, response) => {
       Please provide a title and content for the tip.`;
 
       const completion = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: 'You are a supportive parenting expert who gives warm, practical advice.' },
           { role: 'user', content: tipPrompt }

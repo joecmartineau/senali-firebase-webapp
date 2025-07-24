@@ -81,7 +81,7 @@ router.post('/', async (req, res) => {
     console.log('Sending chat request to OpenAI...');
     
     const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o',
       messages: messages as any,
       max_tokens: 1000,
       temperature: 0.7,
