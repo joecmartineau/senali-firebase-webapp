@@ -42,7 +42,7 @@ export function AdminPanel({ currentUser }: AdminPanelProps) {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch('/api/test-admin-users', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

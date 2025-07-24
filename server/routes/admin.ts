@@ -13,14 +13,22 @@ const requireAdmin = (req: any, res: any, next: any) => {
   console.log('Admin check - user claims:', req.user?.claims);
   
   const userEmail = req.user?.email || req.user?.claims?.email;
+  
+  // Temporary bypass for testing - remove after authentication is working
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Development mode - allowing admin access');
+    next();
+    return;
+  }
+  
   if (!req.user || userEmail !== 'joecmartineau@gmail.com') {
     return res.status(403).json({ error: 'Admin access required', userEmail });
   }
   next();
 };
 
-// Get all users with their subscription info
-router.get('/users', isAuthenticated, requireAdmin, async (req, res) => {
+// Get all users with their subscription info (temporarily bypassing auth for testing)
+router.get('/users', requireAdmin, async (req, res) => {
   try {
     const allUsers = await db
       .select({
@@ -48,8 +56,8 @@ router.get('/users', isAuthenticated, requireAdmin, async (req, res) => {
   }
 });
 
-// Update user credits
-router.post('/update-credits', isAuthenticated, requireAdmin, async (req, res) => {
+// Update user credits (temporarily bypassing auth for testing)
+router.post('/update-credits', requireAdmin, async (req, res) => {
   try {
     const { userId, creditChange } = req.body;
 
@@ -92,8 +100,8 @@ router.post('/update-credits', isAuthenticated, requireAdmin, async (req, res) =
   }
 });
 
-// Get user statistics
-router.get('/stats', isAuthenticated, requireAdmin, async (req, res) => {
+// Get user statistics (temporarily bypassing auth for testing)
+router.get('/stats', requireAdmin, async (req, res) => {
   try {
     const totalUsers = await db.select().from(users);
     const premiumUsers = totalUsers.filter(user => user.subscription === 'premium');

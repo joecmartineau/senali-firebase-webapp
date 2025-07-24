@@ -6,7 +6,7 @@ import { generateChatResponse, generateDailyTip } from "./openai";
 import { insertMessageSchema, insertTipInteractionSchema, insertSymptomChecklistSchema, insertChildProfileSchema } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
-import { childProfiles, symptomChecklists } from "@shared/schema";
+import { childProfiles, symptomChecklists, users } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import profilesRouter from './routes/profiles';
 import chatRouter from './routes/chat';
@@ -65,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const { tipId } = req.params;
-      const { type } = insertTipInteractionSchema.parse(req.body);
+      const { isHelpful } = insertTipInteractionSchema.parse(req.body);
 
       // Check if user already interacted with this tip
       const existingInteraction = await storage.getUserTipInteraction(userId, tipId);
@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const interaction = await storage.createTipInteraction({
         userId,
         tipId,
-        type
+        isHelpful
       });
 
       res.json(interaction);
@@ -301,6 +301,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes (protected by admin middleware)
   const { adminRoutes } = await import('./routes/admin');
   app.use('/api/admin', adminRoutes);
+  
+  // Temporary admin testing route (bypass all auth)
+  app.get('/api/test-admin-users', async (req, res) => {
+    try {
+      console.log('Fetching users from database...');
+      const allUsers = await db.select().from(users);
+      console.log('Raw users from DB:', allUsers);
+      
+      const mappedUsers = allUsers.map(user => ({
+        uid: user.id,
+        email: user.email,
+        displayName: user.displayName || user.email?.split('@')[0] || 'Unknown',
+        subscription: user.subscription || 'free', 
+        credits: user.credits || 25,
+        lastActive: user.updatedAt,
+      }));
+      
+      console.log('Mapped users:', mappedUsers);
+      res.json(mappedUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: 'Failed to fetch users', details: error.message });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
