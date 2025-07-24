@@ -8,6 +8,7 @@ import { ChatInterface } from "@/components/chat/chat-interface";
 import { Router, Route, Switch, useLocation } from "wouter";
 import FamilySetup from "@/pages/family-setup";
 import Questionnaires from "@/pages/questionnaires";
+import { FamilyProfiles } from "@/pages/family-profiles";
 import { localStorage } from "@/lib/local-storage";
 
 // Initialize Firebase directly to avoid import issues
@@ -261,6 +262,9 @@ function AuthenticatedApp({ user, onSignOut }: { user: any; onSignOut: () => voi
     <Switch>
       <Route path="/family-setup">
         <FamilySetup />
+      </Route>
+      <Route path="/family-profiles">
+        <FamilyProfiles user={user} />
       </Route>
       <Route path="/questionnaires">
         <Questionnaires />

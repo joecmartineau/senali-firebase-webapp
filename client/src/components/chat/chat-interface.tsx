@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot, User, LogOut, Download, Trash2, Crown, Users } from "lucide-react";
+import { Link } from "wouter";
 import { InfinityIcon } from "@/components/ui/infinity-icon";
 import { localChatService } from "@/services/local-chat-service";
 import { subscriptionService, SUBSCRIPTION_LIMITS } from "@/services/subscription-service";
@@ -273,15 +274,16 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
             >
               <Trash2 className="h-4 w-4" />
             </Button>
-            <Button
-              onClick={() => setShowFamilySidebar(true)}
-              variant="outline"
-              size="sm"
-              className="border-green-600 text-green-300 hover:bg-green-800"
-              title="View family profiles"
-            >
-              <Users className="h-4 w-4" />
-            </Button>
+            <Link href="/family-profiles">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-green-600 text-green-300 hover:bg-green-800"
+                title="Manage family profiles"
+              >
+                <Users className="h-4 w-4" />
+              </Button>
+            </Link>
             <Button
               onClick={onSignOut}
               variant="outline"
