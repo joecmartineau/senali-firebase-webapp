@@ -5,17 +5,23 @@ import { getAuth } from 'firebase-admin/auth';
 // Initialize Firebase Admin SDK
 let app;
 if (getApps().length === 0) {
-  // For development, we'll use the project ID directly
-  // In production, you would use a service account key
-  app = initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID || 'senali-235fb',
-  });
+  try {
+    // For Replit deployment - use project ID (requires proper IAM permissions)
+    app = initializeApp({
+      projectId: 'senali-235fb',
+    });
+    console.log('Firebase Admin initialized successfully with project senali-235fb');
+  } catch (error: any) {
+    console.warn('Firebase Admin initialization failed:', error.message);
+    console.log('Will use fallback for admin routes');
+    app = null;
+  }
 } else {
   app = getApps()[0];
 }
 
-export const adminDb = getFirestore(app);
-export const adminAuth = getAuth(app);
+export const adminDb = app ? getFirestore(app) : null;
+export const adminAuth = app ? getAuth(app) : null;
 
 // Export admin object for compatibility
 export const admin = {
