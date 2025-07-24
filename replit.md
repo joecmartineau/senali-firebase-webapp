@@ -176,8 +176,10 @@ This is a full-stack TypeScript application built with a privacy-first, local st
   - Implemented personalized questioning strategy to learn about users' families and build connections
 
 ### Enhanced Memory & Profile System (2025-01-24)
-- **Conversation Memory**: Increased message history context from 20 to 200 messages for comprehensive conversation continuity
-- **Database-Driven Chat History**: Chat now loads full conversation history from database on startup
+- **Conversation Memory**: Stores up to 200 messages locally for comprehensive conversation continuity
+- **Local Chat History**: Chat loads full conversation history from local IndexedDB on startup
+- **Efficient OpenAI Context**: Optimized to send only last 3 messages to OpenAI for immediate context, reducing API costs and improving response speed
+- **Smart Context Handling**: Senali asks for clarification when missing context rather than assuming, preventing errors and reducing token usage
 - **Dynamic Symptom Tracking**: Senali automatically updates symptom checklists based on natural conversation
   - Tracks 60+ symptoms across attention, hyperactivity, social communication, sensory processing, and emotional regulation
   - Recognizes positive/negative statements ("Sam is always angry" vs "Sam was angry today but isn't always angry")

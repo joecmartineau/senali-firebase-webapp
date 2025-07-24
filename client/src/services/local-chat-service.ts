@@ -35,10 +35,10 @@ export class LocalChatService {
       console.error('Error loading child context:', error);
     }
 
-    // Get conversation history for context (last 10 messages to include in API call)
-    const messageHistory = await this.getMessageHistory(10);
+    // Only send minimal context - let AI request more if needed
+    const recentMessages = await this.getMessageHistory(3); // Just last 3 messages for immediate context
     
-    // Call the server API for AI response with conversation context
+    // Call the server API for AI response with minimal context
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: {
@@ -47,10 +47,11 @@ export class LocalChatService {
       body: JSON.stringify({
         message: content,
         childContext: childContext, // Include context for personalized responses
-        conversationHistory: messageHistory.slice(-10).map(msg => ({
+        recentContext: recentMessages.slice(-3).map(msg => ({
           role: msg.role,
           content: msg.content
-        }))
+        })),
+        userId: this.userId // Allow server to request more context if needed
       }),
     });
 
