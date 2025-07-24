@@ -32,7 +32,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Brain, Eye, Heart, Info, Search, TrendingUp } from 'lucide-react';
+import { Eye, Heart, Info, Search, TrendingUp } from 'lucide-react';
+import { InfinityIcon } from "@/components/ui/infinity-icon";
 
 export default function Assessments() {
   const [childName, setChildName] = useState('');

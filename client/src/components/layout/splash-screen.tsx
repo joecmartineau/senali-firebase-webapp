@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Brain, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
+import { InfinityIcon } from "@/components/ui/infinity-icon";
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -29,8 +30,8 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
       <div className="text-center">
         {/* App Icon */}
         <div className="relative mb-8">
-          <div className="w-24 h-24 bg-green-500 rounded-2xl flex items-center justify-center mx-auto">
-            <Brain className="h-12 w-12 text-black" />
+          <div className="flex justify-center">
+            <InfinityIcon size={96} className="rounded-2xl" />
           </div>
           <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
             <Heart className="h-4 w-4 text-white" />

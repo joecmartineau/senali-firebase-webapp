@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, MessageCircle, Lightbulb, Heart } from "lucide-react";
+import { MessageCircle, Lightbulb, Heart } from "lucide-react";
+import { InfinityIcon } from "@/components/ui/infinity-icon";
 import { useState, useEffect } from "react";
 import { ChatInterface } from "@/components/chat/chat-interface";
 
@@ -157,8 +158,8 @@ function SenaliApp() {
     <div className="min-h-screen bg-black">
       <div className="px-4 py-12">
         <div className="max-w-md mx-auto text-center">
-          <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Brain className="h-10 w-10 text-black" />
+          <div className="flex justify-center mb-6">
+            <InfinityIcon size={80} className="rounded-2xl" />
           </div>
           
           <h1 className="text-3xl font-bold text-white mb-4">

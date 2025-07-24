@@ -1,17 +1,16 @@
-import { useAuth } from "@/hooks/useAuth";
-import { Brain, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { InfinityIcon } from "@/components/ui/infinity-icon";
 
 export default function AppHeader() {
-  const { user } = useAuth();
+  // Note: This component is not currently used in the main app flow
+  // User authentication is handled directly in App.tsx
 
   return (
     <header className="bg-gray-900 shadow-sm border-b border-gray-700 px-4 py-3 flex items-center justify-between">
       <div className="flex items-center space-x-3">
-        <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-          <Brain className="h-6 w-6 text-black" />
-        </div>
+        <InfinityIcon size={40} className="rounded-lg" />
         <div>
-          <h1 className="text-lg font-semibold text-white">NeuroParent</h1>
+          <h1 className="text-lg font-semibold text-white">Senali</h1>
           <p className="text-xs text-gray-300">AI Parenting Support</p>
         </div>
       </div>
