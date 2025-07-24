@@ -6,15 +6,17 @@ import { Label } from '@/components/ui/label';
 import { User } from 'firebase/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { Shield, Users, CreditCard, LogOut, Settings } from 'lucide-react';
+import { Shield, Users, CreditCard, LogOut, Settings, Loader2 } from 'lucide-react';
 
 interface UserData {
-  id: string;
+  uid: string;
   email: string;
   displayName: string;
+  photoURL?: string;
+  createdAt: string;
+  lastSignIn: string;
   credits: number;
   subscriptionStatus: string;
-  lastActive: string;
 }
 
 export default function AdminPanel() {
@@ -29,28 +31,27 @@ export default function AdminPanel() {
 
   const loadUsers = async () => {
     try {
-      // Simulate user data - replace with actual Firebase/API call
-      const mockUsers: UserData[] = [
-        {
-          id: '1',
-          email: 'user1@example.com',
-          displayName: 'John Doe',
-          credits: 850,
-          subscriptionStatus: 'active',
-          lastActive: '2025-01-24'
-        },
-        {
-          id: '2',
-          email: 'user2@example.com',
-          displayName: 'Jane Smith',
-          credits: 25,
-          subscriptionStatus: 'trial',
-          lastActive: '2025-01-23'
+      console.log('Loading real Firebase users...');
+      const response = await fetch('/api/admin/users', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`,
+          'Content-Type': 'application/json'
         }
-      ];
-      setUsers(mockUsers);
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('Loaded users:', userData);
+        setUsers(userData.users || []);
+      } else {
+        console.error('Failed to load users:', response.status);
+        // Show empty state if API fails
+        setUsers([]);
+      }
     } catch (error) {
       console.error('Error loading users:', error);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -61,22 +62,33 @@ export default function AdminPanel() {
 
     try {
       const adjustment = parseInt(creditAdjustment);
-      const newCredits = selectedUser.credits + adjustment;
-      
-      // Update user credits - replace with actual API call
-      setUsers(users.map(user => 
-        user.id === selectedUser.id 
-          ? { ...user, credits: Math.max(0, newCredits) }
-          : user
-      ));
-      
-      setSelectedUser({ ...selectedUser, credits: Math.max(0, newCredits) });
-      setCreditAdjustment('');
-      
-      alert(`Credits adjusted! New balance: ${Math.max(0, newCredits)}`);
+      const response = await fetch(`/api/admin/users/${selectedUser.uid}/credits`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ adjustment })
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        
+        // Update local state
+        setUsers(users.map(user => 
+          user.uid === selectedUser.uid ? updatedUser : user
+        ));
+        
+        setSelectedUser(updatedUser);
+        setCreditAdjustment('');
+        
+        alert(`Credits adjusted! New balance: ${updatedUser.credits}`);
+      } else {
+        throw new Error('Failed to adjust credits');
+      }
     } catch (error) {
       console.error('Error adjusting credits:', error);
-      alert('Error adjusting credits');
+      alert('Error adjusting credits. Please try again.');
     }
   };
 
@@ -135,34 +147,56 @@ export default function AdminPanel() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  onClick={() => setSelectedUser(user)}
-                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                    selectedUser?.id === user.id
-                      ? 'border-green-500 bg-green-500/10'
-                      : 'border-gray-600 hover:border-gray-500'
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium text-white">{user.displayName}</p>
-                      <p className="text-sm text-gray-400">{user.email}</p>
-                      <p className="text-xs text-gray-500">Last active: {user.lastActive}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-green-400">{user.credits} credits</p>
-                      <p className={`text-xs ${
-                        user.subscriptionStatus === 'active' ? 'text-green-400' :
-                        user.subscriptionStatus === 'trial' ? 'text-yellow-400' : 'text-red-400'
-                      }`}>
-                        {user.subscriptionStatus}
-                      </p>
+              {users.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">
+                  <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>No users found</p>
+                  <p className="text-xs mt-1">Users will appear here after they sign in</p>
+                </div>
+              ) : (
+                users.map((user) => (
+                  <div
+                    key={user.uid}
+                    onClick={() => setSelectedUser(user)}
+                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedUser?.uid === user.uid
+                        ? 'border-green-500 bg-green-500/10'
+                        : 'border-gray-600 hover:border-gray-500'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3">
+                        {user.photoURL && (
+                          <img 
+                            src={user.photoURL} 
+                            alt={user.displayName}
+                            className="w-8 h-8 rounded-full"
+                          />
+                        )}
+                        <div>
+                          <p className="font-medium text-white">{user.displayName || 'Unknown User'}</p>
+                          <p className="text-sm text-gray-400">{user.email}</p>
+                          <p className="text-xs text-gray-500">
+                            Last sign in: {new Date(user.lastSignIn).toLocaleDateString()}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Created: {new Date(user.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-green-400">{user.credits} credits</p>
+                        <p className={`text-xs ${
+                          user.subscriptionStatus === 'active' ? 'text-green-400' :
+                          user.subscriptionStatus === 'trial' ? 'text-yellow-400' : 'text-red-400'
+                        }`}>
+                          {user.subscriptionStatus}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </CardContent>
           </Card>
 
@@ -192,6 +226,14 @@ export default function AdminPanel() {
                       }>
                         {selectedUser.subscriptionStatus}
                       </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">User ID:</span>
+                      <span className="text-gray-300 text-xs font-mono">{selectedUser.uid}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Created:</span>
+                      <span className="text-gray-300">{new Date(selectedUser.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
 

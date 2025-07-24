@@ -16,3 +16,9 @@ if (getApps().length === 0) {
 
 export const adminDb = getFirestore(app);
 export const adminAuth = getAuth(app);
+
+// Export admin object for compatibility
+export const admin = {
+  auth: () => adminAuth,
+  firestore: () => adminDb
+};

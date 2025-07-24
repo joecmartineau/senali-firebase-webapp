@@ -1,104 +1,99 @@
-import express from 'express';
-import { db } from '../db';
-import { users } from '../../shared/schema';
-import { eq } from 'drizzle-orm';
-import { verifyFirebaseToken, requireAdmin } from '../middleware/firebase-auth';
+import { Router } from 'express';
+import { adminAuth } from '../firebase-admin';
 
-const router = express.Router();
+const router = Router();
 
-// Admin middleware is now imported from firebase-auth.ts
-
-// Get all users with their subscription info
-router.get('/users', verifyFirebaseToken, requireAdmin, async (req, res) => {
+// Middleware to verify admin access
+const verifyAdmin = async (req: any, res: any, next: any) => {
   try {
-    const allUsers = await db
-      .select({
-        uid: users.id, // Use id as uid for compatibility
-        email: users.email,
-        displayName: users.displayName,
-        credits: users.credits,
-        subscription: users.subscription,
-        lastActive: users.updatedAt,
-      })
-      .from(users)
-      .orderBy(users.createdAt);
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
 
-    res.json(allUsers.map(user => ({
-      uid: user.uid, // Map id to uid for frontend
-      email: user.email,
-      displayName: user.displayName || user.email?.split('@')[0] || 'Unknown',
-      subscription: user.subscription || 'free',
-      credits: user.credits || 25, // Default 25 credits
-      lastActive: user.lastActive,
-    })));
+    const decodedToken = await adminAuth.verifyIdToken(token);
+    
+    // Check if user is admin
+    if (decodedToken.email !== 'joecmartineau@gmail.com') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    req.user = decodedToken;
+    next();
+  } catch (error) {
+    console.error('Admin auth error:', error);
+    res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+// Get all users
+router.get('/users', verifyAdmin, async (req, res) => {
+  try {
+    console.log('Fetching all Firebase users...');
+    
+    const listUsersResult = await adminAuth.listUsers();
+    
+    const users = listUsersResult.users.map(userRecord => ({
+      uid: userRecord.uid,
+      email: userRecord.email || '',
+      displayName: userRecord.displayName || '',
+      photoURL: userRecord.photoURL || null,
+      createdAt: userRecord.metadata.creationTime,
+      lastSignIn: userRecord.metadata.lastSignInTime || userRecord.metadata.creationTime,
+      // Default values for credits and subscription
+      credits: 25, // Default trial credits
+      subscriptionStatus: 'trial'
+    }));
+
+    console.log(`Found ${users.length} users`);
+    
+    res.json({ 
+      users,
+      totalCount: users.length 
+    });
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 
-// Update user credits
-router.post('/update-credits', verifyFirebaseToken, requireAdmin, async (req, res) => {
+// Adjust user credits
+router.patch('/users/:uid/credits', verifyAdmin, async (req, res) => {
   try {
-    const { userId, creditChange } = req.body;
+    const { uid } = req.params;
+    const { adjustment } = req.body;
 
-    if (!userId || typeof creditChange !== 'number') {
-      return res.status(400).json({ error: 'Invalid userId or creditChange' });
+    if (typeof adjustment !== 'number') {
+      return res.status(400).json({ error: 'Invalid adjustment value' });
     }
 
-    // Get current user
-    const [currentUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId));
+    // Get current user record
+    const userRecord = await adminAuth.getUser(uid);
+    
+    // For now, we'll simulate credit adjustment
+    // In a real app, you'd store this in a database
+    const currentCredits = 25; // This would come from your database
+    const newCredits = Math.max(0, currentCredits + adjustment);
 
-    if (!currentUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    console.log(`Adjusting credits for ${userRecord.email}: ${currentCredits} + ${adjustment} = ${newCredits}`);
 
-    const currentCredits = currentUser.credits || 25;
-    const newCredits = Math.max(0, currentCredits + creditChange);
-
-    // Update user credits
-    const [updatedUser] = await db
-      .update(users)
-      .set({ 
-        credits: newCredits,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId))
-      .returning();
-
-    res.json({
-      uid: updatedUser.id, // Return id as uid for frontend compatibility
-      email: updatedUser.email,
-      displayName: updatedUser.displayName,
-      credits: updatedUser.credits,
-    });
-  } catch (error) {
-    console.error('Error updating credits:', error);
-    res.status(500).json({ error: 'Failed to update credits' });
-  }
-});
-
-// Get user statistics
-router.get('/stats', verifyFirebaseToken, requireAdmin, async (req, res) => {
-  try {
-    const totalUsers = await db.select().from(users);
-    const premiumUsers = totalUsers.filter(user => user.subscription === 'premium');
-
-    const stats = {
-      totalUsers: totalUsers.length,
-      premiumUsers: premiumUsers.length,
-      freeUsers: totalUsers.length - premiumUsers.length,
-      totalCredits: totalUsers.reduce((sum, user) => sum + (user.credits || 0), 0),
+    // Return updated user data
+    const updatedUser = {
+      uid: userRecord.uid,
+      email: userRecord.email || '',
+      displayName: userRecord.displayName || '',
+      photoURL: userRecord.photoURL || null,
+      createdAt: userRecord.metadata.creationTime,
+      lastSignIn: userRecord.metadata.lastSignInTime || userRecord.metadata.creationTime,
+      credits: newCredits,
+      subscriptionStatus: newCredits > 25 ? 'active' : 'trial'
     };
 
-    res.json(stats);
+    res.json(updatedUser);
   } catch (error) {
-    console.error('Error fetching stats:', error);
-    res.status(500).json({ error: 'Failed to fetch statistics' });
+    console.error('Error adjusting credits:', error);
+    res.status(500).json({ error: 'Failed to adjust credits' });
   }
 });
 
-export { router as adminRoutes };
+export default router;

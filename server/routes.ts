@@ -9,12 +9,14 @@ import { z } from "zod";
 import { db } from "./db";
 import { childProfiles, symptomChecklists, users } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import profilesRouter from './routes/profiles';
-import chatRouter from './routes/chat';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Chat routes
   app.use('/api', chatRoutes);
+  
+  // Admin routes - import dynamically to avoid circular dependency
+  const { default: adminRoutes } = await import('./routes/admin');
+  app.use('/api/admin', adminRoutes);
 
   // Auth middleware
   await setupAuth(app);
@@ -296,12 +298,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Use remaining modular routes
-  app.use('/api/profiles', profilesRouter);
-  
-  // Admin routes (protected by admin middleware)
-  const { adminRoutes } = await import('./routes/admin');
-  app.use('/api/admin', adminRoutes);
+  // Use remaining modular routes (disabled for now)
+  // app.use('/api/profiles', profilesRouter);
   
   // Temporary admin testing route (bypass all auth)
   app.get('/api/test-admin-users', async (req, res) => {
