@@ -164,8 +164,26 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
     }
   };
 
-  const clearData = async () => {
-    if (confirm('Are you sure you want to clear all your data? This cannot be undone.')) {
+  const clearConversation = async () => {
+    if (confirm('Clear conversation history? Your child profiles and data will be kept safe.')) {
+      try {
+        await localChatService.clearChatHistory();
+        setMessages([{
+          id: 'welcome',
+          content: "Hi there! I'm Senali, and I'm here to listen and support you. What's been on your mind lately?",
+          role: 'assistant',
+          timestamp: new Date(),
+          userId: 'user-1'
+        }]);
+        setMessageCount(0); // Reset message count
+      } catch (error) {
+        console.error('Clear conversation error:', error);
+      }
+    }
+  };
+
+  const clearAllData = async () => {
+    if (confirm('⚠️ Clear ALL data including child profiles? This will permanently delete everything and cannot be undone.')) {
       try {
         await localChatService.clearAllData();
         setMessages([{
@@ -175,8 +193,9 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
           timestamp: new Date(),
           userId: 'user-1'
         }]);
+        setMessageCount(0);
       } catch (error) {
-        console.error('Clear data error:', error);
+        console.error('Clear all data error:', error);
       }
     }
   };
@@ -246,11 +265,11 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
               <Download className="h-4 w-4" />
             </Button>
             <Button
-              onClick={clearData}
+              onClick={clearConversation}
               variant="outline"
               size="sm"
-              className="border-gray-600 text-gray-300 hover:bg-gray-800"
-              title="Clear all data"
+              className="border-blue-600 text-blue-300 hover:bg-blue-800"
+              title="Clear conversation (keeps profiles)"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

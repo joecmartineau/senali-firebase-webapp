@@ -422,6 +422,21 @@ class LocalStorage {
     return data;
   }
 
+  // Clear only chat messages, preserving all profile data
+  async clearChatHistory(): Promise<void> {
+    const db = await this.ensureDB();
+    
+    return new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction(['messages'], 'readwrite');
+      const store = transaction.objectStore('messages');
+      const request = store.clear();
+      
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // Clear all data including profiles (for complete reset)
   async clearAllData(): Promise<void> {
     const db = await this.ensureDB();
     const stores = ['messages', 'childProfiles', 'symptomChecklists', 'userProfiles', 'dailyTips'];

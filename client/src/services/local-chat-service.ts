@@ -128,6 +128,10 @@ export class LocalChatService {
     return await localStorage.exportAllData();
   }
 
+  async clearChatHistory() {
+    return await localStorage.clearChatHistory();
+  }
+
   async clearAllData() {
     return await localStorage.clearAllData();
   }
