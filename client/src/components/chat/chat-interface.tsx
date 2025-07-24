@@ -22,7 +22,7 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: "Hello! I'm your AI parenting assistant specialized in supporting parents of neurodivergent children. How can I help you today?",
+      content: "Hello! How can I help you today?",
       role: 'assistant',
       timestamp: new Date()
     }
@@ -111,8 +111,7 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
           <div className="flex items-center space-x-3">
             <InfinityIcon size={32} glowing />
             <div>
-              <h1 className="text-white font-semibold">Senali AI Assistant</h1>
-              <p className="text-gray-400 text-sm">Neurodivergent parenting support</p>
+              <h1 className="text-white font-semibold">Senali</h1>
             </div>
           </div>
           <div className="flex items-center space-x-3">
@@ -149,12 +148,12 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                     message.role === 'user' 
                       ? 'bg-blue-500' 
-                      : 'bg-green-500'
+                      : 'bg-transparent'
                   }`}>
                     {message.role === 'user' ? (
                       <User className="h-4 w-4 text-white" />
                     ) : (
-                      <Bot className="h-4 w-4 text-black" />
+                      <InfinityIcon size={32} glowing />
                     )}
                   </div>
                   <div className={`max-w-xs sm:max-w-md lg:max-w-lg xl:max-w-xl ${
@@ -175,8 +174,8 @@ export function ChatInterface({ user, onSignOut }: ChatInterfaceProps) {
               ))}
               {isLoading && (
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <Bot className="h-4 w-4 text-black" />
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-transparent">
+                    <InfinityIcon size={32} glowing />
                   </div>
                   <div className="bg-gray-800 text-gray-100 p-3 rounded-lg">
                     <div className="flex items-center space-x-2">

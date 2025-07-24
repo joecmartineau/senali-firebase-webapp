@@ -167,7 +167,7 @@ function SenaliApp() {
           </h1>
           
           <p className="text-gray-300 text-lg mb-8 leading-relaxed">
-            AI-powered support for parents of neurodivergent children. Get personalized guidance, daily tips, and a supportive community.
+            Your AI parenting companion. Get personalized guidance, daily tips, and supportive conversations.
           </p>
 
           {/* Features */}

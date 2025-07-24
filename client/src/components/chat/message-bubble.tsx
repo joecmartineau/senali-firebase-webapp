@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Bot } from "lucide-react";
 import { format } from "date-fns";
 import type { Message } from "@shared/schema";
+import { InfinityIcon } from "@/components/ui/infinity-icon";
 
 interface MessageBubbleProps {
   message: Message;
@@ -46,8 +47,8 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
               {format(timestamp, "h:mm a")}
             </span>
           </div>
-          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-            <Bot className="h-4 w-4 text-black" />
+          <div className="w-8 h-8 bg-transparent rounded-full flex items-center justify-center flex-shrink-0">
+            <InfinityIcon size={32} glowing />
           </div>
         </>
       )}
