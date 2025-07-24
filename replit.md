@@ -160,7 +160,7 @@ This is a full-stack TypeScript application built with a privacy-first, local st
 - **Subscription-Based Revenue Model**: Implemented App Store and Play Store compliant subscription system
   - **Free Tier**: 10 messages per day, 1 child profile, basic features
   - **Premium Subscription**: Unlimited messages, unlimited profiles, data export, priority support
-  - **Pricing**: $5.99/month or $49.99/year (31% discount) with 7-day free trial
+  - **Pricing**: $3.99/month or $34.99/year (27% discount) with 7-day free trial
   - **App Store Integration**: Designed for native In-App Purchase (IAP) implementation
 - **Premium Features**: Advanced feature gating with subscription checks
   - Message limit enforcement for free users with upgrade prompts
