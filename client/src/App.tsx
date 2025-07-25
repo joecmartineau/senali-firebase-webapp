@@ -139,6 +139,7 @@ function SenaliApp() {
   const [hasProfiles, setHasProfiles] = useState(false);
   const [showProfilesMenu, setShowProfilesMenu] = useState(false);
   const [showSubscription, setShowSubscription] = useState(false);
+  const [showAdminChat, setShowAdminChat] = useState(false);
   const [location] = useLocation();
 
 
@@ -231,9 +232,21 @@ function SenaliApp() {
     );
   }
 
-  // Show admin panel for specific email only
-  if (user?.email === 'joecmartineau@gmail.com') {
-    return <AdminPanel />;
+  // Show admin panel for specific email only  
+  if (user?.email === 'joecmartineau@gmail.com' && !showAdminChat) {
+    return <AdminPanel onGoToChat={() => setShowAdminChat(true)} />;
+  }
+  
+  // Admin chat access - bypass profile requirement
+  if (user?.email === 'joecmartineau@gmail.com' && showAdminChat) {
+    return (
+      <ChatInterface 
+        user={user} 
+        onSignOut={onSignOut}
+        onManageProfiles={() => setShowAdminChat(false)} // Go back to admin panel
+        onManageSubscription={() => setShowSubscription(true)}
+      />
+    );
   }
 
   // Skip the simple profile setup and go directly to family profiles

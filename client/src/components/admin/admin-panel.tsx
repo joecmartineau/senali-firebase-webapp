@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { User } from 'firebase/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { Shield, Users, CreditCard, LogOut, Settings, Loader2 } from 'lucide-react';
+import { Shield, Users, CreditCard, LogOut, Settings, Loader2, MessageCircle } from 'lucide-react';
 
 interface UserData {
   uid: string;
@@ -19,11 +19,12 @@ interface UserData {
   subscriptionStatus: string;
 }
 
-export default function AdminPanel() {
+export default function AdminPanel({ onGoToChat }: { onGoToChat?: () => void }) {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [creditAdjustment, setCreditAdjustment] = useState('');
+  const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -125,14 +126,24 @@ export default function AdminPanel() {
               <p className="text-sm text-gray-400">User management and system administration</p>
             </div>
           </div>
-          <Button
-            onClick={handleSignOut}
-            variant="outline"
-            className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => onGoToChat?.()}
+              variant="outline"
+              className="bg-green-600/20 border-green-500/50 text-green-300 hover:bg-green-600/30"
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Go to Chat
+            </Button>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </div>
 
