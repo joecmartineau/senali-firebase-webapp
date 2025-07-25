@@ -40,51 +40,47 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
     symptoms: {}
   });
 
-  // Mock profiles data for demo
-  const mockProfiles: FamilyProfile[] = [
-    {
-      id: 'demo-1',
-      childName: 'Emma',
-      age: '8',
-      relationshipToUser: 'child',
-      medicalDiagnoses: 'ADHD',
-      userId: 'demo-user'
-    },
-    {
-      id: 'demo-2',
-      childName: 'Jake',
-      age: '5', 
-      relationshipToUser: 'child',
-      medicalDiagnoses: 'Autism',
-      userId: 'demo-user'
-    }
-  ];
-
-  // Use mock data instead of API call
-  const profiles = mockProfiles;
-  const isLoading = false;
-  const error = null;
+  // Fetch profiles using apiRequest
+  const { data: profiles = [], isLoading, error } = useQuery<FamilyProfile[]>({
+    queryKey: ['/api/children'],
+    enabled: true
+  });
 
   // Debug authentication issues
   console.log('Family profiles query:', { profiles, isLoading, error });
 
-  // Mock create profile mutation
-  const createProfileMutation = {
-    mutateAsync: async (profileData: Partial<FamilyProfile>) => {
-      console.log('Would create profile:', profileData);
-      return { id: `demo-${Date.now()}`, ...profileData };
+  // Create profile mutation
+  const createProfileMutation = useMutation({
+    mutationFn: async (profileData: Partial<FamilyProfile>) => {
+      const response = await apiRequest('POST', '/api/children/create', profileData);
+      return response.json();
     },
-    isPending: false
-  };
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/children'] });
+      setIsCreatingNew(false);
+      setNewProfile({
+        childName: '',
+        age: '',
+        relationshipToUser: 'child',
+        height: '',
+        medicalDiagnoses: '',
+        workSchoolInfo: '',
+        symptoms: {}
+      });
+    }
+  });
 
-  // Mock delete profile mutation
-  const deleteProfileMutation = {
-    mutateAsync: async (id: string) => {
-      console.log('Would delete profile:', id);
-      return { success: true };
+  // Delete profile mutation
+  const deleteProfileMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('DELETE', `/api/children/${id}/delete`);
+      return response.json();
     },
-    isPending: false
-  };
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/children'] });
+      setSelectedProfile(null);
+    }
+  });
 
   const handleCreateProfile = async () => {
     if (!newProfile.childName?.trim()) {

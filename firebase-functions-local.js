@@ -5,42 +5,38 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// In-memory storage for family profiles
+let familyProfiles = [];
+let profileIdCounter = 1;
+
 // Mock family profiles API endpoints
 app.get('/api/children', (req, res) => {
   console.log('GET /api/children called');
-  res.json([
-    {
-      id: 'demo-1',
-      childName: 'Emma',
-      age: '8',
-      relationshipToUser: 'child',
-      medicalDiagnoses: 'ADHD',
-      userId: 'demo-user'
-    },
-    {
-      id: 'demo-2',
-      childName: 'Jake', 
-      age: '5',
-      relationshipToUser: 'child',
-      medicalDiagnoses: 'Autism',
-      userId: 'demo-user'
-    }
-  ]);
+  res.json(familyProfiles);
 });
 
 app.post('/api/children/create', (req, res) => {
   console.log('POST /api/children/create called with:', req.body);
   const newProfile = {
-    id: `demo-${Date.now()}`,
+    id: `profile-${profileIdCounter++}`,
     ...req.body,
     userId: 'demo-user'
   };
+  familyProfiles.push(newProfile);
+  console.log('Profile created. Total profiles:', familyProfiles.length);
   res.status(201).json(newProfile);
 });
 
 app.delete('/api/children/:id/delete', (req, res) => {
-  console.log('DELETE /api/children/:id/delete called for ID:', req.params.id);
-  res.json({ success: true });
+  const profileId = req.params.id;
+  console.log('DELETE /api/children/:id/delete called for ID:', profileId);
+  
+  const initialLength = familyProfiles.length;
+  familyProfiles = familyProfiles.filter(profile => profile.id !== profileId);
+  const deleted = familyProfiles.length < initialLength;
+  
+  console.log(`Profile deletion ${deleted ? 'successful' : 'failed'}. Remaining profiles:`, familyProfiles.length);
+  res.json({ success: deleted });
 });
 
 app.post('/api/chat', (req, res) => {
