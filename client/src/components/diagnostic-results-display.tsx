@@ -22,7 +22,7 @@ export function DiagnosticResultsDisplay({ profile }: DiagnosticResultsDisplayPr
 
   useEffect(() => {
     loadDiagnosticResults();
-  }, [profile.id]); // Only reload when profile ID changes, not symptoms
+  }, [profile.id, profile.symptoms]); // Reload when profile ID OR symptoms change
 
   const loadDiagnosticResults = async () => {
     // Create a unique cache key based on symptoms for this profile
@@ -37,13 +37,28 @@ export function DiagnosticResultsDisplay({ profile }: DiagnosticResultsDisplayPr
     const isExpired = !cacheTime || (Date.now() - parseInt(cacheTime)) > (24 * 60 * 60 * 1000);
     
     if (cachedResults && !isExpired) {
-      console.log('💾 Using cached diagnostic results for', profile.name);
+      console.log('💾 Using cached diagnostic results for', profile.name, `(hash: ${symptomHash})`);
       setDiagnosticResults(JSON.parse(cachedResults));
       return;
     }
 
+    // Clear old cache entries for this profile when symptoms change
+    const cacheKeysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(`diagnostic_results_${profile.id}_`) && key !== cacheKey) {
+        cacheKeysToRemove.push(key);
+        const timeKey = key.replace('diagnostic_results_', 'diagnostic_time_');
+        cacheKeysToRemove.push(timeKey);
+      }
+    }
+    cacheKeysToRemove.forEach(key => localStorage.removeItem(key));
+    if (cacheKeysToRemove.length > 0) {
+      console.log('🗑️ Cleared', cacheKeysToRemove.length / 2, 'old cache entries for', profile.name);
+    }
+
     setLoading(true);
-    console.log('🤖 Running NEW diagnostic analysis for', profile.name, '(cache expired or missing)');
+    console.log('🤖 Running NEW diagnostic analysis for', profile.name, `(hash: ${symptomHash})`);
     
     try {
       // Convert profile symptoms to questionnaire format

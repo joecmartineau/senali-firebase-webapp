@@ -396,11 +396,26 @@ export class FamilyContextBuilder {
       const isExpired = !cacheTime || (Date.now() - parseInt(cacheTime)) > (24 * 60 * 60 * 1000);
       
       if (cachedResults && !isExpired) {
-        console.log('💾 Using cached diagnostic results for', profile.childName);
+        console.log('💾 Family context using cached diagnostic results for', profile.childName, `(hash: ${symptomHash})`);
         return JSON.parse(cachedResults);
       }
       
-      console.log('🔄 Cache miss/expired for', profile.childName);
+      // Clear old cache entries for this profile when symptoms change
+      const cacheKeysToRemove: string[] = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i);
+        if (key && key.startsWith(`diagnostic_results_${profile.id}_`) && key !== cacheKey) {
+          cacheKeysToRemove.push(key);
+          const timeKey = key.replace('diagnostic_results_', 'diagnostic_time_');
+          cacheKeysToRemove.push(timeKey);
+        }
+      }
+      cacheKeysToRemove.forEach(key => window.localStorage.removeItem(key));
+      if (cacheKeysToRemove.length > 0) {
+        console.log('🗑️ Family context cleared', cacheKeysToRemove.length / 2, 'old cache entries for', profile.childName);
+      }
+      
+      console.log('🔄 Cache miss/expired for', profile.childName, `(hash: ${symptomHash})`);
       return null;
     } catch (error) {
       console.error('Cache error:', error);
