@@ -12,10 +12,12 @@ const openai = new OpenAI({
 });
 
 // Helper function to sanitize user input for prompt safety
-function sanitizeForPrompt(input: string | null | undefined): string {
-  if (!input) return '';
+function sanitizeForPrompt(input: string | number | null | undefined): string {
+  if (!input && input !== 0) return '';
+  // Convert to string first
+  const stringInput = String(input);
   // Remove template literal injection characters and limit length
-  return input
+  return stringInput
     .replace(/[`${}]/g, '') // Remove template literal special characters
     .replace(/\n{3,}/g, '\n\n') // Limit excessive newlines
     .trim()
@@ -31,7 +33,7 @@ router.post('/chat', async (req, res) => {
     // Add validation for family context
     if (req.body.familyContext && Array.isArray(req.body.familyContext)) {
       console.log('🚨 Family context is valid array with', req.body.familyContext.length, 'members');
-      req.body.familyContext.forEach((profile, index) => {
+      req.body.familyContext.forEach((profile: any, index: number) => {
         console.log(`🚨 Profile ${index}:`, {
           name: profile?.name,
           relationship: profile?.relationship,
