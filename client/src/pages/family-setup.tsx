@@ -99,7 +99,10 @@ export default function FamilySetup({ onComplete }: FamilySetupProps) {
       
       console.log('Family profiles saved successfully');
       
-      onComplete(); // Trigger parent to show chat interface
+      // Small delay to ensure localStorage write is complete
+      setTimeout(() => {
+        onComplete(); // Trigger parent to show chat interface
+      }, 50);
     } catch (error) {
       console.error('Error saving profiles:', error);
       alert('Error saving profiles. Please try again.');

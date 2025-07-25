@@ -148,9 +148,20 @@ function SenaliApp() {
 
 
 
+  // Check for profiles when user changes
+  useEffect(() => {
+    if (user) {
+      // Small delay to ensure user state is fully set
+      setTimeout(() => {
+        checkForExistingProfiles();
+      }, 100);
+    }
+  }, [user]);
+
+  // Also check on initial app load
   useEffect(() => {
     checkForExistingProfiles();
-  }, [user]);
+  }, []);
 
   const checkForExistingProfiles = () => {
     try {
@@ -179,7 +190,7 @@ function SenaliApp() {
       
       // Clear all local data first
       setUser(null);
-      setHasProfiles(false);
+      // DON'T set hasProfiles to false - let the profile check handle this
       setShowProfilesMenu(false);
       setShowSubscription(false);
       setShowAdminChat(false);

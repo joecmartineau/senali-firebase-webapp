@@ -21,17 +21,17 @@ export const googleProvider = new GoogleAuthProvider();
 // Initialize Firestore
 export const db = getFirestore(app);
 
-// Connect to emulators if in development
-if (import.meta.env.DEV) {
-  try {
-    // Only connect if not already connected
-    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-    connectFirestoreEmulator(db, 'localhost', 8080);
-  } catch (error) {
-    // Emulators might already be connected
-    console.log('Firebase emulators connection skipped (already connected)');
-  }
-}
+// Disable emulators for production Firebase deployment
+// if (import.meta.env.DEV) {
+//   try {
+//     // Only connect if not already connected
+//     connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+//     connectFirestoreEmulator(db, 'localhost', 8080);
+//   } catch (error) {
+//     // Emulators might already be connected
+//     console.log('Firebase emulators connection skipped (already connected)');
+//   }
+// }
 
 console.log('Firebase initialized with project:', import.meta.env.VITE_FIREBASE_PROJECT_ID);
 
