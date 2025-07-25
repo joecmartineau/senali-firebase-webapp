@@ -6,7 +6,7 @@ import { InfinityIcon } from "@/components/ui/infinity-icon";
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 // import FamilySetup from "@/pages/family-setup"; // Removed - causes React hook errors
-import FamilyProfiles from "@/pages/family-profiles";
+// import FamilyProfiles from "@/pages/family-profiles"; // Removed - deleting family profile system
 import AdminPanel from "@/components/admin/admin-panel";
 import ChatInterface from "@/pages/chat";
 import SubscriptionPage from "@/pages/subscription";
@@ -140,49 +140,15 @@ function SenaliApp() {
       alert('Unable to sign in. Please try refreshing the page.');
     }
   };
-  const [hasProfiles, setHasProfiles] = React.useState(false);
-  const [showProfilesMenu, setShowProfilesMenu] = React.useState(false);
+  // const [hasProfiles, setHasProfiles] = React.useState(false); // Removed - deleting family profile system
+  // const [showProfilesMenu, setShowProfilesMenu] = React.useState(false); // Removed - deleting family profile system
   const [showSubscription, setShowSubscription] = React.useState(false);
   const [showAdminChat, setShowAdminChat] = React.useState(false);
   const [location] = useLocation();
 
 
 
-  // Check for profiles when user changes
-  React.useEffect(() => {
-    if (user) {
-      // Small delay to ensure user state is fully set
-      setTimeout(() => {
-        checkForExistingProfiles();
-      }, 100);
-    }
-  }, [user]);
-
-  // Also check on initial app load
-  React.useEffect(() => {
-    checkForExistingProfiles();
-  }, []);
-
-  const checkForExistingProfiles = () => {
-    const saved = localStorage.getItem('senali_family_profiles');
-    console.log('Profile check - raw data:', saved);
-    
-    if (saved && saved !== 'null') {
-      try {
-        const parsed = JSON.parse(saved);
-        const isValid = Array.isArray(parsed) && parsed.length > 0;
-        console.log('Profile check result:', isValid, 'Count:', parsed.length);
-        setHasProfiles(isValid);
-      } catch (e) {
-        console.log('Parse error, clearing invalid data');
-        localStorage.removeItem('senali_family_profiles');
-        setHasProfiles(false);
-      }
-    } else {
-      console.log('No profiles found');
-      setHasProfiles(false);
-    }
-  };
+  // Family profile code removed - deleting family profile system
 
   const onSignOut = async () => {
     try {
@@ -191,8 +157,7 @@ function SenaliApp() {
       
       // Clear all local data first
       setUser(null);
-      // DON'T set hasProfiles to false - let the profile check handle this
-      setShowProfilesMenu(false);
+      // setShowProfilesMenu(false); // Removed - deleting family profile system
       setShowSubscription(false);
       setShowAdminChat(false);
       
@@ -323,17 +288,7 @@ function SenaliApp() {
     );
   }
 
-  // Skip family setup - go directly to chat (family profiles are now optional)
-
-  // Show family profiles management
-  if (showProfilesMenu) {
-    return (
-      <FamilyProfiles 
-        onStartChat={() => setShowProfilesMenu(false)}
-        onBack={() => { setHasProfiles(false); setShowProfilesMenu(false); }}
-      />
-    );
-  }
+  // Family profile system removed - skip family setup, go directly to chat
 
   // Show subscription page
   if (showSubscription) {
@@ -345,12 +300,12 @@ function SenaliApp() {
     );
   }
 
-  // Go directly to chat - family profiles are optional
+  // Go directly to chat - family profiles removed
   return (
     <ChatInterface 
       user={user} 
       onSignOut={onSignOut}
-      onManageProfiles={() => setShowProfilesMenu(true)}
+      onManageProfiles={() => {}} // No-op since family profiles removed
       onManageSubscription={() => setShowSubscription(true)}
     />
   );
