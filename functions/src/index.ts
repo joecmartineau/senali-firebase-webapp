@@ -2,13 +2,15 @@ import {onRequest} from 'firebase-functions/v2/https';
 import {setGlobalOptions} from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 import OpenAI from 'openai';
-import * as cors from 'cors';
+import cors from 'cors';
 
 // Set global options for all functions
 setGlobalOptions({maxInstances: 10});
 
 // Initialize Firebase Admin
 admin.initializeApp();
+const db = admin.firestore();
+const auth = admin.auth();
 
 // Initialize CORS
 const corsHandler = cors({ origin: true });
@@ -17,6 +19,35 @@ const corsHandler = cors({ origin: true });
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// Helper function to verify admin access
+async function verifyAdmin(request: any): Promise<boolean> {
+  try {
+    const authHeader = request.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return false;
+    }
+
+    const token = authHeader.split('Bearer ')[1];
+    const decodedToken = await auth.verifyIdToken(token);
+    
+    return decodedToken.email === 'joecmartineau@gmail.com';
+  } catch (error) {
+    console.error('Admin verification error:', error);
+    return false;
+  }
+}
+
+// Helper function to sanitize input
+function sanitizeForPrompt(input: string | number | null | undefined): string {
+  if (!input && input !== 0) return '';
+  const stringInput = String(input);
+  return stringInput
+    .replace(/[`${}]/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .slice(0, 2000);
+}
 
 // System prompt for Senali - parenting coach and friend role with efficient context handling
 const SYSTEM_PROMPT = `You are Senali, an AI friend who listens and helps like a parenting coach. You talk in a warm and caring way.
@@ -55,8 +86,8 @@ Begin with a warm greeting that makes them want to share what's on their mind.
 
 Remember: You're here to listen, understand, and gently help people talk about their family and feelings. It's better to ask for clarification than to assume context you don't have.`;
 
-// Chat endpoint - replaces the Express.js route
-export const chat = onRequest((request, response) => {
+// Chat endpoint - enhanced version with credit management and admin support
+export const chat = onRequest(async (request: any, response: any) => {
   return corsHandler(request, response, async () => {
     try {
       if (request.method !== 'POST') {
@@ -64,43 +95,122 @@ export const chat = onRequest((request, response) => {
         return;
       }
 
-      const { message, childContext = '', recentContext = [], userId } = request.body;
+      const { message, familyContext, userUid, conversationSummary, recentMessages, isQuestionnaire } = request.body;
 
-      if (!message || typeof message !== 'string') {
+      if (!message) {
         response.status(400).json({ error: 'Message is required' });
         return;
       }
 
-      // Build system prompt with child context
-      const systemPromptWithContext = childContext ? 
-        `${SYSTEM_PROMPT}\n\n${childContext}` : 
-        SYSTEM_PROMPT;
+      console.log(`Chat request from userUid: ${userUid}`);
 
-      // Use minimal context approach - only recent messages
-      const messages = [
-        { role: 'system', content: systemPromptWithContext },
-        ...recentContext.slice(-3), // Only last 3 messages for immediate context
-        { role: 'user', content: message }
-      ];
-
-      console.log(`Sending ${recentContext.length} recent messages to OpenAI (efficient context)`);
+      // Get user for admin check and credit management
+      let user = null;
+      let isAdmin = false;
       
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: messages as any,
-        max_tokens: 1000,
-        temperature: 0.7,
-      });
-
-      const aiResponse = completion.choices[0]?.message?.content;
-
-      if (!aiResponse) {
-        throw new Error('No response from OpenAI');
+      if (userUid) {
+        try {
+          const userDoc = await db.collection('users').doc(userUid).get();
+          
+          if (!userDoc.exists) {
+            // Check if this could be admin accessing via Firebase auth
+            const adminDoc = await db.collection('users').where('email', '==', 'joecmartineau@gmail.com').limit(1).get();
+            if (!adminDoc.empty) {
+              user = { id: adminDoc.docs[0].id, ...adminDoc.docs[0].data() };
+              isAdmin = true;
+              console.log('Admin user detected via fallback lookup - unlimited access');
+            } else {
+              return response.status(404).json({ error: 'User not found' });
+            }
+          } else {
+            user = { id: userDoc.id, ...userDoc.data() } as any;
+            isAdmin = (user as any).email === 'joecmartineau@gmail.com';
+          }
+          
+          // Only check credits for non-admin users
+          if (!isAdmin && (user as any).credits <= 0) {
+            return response.status(403).json({ 
+              error: 'No credits remaining',
+              message: 'You have no credits left. Please upgrade to continue chatting.' 
+            });
+          }
+          
+          console.log(`User ${(user as any)?.email || userUid} has ${(user as any)?.credits || 'unlimited'} credits before chat${isAdmin ? ' (ADMIN - unlimited access)' : ''}`);
+        } catch (error) {
+          console.error('Error fetching user:', error);
+        }
       }
 
-      console.log('OpenAI response received');
+      // Build system prompt with family context
+      let systemPrompt: string;
       
-      response.json({ response: aiResponse });
+      if (isAdmin) {
+        systemPrompt = `You are Senali, an AI assistant with full capabilities. You can discuss any topic without restrictions. Be helpful, informative, and conversational. You have access to GPT-4o and can provide detailed, comprehensive responses on any subject the user wants to explore.`;
+      } else {
+        systemPrompt = SYSTEM_PROMPT;
+      }
+
+      if (familyContext && familyContext.length > 0) {
+        systemPrompt += `\n\nFamily Context:\n`;
+        familyContext.forEach((member: any) => {
+          systemPrompt += `- ${sanitizeForPrompt(member.name)} (${sanitizeForPrompt(member.relationship)})`;
+          if (member.age) systemPrompt += `, age ${sanitizeForPrompt(member.age)}`;
+          if (member.medicalDiagnoses) systemPrompt += `, diagnoses: ${sanitizeForPrompt(member.medicalDiagnoses)}`;
+          systemPrompt += `\n`;
+        });
+      }
+
+      // Add conversation summary if available
+      if (conversationSummary) {
+        systemPrompt += `\n\nPrevious Conversation Summary:\n${sanitizeForPrompt(conversationSummary)}`;
+      }
+
+      // Build messages array with recent context
+      const messages: any[] = [{ role: 'system', content: systemPrompt }];
+      
+      // Add recent messages for immediate context (last 10 messages)
+      if (recentMessages && recentMessages.length > 0) {
+        const contextMessages = recentMessages.slice(0, -1);
+        messages.push(...contextMessages);
+      }
+      
+      // Add the current user message
+      messages.push({ role: 'user', content: message });
+
+      // Handle questionnaire analysis differently
+      const modelToUse = isQuestionnaire ? 'gpt-4o' : (isAdmin ? 'gpt-4o' : 'gpt-3.5-turbo');
+      const maxTokens = isQuestionnaire ? 1000 : (isAdmin ? 1000 : 500);
+      const temperature = isQuestionnaire ? 0.3 : (isAdmin ? 0.8 : 0.7);
+      
+      const completion = await openai.chat.completions.create({
+        model: modelToUse,
+        messages: messages,
+        max_tokens: maxTokens,
+        temperature: temperature,
+        response_format: isQuestionnaire ? { type: "json_object" } : undefined
+      });
+
+      const aiResponse = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response right now.";
+
+      console.log('OpenAI response received');
+
+      // Deduct credit for non-admin users
+      let updatedCredits = (user as any)?.credits;
+      if (user && !isAdmin) {
+        const newCredits = Math.max(0, (user as any).credits - 1);
+        await db.collection('users').doc((user as any).id).update({
+          credits: newCredits,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        updatedCredits = newCredits;
+        console.log(`Credit deducted: ${(user as any).email} now has ${newCredits} credits`);
+      }
+      
+      response.json({ 
+        response: aiResponse,
+        creditsRemaining: isAdmin ? 999999 : updatedCredits
+      });
+
     } catch (error: any) {
       console.error('Chat API error:', error);
       
@@ -122,7 +232,7 @@ export const chat = onRequest((request, response) => {
 });
 
 // Tips generation endpoint
-export const generateTip = onRequest((request, response) => {
+export const generateTip = onRequest(async (request: any, response: any) => {
   return corsHandler(request, response, async () => {
     try {
       if (request.method !== 'POST') {
@@ -197,3 +307,212 @@ function getAgeRange(age?: number): string {
   if (age <= 18) return '13-18';
   return 'adult';
 }
+
+// Firebase Auth Sign-in endpoint
+export const firebaseSignin = onRequest(async (request: any, response: any) => {
+  return corsHandler(request, response, async () => {
+    try {
+      if (request.method !== 'POST') {
+        response.status(405).json({ error: 'Method not allowed' });
+        return;
+      }
+
+      const { uid, email, displayName, photoURL } = request.body;
+
+      if (!uid || !email) {
+        response.status(400).json({ error: 'UID and email are required' });
+        return;
+      }
+
+      // Check if user exists in Firestore
+      let userDoc = await db.collection('users').doc(uid).get();
+      
+      if (!userDoc.exists) {
+        // Create new user with default credits
+        await db.collection('users').doc(uid).set({
+          email,
+          displayName: displayName || email.split('@')[0],
+          profileImageUrl: photoURL || null,
+          credits: 25, // Default starting credits
+          subscription: 'free',
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        
+        userDoc = await db.collection('users').doc(uid).get();
+        console.log(`New user created: ${email} with 25 credits`);
+      } else {
+        // Update existing user's last sign-in
+        await db.collection('users').doc(uid).update({
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        console.log(`Existing user signed in: ${email}`);
+      }
+
+      const userData = userDoc.data();
+      response.json({
+        user: {
+          uid,
+          email: userData?.email || email,
+          displayName: userData?.displayName || displayName,
+          credits: userData?.credits || 25,
+          subscription: userData?.subscription || 'free'
+        }
+      });
+
+    } catch (error) {
+      console.error('Firebase signin error:', error);
+      response.status(500).json({ error: 'Failed to sign in user' });
+    }
+  });
+});
+
+// Get subscription status
+export const getSubscriptionStatus = onRequest(async (request: any, response: any) => {
+  return corsHandler(request, response, async () => {
+    try {
+      if (request.method !== 'GET') {
+        response.status(405).json({ error: 'Method not allowed' });
+        return;
+      }
+
+      const uid = request.url?.split('/').pop();
+      if (!uid) {
+        response.status(400).json({ error: 'User ID is required' });
+        return;
+      }
+
+      const userDoc = await db.collection('users').doc(uid).get();
+      if (!userDoc.exists) {
+        response.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      const userData = userDoc.data();
+      response.json({
+        credits: userData?.credits || 0,
+        subscription: userData?.subscription || 'free',
+        subscriptionStatus: userData?.subscription === 'premium' ? 'active' : 'trial'
+      });
+
+    } catch (error) {
+      console.error('Get subscription status error:', error);
+      response.status(500).json({ error: 'Failed to get subscription status' });
+    }
+  });
+});
+
+// Admin: Get all users
+export const adminGetUsers = onRequest(async (request: any, response: any) => {
+  return corsHandler(request, response, async () => {
+    try {
+      if (request.method !== 'GET') {
+        response.status(405).json({ error: 'Method not allowed' });
+        return;
+      }
+
+      const isAdmin = await verifyAdmin(request);
+      if (!isAdmin) {
+        response.status(403).json({ error: 'Access denied' });
+        return;
+      }
+
+      console.log('Admin: Fetching all users...');
+      
+      // Get users from Firestore
+      const usersSnapshot = await db.collection('users').get();
+      const users = usersSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          uid: doc.id,
+          email: data.email || '',
+          displayName: data.displayName || data.email?.split('@')[0] || 'Unknown',
+          photoURL: data.profileImageUrl || null,
+          createdAt: data.createdAt?.toDate()?.toISOString() || new Date().toISOString(),
+          lastSignIn: data.updatedAt?.toDate()?.toISOString() || data.createdAt?.toDate()?.toISOString() || new Date().toISOString(),
+          credits: data.credits || 25,
+          subscriptionStatus: data.subscription === 'premium' ? 'premium' : 'free'
+        };
+      });
+
+      console.log(`Found ${users.length} users`);
+      response.json({ users, totalCount: users.length });
+
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      response.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+});
+
+// Admin: Adjust user credits
+export const adminAdjustCredits = onRequest(async (request: any, response: any) => {
+  return corsHandler(request, response, async () => {
+    try {
+      if (request.method !== 'PATCH') {
+        response.status(405).json({ error: 'Method not allowed' });
+        return;
+      }
+
+      const isAdmin = await verifyAdmin(request);
+      if (!isAdmin) {
+        response.status(403).json({ error: 'Access denied' });
+        return;
+      }
+
+      const uid = request.url?.split('/')[4]; // Extract UID from URL path
+      const { adjustment, setAbsolute } = request.body;
+
+      if (typeof adjustment !== 'number') {
+        response.status(400).json({ error: 'Invalid adjustment value' });
+        return;
+      }
+
+      console.log(`Admin: ${setAbsolute ? 'Setting' : 'Adjusting'} credits for user ${uid} ${setAbsolute ? 'to' : 'by'} ${adjustment}`);
+
+      // Get current user first
+      const userDoc = await db.collection('users').doc(uid).get();
+      if (!userDoc.exists) {
+        response.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      const userData = userDoc.data();
+      const currentCredits = userData?.credits || 25;
+      
+      // Either set absolute value or adjust relative to current
+      const newCredits = setAbsolute ? Math.max(0, adjustment) : Math.max(0, currentCredits + adjustment);
+
+      console.log(`Credits change: ${currentCredits} → ${newCredits} (${setAbsolute ? 'absolute' : 'relative'})`);
+
+      // Update in Firestore
+      await db.collection('users').doc(uid).update({
+        credits: newCredits,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      const updatedDoc = await db.collection('users').doc(uid).get();
+      const updatedData = updatedDoc.data();
+
+      console.log(`Credits updated: ${updatedData?.email} now has ${updatedData?.credits} credits`);
+
+      // Return formatted user data
+      const responseUser = {
+        uid: uid,
+        email: updatedData?.email || '',
+        displayName: updatedData?.displayName || updatedData?.email?.split('@')[0] || 'Unknown',
+        photoURL: updatedData?.profileImageUrl || null,
+        createdAt: updatedData?.createdAt?.toDate()?.toISOString() || new Date().toISOString(),
+        lastSignIn: updatedData?.updatedAt?.toDate()?.toISOString() || new Date().toISOString(),
+        credits: updatedData?.credits || 0,
+        subscriptionStatus: updatedData?.subscription === 'premium' ? 'active' : 'trial'
+      };
+
+      response.json(responseUser);
+
+    } catch (error) {
+      console.error('Error adjusting credits:', error);
+      response.status(500).json({ error: 'Failed to adjust credits' });
+    }
+  });
+});

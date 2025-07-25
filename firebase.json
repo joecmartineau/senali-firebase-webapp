@@ -24,6 +24,22 @@
         "function": "generateTip"
       },
       {
+        "source": "/api/auth/firebase-signin",
+        "function": "firebaseSignin"
+      },
+      {
+        "source": "/api/subscriptions/status/*",
+        "function": "getSubscriptionStatus"
+      },
+      {
+        "source": "/api/admin/users",
+        "function": "adminGetUsers"
+      },
+      {
+        "source": "/api/admin/users/*/credits",
+        "function": "adminAdjustCredits"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

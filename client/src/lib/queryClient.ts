@@ -41,6 +41,12 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
+// Determine if we're in production (Firebase hosting) or development (Replit)
+const isProduction = import.meta.env.PROD || window.location.hostname.includes('firebaseapp.com') || window.location.hostname.includes('web.app');
+const baseURL = isProduction ? '' : '';
+
+console.log('API Base URL:', baseURL, '(Production:', isProduction, ')');
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -55,3 +61,28 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+// Enhanced apiRequest function for Firebase compatibility
+export async function firebaseApiRequest(url: string, options: RequestInit = {}) {
+  const response = await fetch(`${baseURL}${url}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorMessage;
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorMessage = errorJson.error || errorJson.message || 'Request failed';
+    } catch {
+      errorMessage = errorText || 'Request failed';
+    }
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+}
