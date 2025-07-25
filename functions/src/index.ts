@@ -141,7 +141,7 @@ export const chat = onRequest(async (request: any, response: any) => {
         }
       }
 
-      // Build system prompt with family context
+      // Build system prompt with family context and diagnostic awareness
       let systemPrompt: string;
       
       if (isAdmin) {

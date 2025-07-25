@@ -5,6 +5,7 @@
 
 import { localStorage, type ChildProfile } from './local-storage';
 import { calculateDiagnosticProbabilities, type DiagnosticResult } from './diagnostic-questions';
+import { getAIDiagnosticAnalysis, convertAIResultsToUIFormat } from './ai-diagnostic-system';
 
 export interface FamilyMemberInfo {
   name: string;
@@ -73,6 +74,64 @@ export class FamilyContextBuilder {
         gender: profile.gender,
         relationship: this.formatRelationship(profile.relationshipToUser || 'family member')
       };
+
+      // Get AI-powered diagnostic results for this family member
+      if (profile.symptoms && Object.keys(profile.symptoms).length > 0) {
+        try {
+          // Convert symptoms to response format
+          const responses: Record<string, 'yes' | 'no' | 'unsure'> = {};
+          Object.entries(profile.symptoms).forEach(([key, value]) => {
+            if (value === 'yes' || value === true) {
+              responses[key] = 'yes';
+            } else if (value === 'no' || value === false) {
+              responses[key] = 'no';
+            } else {
+              responses[key] = 'unsure';
+            }
+          });
+
+          const yesCount = Object.values(responses).filter(r => r === 'yes').length;
+          
+          // Get AI diagnostic results if enough positive symptoms
+          if (yesCount >= 2 && Object.keys(responses).length >= 5) {
+            console.log(`🤖 Getting AI diagnostics for ${profile.childName} with ${yesCount} positive symptoms`);
+            
+            // Create profile object for AI analysis
+            const aiProfile = {
+              name: profile.childName,
+              childName: profile.childName,
+              age: parseInt(profile.age || '0'),
+              relationship: profile.relationshipToUser,
+              relationshipToUser: profile.relationshipToUser,
+              symptoms: profile.symptoms
+            };
+            
+            const aiResults = await getAIDiagnosticAnalysis(aiProfile, responses);
+            const diagnosticResults = convertAIResultsToUIFormat(aiResults);
+            memberInfo.diagnosticResults = diagnosticResults;
+            
+            console.log(`✅ AI diagnostic results for ${profile.childName}:`, diagnosticResults);
+          } else {
+            // Use rule-based fallback
+            const diagnosticResults = calculateDiagnosticProbabilities(responses);
+            memberInfo.diagnosticResults = diagnosticResults;
+          }
+        } catch (error) {
+          console.error(`❌ Error getting diagnostics for ${profile.childName}:`, error);
+          // Use rule-based fallback
+          const responses: Record<string, 'yes' | 'no' | 'unsure'> = {};
+          Object.entries(profile.symptoms).forEach(([key, value]) => {
+            if (value === 'yes' || value === true) {
+              responses[key] = 'yes';
+            } else if (value === 'no' || value === false) {
+              responses[key] = 'no';
+            } else {
+              responses[key] = 'unsure';
+            }
+          });
+          memberInfo.diagnosticResults = calculateDiagnosticProbabilities(responses);
+        }
+      }
 
       // Add medical diagnoses if available (check profile structure)
       if ((profile as any).medicalDiagnoses && (profile as any).medicalDiagnoses.length > 0) {
@@ -194,30 +253,35 @@ export class FamilyContextBuilder {
   private formatFamilyContext(familyMembers: FamilyMemberInfo[]): string {
     if (familyMembers.length === 0) return '';
 
-    let context = `**FAMILY MEMBERS:**\n\n`;
+    let context = `**FAMILY MEMBERS & AI DIAGNOSTIC RESULTS:**\n\n`;
 
     familyMembers.forEach((member, index) => {
-      context += `**${member.name}**\n`;
-      context += `- Relationship: ${member.relationship}\n`;
+      context += `**${member.name}** (${member.relationship}`;
+      if (member.age) context += `, age ${member.age}`;
+      context += `)\n`;
       
-      if (member.age) {
-        context += `- Age: ${member.age}\n`;
-      }
-      
-      if (member.gender) {
-        context += `- Gender: ${member.gender}\n`;
+      // PRIORITY: AI Diagnostic Results (Most Important for Senali)
+      if (member.diagnosticResults && member.diagnosticResults.length > 0) {
+        context += `🤖 **AI DIAGNOSTIC ANALYSIS:**\n`;
+        member.diagnosticResults.forEach(result => {
+          const priority = result.probability === 'high' ? '🔴 HIGH' : 
+                          result.probability === 'moderate' ? '🟡 MODERATE' : '🟢 LOW';
+          context += `   ${priority}: ${result.condition}\n`;
+          if (result.description) {
+            context += `      → ${result.description}\n`;
+          }
+        });
+        
+        // Special emphasis for high probability conditions
+        const highProbConditions = member.diagnosticResults.filter(r => r.probability === 'high');
+        if (highProbConditions.length > 0) {
+          context += `⚠️  **SENALI GUIDANCE**: ${member.name} likely has ${highProbConditions.map(c => c.condition).join(' and ')}. Tailor responses accordingly.\n`;
+        }
+        context += `\n`;
       }
       
       if (member.diagnoses && member.diagnoses.length > 0) {
-        context += `- Medical diagnoses: ${member.diagnoses.join(', ')}\n`;
-      }
-
-      // Add diagnostic results from questionnaires
-      if (member.diagnosticResults && member.diagnosticResults.length > 0) {
-        context += `- Assessment Results:\n`;
-        member.diagnosticResults.forEach(result => {
-          context += `  • ${result.condition} (${result.probability} probability)\n`;
-        });
+        context += `📋 Official diagnoses: ${member.diagnoses.join(', ')}\n`;
       }
 
       // Add symptom summary
