@@ -16,10 +16,6 @@
     ],
     "rewrites": [
       {
-        "source": "/api/**",
-        "destination": "http://localhost:8081/api/**"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
