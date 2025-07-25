@@ -336,6 +336,19 @@ export function calculateDiagnosticProbabilities(responses: Record<string, 'yes'
   const sensoryYes = sensoryQuestions.filter(q => responses[q.id] === 'yes').length;
   const executiveYes = executiveFunctionQuestions.filter(q => responses[q.id] === 'yes').length;
 
+  // Debug logging to help diagnose issues
+  console.log('🧠 DIAGNOSTIC DEBUG:', {
+    inattentiveYes: `${inattentiveYes}/${adhdInattentiveQuestions.length}`,
+    hyperactiveYes: `${hyperactiveYes}/${adhdHyperactiveQuestions.length}`,
+    socialYes: `${socialYes}/${autismSocialQuestions.length}`,
+    repetitiveYes: `${repetitiveYes}/${autismRepetitiveQuestions.length}`,
+    anxietyYes: `${anxietyYes}/${anxietyQuestions.length}`,
+    sensoryYes: `${sensoryYes}/${sensoryQuestions.length}`,
+    executiveYes: `${executiveYes}/${executiveFunctionQuestions.length}`,
+    totalResponses: Object.keys(responses).length,
+    totalYesResponses: Object.values(responses).filter(r => r === 'yes').length
+  });
+
   // ADHD Analysis (using DSM-5 criteria - 6+ symptoms needed)
   if (inattentiveYes >= 6 && hyperactiveYes >= 6) {
     results.push({
@@ -387,6 +400,8 @@ export function calculateDiagnosticProbabilities(responses: Record<string, 'yes'
     });
   }
 
+  console.log('🧠 ADHD Results so far:', results.length);
+
   // Autism Analysis (using DSM-5 criteria)
   if (socialYes >= 3 && repetitiveYes >= 2) {
     results.push({
@@ -413,6 +428,8 @@ export function calculateDiagnosticProbabilities(responses: Record<string, 'yes'
       ]
     });
   }
+
+  console.log('🧠 Autism Results so far:', results.length);
 
   // Anxiety Analysis
   if (anxietyYes >= 4) {
@@ -497,6 +514,7 @@ export function calculateDiagnosticProbabilities(responses: Record<string, 'yes'
 
   // If no significant patterns, provide general guidance
   if (results.length === 0) {
+    console.log('🧠 No results found - adding fallback "No Significant Concerns"');
     results.push({
       condition: 'No Significant Concerns',
       probability: 'low',
@@ -510,5 +528,6 @@ export function calculateDiagnosticProbabilities(responses: Record<string, 'yes'
     });
   }
 
+  console.log('🧠 FINAL DIAGNOSTIC RESULTS:', results.map(r => `${r.condition} (${r.probability})`));
   return results;
 }
