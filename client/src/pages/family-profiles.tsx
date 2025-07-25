@@ -9,6 +9,7 @@ import { InfinityIcon } from '@/components/ui/infinity-icon';
 import { calculateDiagnosticProbabilities, type DiagnosticResult } from '@/lib/diagnostic-questions';
 import { DiagnosticResultsDisplay } from '@/components/diagnostic-results-display';
 import { Badge } from '@/components/ui/badge';
+import { localStorage } from '@/lib/local-storage';
 
 interface FamilyProfile {
   name: string;
@@ -28,6 +29,7 @@ interface FamilyProfilesProps {
 export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesProps) {
   const [profiles, setProfiles] = useState<FamilyProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<FamilyProfile | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0); // Force refresh when needed
   const [isEditing, setIsEditing] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -109,20 +111,37 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
 
   useEffect(() => {
     loadProfiles();
+    
+    // Listen for storage changes to reload profiles when questionnaire updates them
+    const handleStorageChange = () => {
+      console.log('🔄 Storage changed, reloading profiles...');
+      setRefreshKey(prev => prev + 1);
+      loadProfiles();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const loadProfiles = () => {
+  const loadProfiles = async () => {
     try {
-      const saved = window.localStorage.getItem('senali_family_profiles');
-      if (saved) {
-        const loadedProfiles = JSON.parse(saved);
-        // Ensure each profile has a symptoms object
-        const profilesWithSymptoms = loadedProfiles.map((profile: any) => ({
-          ...profile,
-          symptoms: profile.symptoms || {}
-        }));
-        setProfiles(profilesWithSymptoms);
-      }
+      // Use the correct localStorage system that matches the questionnaire
+      const userId = 'anonymous'; // Using same ID as localStorage system
+      const childProfiles = await localStorage.getChildProfiles(userId);
+      
+      // Convert to FamilyProfile format expected by this component
+      const familyProfiles: FamilyProfile[] = childProfiles.map(profile => ({
+        name: profile.childName,
+        age: profile.age || 0,  
+        relationship: profile.relationshipToUser as 'child' | 'spouse' | 'self' | 'other',
+        height: profile.height || '',
+        medicalDiagnoses: profile.medicalDiagnoses || '',
+        workSchoolInfo: profile.workSchoolInfo || '',
+        symptoms: profile.symptoms || {}
+      }));
+      
+      setProfiles(familyProfiles);
+      console.log('📂 Loaded', familyProfiles.length, 'family profiles from localStorage system');
     } catch (error) {
       console.error('Error loading profiles:', error);
     }
@@ -468,7 +487,13 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
                           <div className="text-sm">
                             <span className="text-gray-400">Probable Conditions:</span>
                             <div className="mt-2">
-                              <DiagnosticResultsDisplay profile={profile} />
+                              <DiagnosticResultsDisplay key={`${profile.name}-${refreshKey}`} profile={{
+                                id: profile.name, // Use name as ID since that's how localStorage stores them
+                                name: profile.name,
+                                age: profile.age,
+                                relationship: profile.relationship,
+                                symptoms: profile.symptoms
+                              }} />
                             </div>
                           </div>
                         )}

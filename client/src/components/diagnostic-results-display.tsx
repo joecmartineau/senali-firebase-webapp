@@ -22,7 +22,7 @@ export function DiagnosticResultsDisplay({ profile }: DiagnosticResultsDisplayPr
 
   useEffect(() => {
     loadDiagnosticResults();
-  }, [profile.id, profile.symptoms]); // Reload when profile ID OR symptoms change
+  }, [profile.id, JSON.stringify(profile.symptoms)]); // Reload when profile ID OR symptoms change (deep comparison)
 
   const loadDiagnosticResults = async () => {
     // Create a unique cache key based on symptoms for this profile

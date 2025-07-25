@@ -118,6 +118,14 @@ export function ProfileQuestionnaire({ profile, onClose }: ProfileQuestionnaireP
       await localStorage.updateChildProfile(profile.id, {
         symptoms: updatedSymptoms
       });
+      console.log('💾 Profile symptoms updated for', profile.childName, Object.keys(updatedSymptoms).length, 'symptoms');
+      
+      // Force refresh of diagnostic components by triggering a storage event
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'senali_child_profiles',
+        newValue: JSON.stringify(updatedSymptoms),
+        url: window.location.href
+      }));
     } catch (error) {
       console.error('Error saving response:', error);
     } finally {
