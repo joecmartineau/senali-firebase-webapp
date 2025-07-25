@@ -5,7 +5,7 @@ import { ParentingQuote } from "@/components/ParentingQuote";
 import { InfinityIcon } from "@/components/ui/infinity-icon";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import FamilySetup from "@/pages/family-setup";
+// import FamilySetup from "@/pages/family-setup"; // Removed - causes React hook errors
 import FamilyProfiles from "@/pages/family-profiles";
 import AdminPanel from "@/components/admin/admin-panel";
 import ChatInterface from "@/pages/chat";
