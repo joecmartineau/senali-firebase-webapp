@@ -243,32 +243,36 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white flex flex-col">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-700 p-4">
+      <div className="bg-black/40 backdrop-blur-sm border-b border-green-500/20 p-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-              <span className="text-black font-bold text-lg">∞</span>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+              <span className="text-black font-bold text-xl">∞</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold">Senali</h1>
-              <p className="text-sm text-gray-400">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-green-300 bg-clip-text text-transparent">
+                Senali
+              </h1>
+              <p className="text-sm text-gray-300">
                 Your AI therapist and friend
-                {creditsRemaining !== null && (
-                  <span className="ml-2 px-2 py-1 bg-green-500 text-black rounded text-xs font-medium">
-                    {creditsRemaining} credits
-                  </span>
-                )}
               </p>
             </div>
+            {creditsRemaining !== null && (
+              <div className="ml-4 px-3 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
+                <span className="text-green-300 text-sm font-medium">
+                  {creditsRemaining} credits
+                </span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Button
               onClick={onManageProfiles}
               variant="outline"
               size="sm"
-              className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+              className="bg-gray-800/50 border-gray-600/50 text-white hover:bg-gray-700/70 hover:border-green-500/50 transition-all duration-200"
             >
               <Users className="w-4 h-4 mr-2" />
               Manage Profiles
@@ -277,7 +281,7 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
               onClick={onSignOut}
               variant="outline"
               size="sm"
-              className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+              className="bg-gray-800/50 border-gray-600/50 text-white hover:bg-red-500/20 hover:border-red-500/50 transition-all duration-200"
             >
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out
@@ -288,17 +292,17 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
 
       {/* Family Profiles Summary */}
       {familyProfiles.length > 0 && (
-        <div className="bg-gray-900 border-b border-gray-700 p-4">
+        <div className="bg-black/30 backdrop-blur-sm border-b border-green-500/10 p-4">
           <div className="max-w-4xl mx-auto">
-            <p className="text-sm text-gray-400 mb-2">Family Members:</p>
+            <p className="text-sm text-green-300 font-medium mb-3">Family Members:</p>
             <div className="flex flex-wrap gap-2">
               {familyProfiles.map((profile, index) => (
-                <span
+                <div
                   key={index}
-                  className="bg-green-500 text-black px-2 py-1 rounded text-xs font-medium"
+                  className="bg-gradient-to-r from-green-500/20 to-green-600/20 border border-green-500/30 text-green-200 px-3 py-1.5 rounded-full text-sm font-medium shadow-sm"
                 >
                   {profile.name} ({profile.relationship})
-                </span>
+                </div>
               ))}
             </div>
           </div>
@@ -306,34 +310,66 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
       )}
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-4xl mx-auto space-y-4">
-          {messages.map((message) => (
+      <div className="flex-1 overflow-y-auto p-6 space-y-1">
+        <div className="max-w-4xl mx-auto">
+          {messages.length === 0 && (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-400/20 to-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-green-300 font-bold text-2xl">∞</span>
+              </div>
+              <p className="text-gray-300 text-lg mb-2">Welcome to your conversation with Senali</p>
+              <p className="text-gray-400 text-sm">Share what's on your mind, and I'll listen with care</p>
+            </div>
+          )}
+          
+          {messages.map((message, index) => (
             <div
               key={message.id}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex mb-6 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  message.role === 'user'
-                    ? 'bg-green-500 text-black'
-                    : 'bg-gray-800 text-white'
-                }`}
-              >
-                <p className="text-sm">{message.content}</p>
-                <p className="text-xs opacity-70 mt-1">
-                  {message.timestamp.toLocaleTimeString()}
-                </p>
+              <div className={`flex items-start gap-3 max-w-2xl ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                {message.role === 'assistant' && (
+                  <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <span className="text-black font-bold text-sm">∞</span>
+                  </div>
+                )}
+                {message.role === 'user' && (
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <span className="text-white font-bold text-sm">You</span>
+                  </div>
+                )}
+                
+                <div
+                  className={`px-4 py-3 rounded-2xl shadow-lg ${
+                    message.role === 'user'
+                      ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white'
+                      : 'bg-gray-800/80 backdrop-blur-sm border border-gray-700/50 text-gray-100'
+                  }`}
+                >
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  <p className={`text-xs mt-2 ${message.role === 'user' ? 'text-blue-100' : 'text-gray-400'}`}>
+                    {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+                  </p>
+                </div>
               </div>
             </div>
           ))}
+          
           {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-800 text-white max-w-xs lg:max-w-md px-4 py-2 rounded-lg">
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="flex justify-start mb-6">
+              <div className="flex items-start gap-3 max-w-2xl">
+                <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-black font-bold text-sm">∞</span>
+                </div>
+                <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700/50 text-gray-100 px-4 py-3 rounded-2xl shadow-lg">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                    <span className="text-sm text-gray-300">Senali is typing...</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -343,23 +379,41 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
       </div>
 
       {/* Input Area */}
-      <div className="bg-gray-900 border-t border-gray-700 p-4">
-        <div className="max-w-4xl mx-auto flex gap-2">
-          <Input
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
-            className="flex-1 bg-gray-800 border-gray-600 text-white"
-            disabled={isLoading}
-          />
-          <Button
-            onClick={sendMessage}
-            disabled={!inputMessage.trim() || isLoading}
-            className="bg-green-500 hover:bg-green-600 text-black"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
+      <div className="bg-black/40 backdrop-blur-sm border-t border-green-500/20 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex gap-3 items-end">
+            <div className="flex-1 relative">
+              <Input
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Share what's on your mind..."
+                className="bg-gray-800/70 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 pr-12 focus:border-green-500/50 focus:ring-green-500/20 transition-all duration-200"
+                disabled={isLoading}
+                rows={1}
+              />
+            </div>
+            <Button
+              onClick={sendMessage}
+              disabled={!inputMessage.trim() || isLoading}
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-black font-medium px-6 py-3 rounded-xl shadow-lg transition-all duration-200 disabled:opacity-50"
+            >
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+          
+          {creditsRemaining !== null && creditsRemaining <= 10 && (
+            <div className="mt-3 text-center">
+              <p className="text-yellow-400 text-sm">
+                ⚠️ {creditsRemaining} credits remaining
+                {creditsRemaining === 0 && " - Please upgrade to continue chatting"}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
