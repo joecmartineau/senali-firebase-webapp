@@ -84,25 +84,20 @@ export default function FamilySetup({ onComplete }: FamilySetupProps) {
         symptoms: []
       }));
       
-      // Save to localStorage with multiple verification steps
+      // Save to localStorage
       const profilesJson = JSON.stringify(profiles);
-      console.log('💾 SAVING: About to save profiles to localStorage:', profilesJson);
+      console.log('Saving family profiles:', profiles);
       
-      window.localStorage.setItem('senali_family_profiles', profilesJson);
+      localStorage.setItem('senali_family_profiles', profilesJson);
       
-      // Verify the save worked immediately
-      const savedVerification = window.localStorage.getItem('senali_family_profiles');
-      console.log('✅ VERIFICATION: Data saved successfully:', !!savedVerification);
-      console.log('✅ VERIFICATION: Saved content matches:', savedVerification === profilesJson);
-      
-      if (!savedVerification) {
-        console.error('❌ SAVE FAILED: localStorage did not save the data!');
-        alert('Failed to save family profiles. Please check your browser settings and try again.');
+      // Verify save worked
+      const verification = localStorage.getItem('senali_family_profiles');
+      if (!verification) {
+        alert('Failed to save family profiles. Please check your browser settings.');
         return;
       }
       
-      console.log('✅ FAMILY SETUP: Family profiles saved successfully to localStorage');
-      console.log('✅ FAMILY SETUP: Calling onComplete to trigger parent state change');
+      console.log('Family profiles saved successfully');
       
       onComplete(); // Trigger parent to show chat interface
     } catch (error) {

@@ -155,9 +155,19 @@ function SenaliApp() {
   const checkForExistingProfiles = () => {
     try {
       const saved = localStorage.getItem('senali_family_profiles');
-      const hasLocalProfiles = saved && JSON.parse(saved).length > 0;
-      setHasProfiles(!!hasLocalProfiles);
+      console.log('Checking for profiles:', { saved: !!saved, raw: saved });
+      
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const hasValidProfiles = Array.isArray(parsed) && parsed.length > 0;
+        console.log('Profile check result:', { hasValidProfiles, profileCount: parsed.length });
+        setHasProfiles(hasValidProfiles);
+      } else {
+        console.log('No saved profiles found');
+        setHasProfiles(false);
+      }
     } catch (error) {
+      console.error('Error checking profiles:', error);
       setHasProfiles(false);
     }
   };
@@ -180,6 +190,8 @@ function SenaliApp() {
       // window.localStorage.removeItem('senali_family_profiles'); 
       window.localStorage.removeItem('senali_messages');
       window.localStorage.removeItem('senali_conversation_summary');
+      
+      console.log('Sign out complete - family profiles preserved in localStorage');
       
       // Check if in demo mode
       const demoUser = getDemoUser();
