@@ -149,14 +149,24 @@ function SenaliApp() {
 
 
   useEffect(() => {
-    checkForExistingProfiles();
-  }, []);
+    if (user) {
+      checkForExistingProfiles();
+    }
+  }, [user]);
 
   const checkForExistingProfiles = async () => {
     try {
       // Check if user has saved family profiles in browser localStorage
       const saved = window.localStorage.getItem('senali_family_profiles');
-      setHasProfiles(saved ? JSON.parse(saved).length > 0 : false);
+      const hasLocalProfiles = saved ? JSON.parse(saved).length > 0 : false;
+      
+      console.log('Checking for existing profiles:', {
+        hasLocalProfiles,
+        savedProfilesLength: saved ? JSON.parse(saved).length : 0,
+        user: user?.email
+      });
+      
+      setHasProfiles(hasLocalProfiles);
     } catch (error) {
       console.error('Error checking profiles:', error);
       setHasProfiles(false);
@@ -297,10 +307,14 @@ function SenaliApp() {
     );
   }
 
-  // Skip the simple profile setup and go directly to family profiles
-  // This eliminates the duplicate profile entry experience
+  // Check for family profiles - if user has them, go to chat; if not, go to setup
   if (!hasProfiles) {
-    return <FamilySetup onComplete={() => { setHasProfiles(true); setShowProfilesMenu(true); }} />;
+    console.log('No family profiles found, showing family setup');
+    return <FamilySetup onComplete={() => { 
+      console.log('Family setup completed, setting hasProfiles to true');
+      setHasProfiles(true); 
+      setShowProfilesMenu(false); // Go directly to chat after setup
+    }} />;
   }
 
   // Show family profiles management
