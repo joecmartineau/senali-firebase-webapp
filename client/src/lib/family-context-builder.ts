@@ -75,46 +75,72 @@ export class FamilyContextBuilder {
         relationship: this.formatRelationship(profile.relationshipToUser || 'family member')
       };
 
-      // Get AI-powered diagnostic results for this family member
+      // Get AI-powered diagnostic results with caching optimization
       if (profile.symptoms && Object.keys(profile.symptoms).length > 0) {
         try {
-          // Convert symptoms to response format
-          const responses: Record<string, 'yes' | 'no' | 'unsure'> = {};
-          Object.entries(profile.symptoms).forEach(([key, value]) => {
-            if (value === 'yes' || value === true) {
-              responses[key] = 'yes';
-            } else if (value === 'no' || value === false) {
-              responses[key] = 'no';
-            } else {
-              responses[key] = 'unsure';
-            }
-          });
-
-          const yesCount = Object.values(responses).filter(r => r === 'yes').length;
+          // Create hash of current symptoms to detect changes
+          const currentSymptomsHash = JSON.stringify(profile.symptoms);
+          const now = Date.now();
           
-          // Get AI diagnostic results if enough positive symptoms
-          if (yesCount >= 2 && Object.keys(responses).length >= 5) {
-            console.log(`🤖 Getting AI diagnostics for ${profile.childName} with ${yesCount} positive symptoms`);
+          // Check if we have cached results and symptoms haven't changed
+          if (profile.cachedDiagnosticResults && 
+              profile.symptomsHash === currentSymptomsHash &&
+              profile.lastDiagnosticAnalysis &&
+              (now - profile.lastDiagnosticAnalysis) < 24 * 60 * 60 * 1000) { // 24 hour cache
             
-            // Create profile object for AI analysis
-            const aiProfile = {
-              name: profile.childName,
-              childName: profile.childName,
-              age: parseInt(profile.age || '0'),
-              relationship: profile.relationshipToUser,
-              relationshipToUser: profile.relationshipToUser,
-              symptoms: profile.symptoms
-            };
-            
-            const aiResults = await getAIDiagnosticAnalysis(aiProfile, responses);
-            const diagnosticResults = convertAIResultsToUIFormat(aiResults);
-            memberInfo.diagnosticResults = diagnosticResults;
-            
-            console.log(`✅ AI diagnostic results for ${profile.childName}:`, diagnosticResults);
+            console.log(`💾 Using cached AI diagnostics for ${profile.childName} (no symptoms changed)`);
+            memberInfo.diagnosticResults = profile.cachedDiagnosticResults;
           } else {
-            // Use rule-based fallback
-            const diagnosticResults = calculateDiagnosticProbabilities(responses);
-            memberInfo.diagnosticResults = diagnosticResults;
+            // Convert symptoms to response format
+            const responses: Record<string, 'yes' | 'no' | 'unsure'> = {};
+            Object.entries(profile.symptoms).forEach(([key, value]) => {
+              if (value === 'yes' || value === true || value === 'true') {
+                responses[key] = 'yes';
+              } else if (value === 'no' || value === false || value === 'false') {
+                responses[key] = 'no';
+              } else {
+                responses[key] = 'unsure';
+              }
+            });
+
+            const yesCount = Object.values(responses).filter(r => r === 'yes').length;
+            
+            // Get AI diagnostic results if enough positive symptoms
+            if (yesCount >= 2 && Object.keys(responses).length >= 5) {
+              console.log(`🤖 Running NEW AI diagnostics for ${profile.childName} with ${yesCount} positive symptoms (symptoms changed or cache expired)`);
+              
+              // Create profile object for AI analysis
+              const aiProfile = {
+                name: profile.childName,
+                childName: profile.childName,
+                age: parseInt(profile.age || '0'),
+                relationship: profile.relationshipToUser,
+                relationshipToUser: profile.relationshipToUser,
+                symptoms: profile.symptoms
+              };
+              
+              const aiResults = await getAIDiagnosticAnalysis(aiProfile, responses);
+              const diagnosticResults = convertAIResultsToUIFormat(aiResults);
+              memberInfo.diagnosticResults = diagnosticResults;
+              
+              // Cache the results to prevent unnecessary API calls
+              profile.cachedDiagnosticResults = diagnosticResults;
+              profile.symptomsHash = currentSymptomsHash;
+              profile.lastDiagnosticAnalysis = now;
+              
+              // Update localStorage with cached results
+              await localStorage.updateChildProfile(profile.id, {
+                cachedDiagnosticResults: diagnosticResults,
+                symptomsHash: currentSymptomsHash,
+                lastDiagnosticAnalysis: now
+              });
+              
+              console.log(`✅ AI diagnostic results cached for ${profile.childName}:`, diagnosticResults);
+            } else {
+              // Use rule-based fallback
+              const diagnosticResults = calculateDiagnosticProbabilities(responses);
+              memberInfo.diagnosticResults = diagnosticResults;
+            }
           }
         } catch (error) {
           console.error(`❌ Error getting diagnostics for ${profile.childName}:`, error);
@@ -159,8 +185,8 @@ export class FamilyContextBuilder {
           // Convert symptoms to diagnostic format and calculate results
           const responses: Record<string, 'yes' | 'no' | 'unsure'> = {};
           symptomEntries.forEach(([key, value]) => {
-            if (value === 'yes') responses[key] = 'yes';
-            else if (value === 'no') responses[key] = 'no';
+            if (value === 'yes' || value === true || value === 'true') responses[key] = 'yes';
+            else if (value === 'no' || value === false || value === 'false') responses[key] = 'no';
             else responses[key] = 'unsure';
           });
           

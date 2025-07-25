@@ -33,6 +33,11 @@ interface ChildProfile {
   parentNotes?: string;
   senaliObservations?: string;
   
+  // AI diagnostic caching to prevent unnecessary API calls
+  cachedDiagnosticResults?: any;
+  lastDiagnosticAnalysis?: number; // timestamp
+  symptomsHash?: string; // to detect changes
+  
   // Comprehensive neurodivergent symptom tracking (yes/no/unknown - default undefined = unknown)
   symptoms?: {
     // ADHD - Inattentive symptoms

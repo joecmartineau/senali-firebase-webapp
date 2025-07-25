@@ -237,20 +237,20 @@ This is a full-stack TypeScript application built with a privacy-first, local st
 
 ### Latest Updates (2025-01-25)
 
-#### AI Diagnostic Integration with Senali Chat (2025-01-25)
+#### AI Diagnostic Integration with Senali Chat - OPTIMIZED (2025-01-25)
 - **Complete AI-Powered Diagnostic System**: Successfully integrated GPT-4o diagnostic analysis into Senali's chat context
   - **Real-time AI Analysis**: Family members' questionnaire responses trigger GPT-4o analysis using DSM-5 criteria
-  - **Senali Diagnostic Awareness**: Updated Senali's system prompt to recognize and respond to AI diagnostic results
-  - **Priority Context Display**: High probability diagnoses (🔴) are emphasized in family context for Senali
+  - **Senali Diagnostic Communication**: Updated Senali to EXPLICITLY tell users their probable conditions ("Based on your questionnaire, you most likely have Inattentive ADHD")
+  - **API Usage Optimization**: Implemented intelligent caching to prevent unnecessary API calls on profile views
+  - **Smart Caching**: AI analysis only runs when questionnaire responses change or cache expires (24 hours)
   - **Condition-Specific Guidance**: Senali provides ADHD-specific, Autism-specific, and targeted parenting strategies
-  - **Smart Triggering**: AI analysis activates when 2+ positive symptoms and 5+ total responses are present
-  - **Comprehensive Integration**: Diagnostic results flow from questionnaires → AI analysis → family context → Senali's responses
-- **Enhanced Family Context Builder**: Updated to include AI diagnostic results in Senali's conversation context
+  - **Comprehensive Integration**: Diagnostic results flow from questionnaires → AI analysis → cached results → Senali's responses
+- **Enhanced Family Context Builder**: Updated to include AI diagnostic results with caching optimization
   - Displays probability levels (HIGH/MODERATE/LOW) with condition names
   - Provides specific guidance notes for Senali based on likely diagnoses
-  - Maintains fallback to rule-based analysis when AI fails
-  - Includes detailed symptom summaries and assessment progress
-- **Benefits**: Senali now understands your family's likely conditions and provides personalized, condition-aware support
+  - Caches diagnostic results to localStorage to prevent redundant API calls
+  - Only triggers new AI analysis when symptoms change or cache expires
+- **Benefits**: Senali now explicitly mentions your likely conditions and provides personalized support while optimizing API usage
 
 ### Latest Updates (2025-01-25)
 
