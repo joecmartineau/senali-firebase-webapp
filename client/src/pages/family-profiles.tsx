@@ -132,11 +132,11 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
       // Convert to FamilyProfile format expected by this component
       const familyProfiles: FamilyProfile[] = childProfiles.map(profile => ({
         name: profile.childName,
-        age: profile.age || 0,  
+        age: parseInt(profile.age?.toString()) || 0,  
         relationship: profile.relationshipToUser as 'child' | 'spouse' | 'self' | 'other',
         height: profile.height || '',
-        medicalDiagnoses: profile.medicalDiagnoses || '',
-        workSchoolInfo: profile.workSchoolInfo || '',
+        medicalDiagnoses: Array.isArray(profile.existingDiagnoses) ? profile.existingDiagnoses.join(', ') : (profile.medicalDiagnoses || ''),
+        workSchoolInfo: profile.workInfo || profile.schoolGrade || '',
         symptoms: profile.symptoms || {}
       }));
       

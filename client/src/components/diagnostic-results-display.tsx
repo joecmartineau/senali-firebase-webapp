@@ -26,14 +26,19 @@ export function DiagnosticResultsDisplay({ profile }: DiagnosticResultsDisplayPr
 
   const loadDiagnosticResults = async () => {
     // Create a unique cache key based on symptoms for this profile
-    const symptomData = JSON.stringify(profile.symptoms);
+    const symptomData = JSON.stringify(profile.symptoms || {});
     const symptomHash = btoa(symptomData).slice(0, 10); // Simple hash for cache key
     const cacheKey = `diagnostic_results_${profile.id}_${symptomHash}`;
     const cacheTimeKey = `diagnostic_time_${profile.id}_${symptomHash}`;
     
+    console.log('🔍 Diagnostic analysis for', profile.name || profile.id);
+    console.log('🔍 Profile symptoms:', Object.keys(profile.symptoms || {}).length, 'total');
+    console.log('🔍 Symptom hash:', symptomHash);
+    console.log('🔍 Cache key:', cacheKey);
+    
     // Check for cached results (valid for 24 hours)
-    const cachedResults = localStorage.getItem(cacheKey);
-    const cacheTime = localStorage.getItem(cacheTimeKey);
+    const cachedResults = window.localStorage.getItem(cacheKey);
+    const cacheTime = window.localStorage.getItem(cacheTimeKey);
     const isExpired = !cacheTime || (Date.now() - parseInt(cacheTime)) > (24 * 60 * 60 * 1000);
     
     if (cachedResults && !isExpired) {
@@ -44,15 +49,15 @@ export function DiagnosticResultsDisplay({ profile }: DiagnosticResultsDisplayPr
 
     // Clear old cache entries for this profile when symptoms change
     const cacheKeysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
       if (key && key.startsWith(`diagnostic_results_${profile.id}_`) && key !== cacheKey) {
         cacheKeysToRemove.push(key);
         const timeKey = key.replace('diagnostic_results_', 'diagnostic_time_');
         cacheKeysToRemove.push(timeKey);
       }
     }
-    cacheKeysToRemove.forEach(key => localStorage.removeItem(key));
+    cacheKeysToRemove.forEach(key => window.localStorage.removeItem(key));
     if (cacheKeysToRemove.length > 0) {
       console.log('🗑️ Cleared', cacheKeysToRemove.length / 2, 'old cache entries for', profile.name);
     }
@@ -97,9 +102,9 @@ export function DiagnosticResultsDisplay({ profile }: DiagnosticResultsDisplayPr
       }
 
       // Cache the results
-      localStorage.setItem(cacheKey, JSON.stringify(results));
-      localStorage.setItem(cacheTimeKey, Date.now().toString());
-      console.log('💾 Diagnostic results cached for', profile.name);
+      window.localStorage.setItem(cacheKey, JSON.stringify(results));
+      window.localStorage.setItem(cacheTimeKey, Date.now().toString());
+      console.log('💾 Cached diagnostic results for', profile.name, `(hash: ${symptomHash})`);
       
       setDiagnosticResults(results);
     } catch (error) {
