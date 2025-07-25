@@ -25,8 +25,22 @@ function sanitizeForPrompt(input: string | null | undefined): string {
 router.post('/chat', async (req, res) => {
   try {
     console.log('🚨 CHAT API: Received request');
-    console.log('🚨 Request body:', JSON.stringify(req.body, null, 2));
-    console.log('🚨 Request headers:', req.headers);
+    console.log('🚨 Request body keys:', Object.keys(req.body));
+    console.log('🚨 Family context length:', req.body.familyContext?.length || 0);
+    
+    // Add validation for family context
+    if (req.body.familyContext && Array.isArray(req.body.familyContext)) {
+      console.log('🚨 Family context is valid array with', req.body.familyContext.length, 'members');
+      req.body.familyContext.forEach((profile, index) => {
+        console.log(`🚨 Profile ${index}:`, {
+          name: profile?.name,
+          relationship: profile?.relationship,
+          hasSymptoms: profile?.symptoms ? Object.keys(profile.symptoms).length : 0
+        });
+      });
+    } else {
+      console.log('🚨 Family context is not a valid array:', typeof req.body.familyContext);
+    }
     
     const { message, familyContext, userUid, conversationSummary, recentMessages, isQuestionnaire } = req.body;
 
