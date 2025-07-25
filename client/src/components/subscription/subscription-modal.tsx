@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Crown, Zap, Star, Users, Download, Shield, MessageCircle, Clock, X } from 'lucide-react';
 import { subscriptionService } from '@/services/subscription-service';
+import { InfinityIcon } from '@/components/ui/infinity-icon';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -51,9 +52,7 @@ export function SubscriptionModal({ isOpen, onClose, onSubscribe }: Subscription
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center">
-                <Crown className="w-6 h-6 text-white" />
-              </div>
+              <InfinityIcon size={48} glowing />
               <div>
                 <h2 className="text-2xl font-bold">Senali Premium</h2>
                 <p className="text-gray-600 dark:text-gray-400">Unlock unlimited conversations and advanced features</p>

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User } from 'firebase/auth';
+import { InfinityIcon } from '@/components/ui/infinity-icon';
 
 interface UserProfileSetupProps {
   user: User;
@@ -56,8 +57,8 @@ export default function UserProfileSetup({ user, onProfileComplete }: UserProfil
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-gray-900 border-gray-700">
         <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-black font-bold text-2xl">∞</span>
+          <div className="flex justify-center mb-4">
+            <InfinityIcon size={64} glowing />
           </div>
           <CardTitle className="text-2xl text-white">Welcome to Senali</CardTitle>
           <p className="text-gray-400 text-sm">

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { User } from 'firebase/auth';
 import { Crown, Zap, Star, CreditCard, ArrowLeft } from 'lucide-react';
+import { InfinityIcon } from '@/components/ui/infinity-icon';
 
 interface SubscriptionPageProps {
   user: User;
@@ -130,9 +131,7 @@ export default function SubscriptionPage({ user, onBack }: SubscriptionPageProps
               Back
             </Button>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-black font-bold text-sm">∞</span>
-              </div>
+              <InfinityIcon size={32} glowing />
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-white to-green-300 bg-clip-text text-transparent">
                   Subscription & Credits

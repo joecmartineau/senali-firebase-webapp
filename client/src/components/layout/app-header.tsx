@@ -1,7 +1,11 @@
 import { ChevronDown } from "lucide-react";
 import { InfinityIcon } from "@/components/ui/infinity-icon";
 
-export default function AppHeader() {
+interface AppHeaderProps {
+  user?: any;
+}
+
+export default function AppHeader({ user }: AppHeaderProps) {
   // Note: This component is not currently used in the main app flow
   // User authentication is handled directly in App.tsx
 

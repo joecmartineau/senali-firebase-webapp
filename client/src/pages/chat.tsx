@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User } from 'firebase/auth';
 import { MessageCircle, Send, LogOut, Users, Crown, Settings } from 'lucide-react';
+import { InfinityIcon } from '@/components/ui/infinity-icon';
 
 interface Message {
   id: string;
@@ -247,9 +248,7 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
           {/* Top row - Logo and credits */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-black font-bold text-sm">∞</span>
-              </div>
+              <InfinityIcon size={32} glowing />
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-white to-green-300 bg-clip-text text-transparent">
                   Senali
@@ -337,8 +336,8 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
         <div className="max-w-4xl mx-auto">
           {messages.length === 0 && (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-400/20 to-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-green-300 font-bold text-2xl">∞</span>
+              <div className="flex justify-center mb-4">
+                <InfinityIcon size={64} glowing />
               </div>
               <p className="text-gray-300 text-lg mb-2">Welcome to your conversation with Senali</p>
               <p className="text-gray-400 text-sm">Share what's on your mind, and I'll listen with care</p>
@@ -352,8 +351,8 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
             >
               <div className={`flex items-start gap-3 max-w-2xl ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
                 {message.role === 'assistant' && (
-                  <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-black font-bold text-sm">∞</span>
+                  <div className="flex-shrink-0 mt-1">
+                    <InfinityIcon size={32} glowing />
                   </div>
                 )}
                 {message.role === 'user' && (
@@ -381,8 +380,8 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
           {isLoading && (
             <div className="flex justify-start mb-6">
               <div className="flex items-start gap-3 max-w-2xl">
-                <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-black font-bold text-sm">∞</span>
+                <div className="flex-shrink-0 mt-1">
+                  <InfinityIcon size={32} glowing />
                 </div>
                 <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700/50 text-gray-100 px-4 py-3 rounded-2xl shadow-lg">
                   <div className="flex items-center space-x-2">

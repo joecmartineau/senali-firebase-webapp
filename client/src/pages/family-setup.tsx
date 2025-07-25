@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLocation } from 'wouter';
+import { InfinityIcon } from '@/components/ui/infinity-icon';
 // Simple family profile interface for local storage
 interface FamilyProfile {
   name: string;
@@ -97,8 +98,8 @@ export default function FamilySetup({ onComplete }: FamilySetupProps) {
     <div className="min-h-screen bg-black text-white p-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-black font-bold text-2xl">∞</span>
+          <div className="flex justify-center mb-4">
+            <InfinityIcon size={64} glowing />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Welcome to Senali</h1>
           <p className="text-gray-300 text-lg">

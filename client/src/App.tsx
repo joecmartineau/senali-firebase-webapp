@@ -191,9 +191,7 @@ function SenaliApp() {
         <div className="max-w-md w-full space-y-8 text-center">
           <div className="space-y-6">
             <div className="flex flex-col items-center gap-4">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-black font-bold text-2xl">∞</span>
-              </div>
+              <InfinityIcon size={64} glowing />
               <div className="text-center">
                 <h1 className="text-3xl font-bold text-white mb-2">Welcome to Senali</h1>
                 <p className="text-gray-300 text-lg">
