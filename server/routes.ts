@@ -288,6 +288,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // In-memory storage for family profiles (temporary fix for black screen)
+  let familyProfiles: any[] = [];
+  let profileIdCounter = 1;
+
+  // Simple family profile routes for frontend compatibility
+  app.get('/api/children', (req, res) => {
+    console.log('GET /api/children - returning profiles:', familyProfiles.length);
+    res.json(familyProfiles);
+  });
+
+  app.post('/api/children/create', (req, res) => {
+    console.log('POST /api/children/create with data:', req.body);
+    const newProfile = {
+      id: `profile-${profileIdCounter++}`,
+      ...req.body,
+      userId: 'demo-user'
+    };
+    familyProfiles.push(newProfile);
+    console.log('Profile created. Total profiles:', familyProfiles.length);
+    res.status(201).json(newProfile);
+  });
+
+  app.delete('/api/children/:id/delete', (req, res) => {
+    const profileId = req.params.id;
+    console.log('DELETE /api/children/:id/delete for ID:', profileId);
+    
+    const initialLength = familyProfiles.length;
+    familyProfiles = familyProfiles.filter(profile => profile.id !== profileId);
+    const deleted = familyProfiles.length < initialLength;
+    
+    console.log(`Profile deletion ${deleted ? 'successful' : 'failed'}. Remaining:`, familyProfiles.length);
+    res.json({ success: deleted });
+  });
+
   app.post('/api/children', async (req: any, res) => {
     try {
       const userId = 'demo-user'; // Temporary demo user for testing
