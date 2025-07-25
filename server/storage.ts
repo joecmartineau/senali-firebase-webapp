@@ -3,6 +3,7 @@ import {
   messages,
   dailyTips,
   tipInteractions,
+  childProfiles,
   type User,
   type UpsertUser,
   type Message,
@@ -11,6 +12,8 @@ import {
   type InsertDailyTip,
   type TipInteraction,
   type InsertTipInteraction,
+  type ChildProfile,
+  type InsertChildProfile,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -33,6 +36,13 @@ export interface IStorage {
   // Tip interactions
   createTipInteraction(interaction: InsertTipInteraction): Promise<TipInteraction>;
   getUserTipInteraction(userId: string, tipId: number): Promise<TipInteraction | undefined>;
+  
+  // Child profile operations
+  createChildProfile(profile: InsertChildProfile): Promise<ChildProfile>;
+  updateChildProfile(id: number, updates: Partial<InsertChildProfile>): Promise<ChildProfile>;
+  getUserChildProfiles(userId: string): Promise<ChildProfile[]>;
+  getChildProfile(id: number): Promise<ChildProfile | undefined>;
+  deleteChildProfile(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -134,6 +144,46 @@ export class DatabaseStorage implements IStorage {
         )
       );
     return interaction;
+  }
+
+  // Child profile operations
+  async createChildProfile(profileData: InsertChildProfile): Promise<ChildProfile> {
+    const [profile] = await db
+      .insert(childProfiles)
+      .values(profileData)
+      .returning();
+    return profile;
+  }
+
+  async updateChildProfile(id: number, updates: Partial<InsertChildProfile>): Promise<ChildProfile> {
+    const [profile] = await db
+      .update(childProfiles)
+      .set(updates)
+      .where(eq(childProfiles.id, id))
+      .returning();
+    return profile;
+  }
+
+  async getUserChildProfiles(userId: string): Promise<ChildProfile[]> {
+    return await db
+      .select()
+      .from(childProfiles)
+      .where(eq(childProfiles.userId, userId))
+      .orderBy(childProfiles.childName);
+  }
+
+  async getChildProfile(id: number): Promise<ChildProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(childProfiles)
+      .where(eq(childProfiles.id, id));
+    return profile;
+  }
+
+  async deleteChildProfile(id: number): Promise<void> {
+    await db
+      .delete(childProfiles)
+      .where(eq(childProfiles.id, id));
   }
 }
 

@@ -276,6 +276,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Symptom checklist routes (continued)
+  app.put('/api/children/:childId/symptoms', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const profiles = await storage.getUserChildProfiles(userId);
+      res.json(profiles);
+    } catch (error) {
+      console.error("Error fetching children profiles:", error);
+      res.status(500).json({ message: "Failed to fetch profiles" });
+    }
+  });
+
+  app.post('/api/children', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validation = insertChildProfileSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ errors: validation.error.errors });
+      }
+
+      const profileData = {
+        ...validation.data,
+        userId
+      };
+
+      const profile = await storage.createChildProfile(profileData);
+      console.log('Created child profile:', profile.childName);
+      res.status(201).json(profile);
+    } catch (error) {
+      console.error("Error creating child profile:", error);
+      res.status(500).json({ message: "Failed to create profile" });
+    }
+  });
+
+  app.get('/api/children/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const childId = parseInt(req.params.id);
+
+      const profile = await storage.getChildProfile(childId);
+      
+      if (!profile || profile.userId !== userId) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching child profile:", error);
+      res.status(500).json({ message: "Failed to fetch profile" });
+    }
+  });
+
+  app.put('/api/children/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const childId = parseInt(req.params.id);
+
+      // Verify ownership
+      const existingProfile = await storage.getChildProfile(childId);
+      
+      if (!existingProfile || existingProfile.userId !== userId) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const validation = insertChildProfileSchema.partial().safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ errors: validation.error.errors });
+      }
+
+      const updatedProfile = await storage.updateChildProfile(childId, validation.data);
+      console.log('Updated child profile:', updatedProfile.childName);
+      res.json(updatedProfile);
+    } catch (error) {
+      console.error("Error updating child profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  app.delete('/api/children/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const childId = parseInt(req.params.id);
+
+      // Verify ownership
+      const existingProfile = await storage.getChildProfile(childId);
+      
+      if (!existingProfile || existingProfile.userId !== userId) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      await storage.deleteChildProfile(childId);
+      console.log('Deleted child profile:', existingProfile.childName);
+      res.json({ message: "Profile deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting child profile:", error);
+      res.status(500).json({ message: "Failed to delete profile" });
+    }
+  });
+
   // Symptom checklist routes
   app.post('/api/children/:childId/symptoms', isAuthenticated, async (req: any, res) => {
     try {

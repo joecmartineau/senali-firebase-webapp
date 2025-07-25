@@ -124,6 +124,18 @@ export const childProfiles = pgTable("child_profiles", {
   parentNotes: text("parent_notes"), // Free-form notes from parent
   senaliObservations: text("senali_observations"), // AI observations over time
   
+  // Relationship type (expanded from original design)
+  relationshipToUser: varchar("relationship_to_user", { enum: ["child", "spouse", "self", "other"] }).default("child"),
+  
+  // Additional fields from local storage design
+  height: varchar("height"),
+  workInfo: varchar("work_info"), // For adults
+  medicalDiagnoses: text("medical_diagnoses"), // Free text field
+  workSchoolInfo: text("work_school_info"), // Combined work/school info
+  
+  // Symptom tracking (comprehensive boolean fields for questionnaire responses)
+  symptoms: jsonb("symptoms"), // Store all symptom responses as JSON
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
