@@ -160,11 +160,18 @@ function SenaliApp() {
       const saved = window.localStorage.getItem('senali_family_profiles');
       const hasLocalProfiles = saved ? JSON.parse(saved).length > 0 : false;
       
-      console.log('Checking for existing profiles:', {
+      console.log('🔍 PROFILE CHECK: Checking for existing profiles:', {
         hasLocalProfiles,
+        rawSaved: saved,
         savedProfilesLength: saved ? JSON.parse(saved).length : 0,
         user: user?.email
       });
+      
+      if (hasLocalProfiles) {
+        console.log('✅ PROFILE CHECK: Found existing profiles, user should skip setup');
+      } else {
+        console.log('❌ PROFILE CHECK: No profiles found, user needs setup');
+      }
       
       setHasProfiles(hasLocalProfiles);
     } catch (error) {
@@ -185,9 +192,10 @@ function SenaliApp() {
       setShowSubscription(false);
       setShowAdminChat(false);
       
-      // Clear localStorage
+      // Clear localStorage (but keep family profiles - users want those to persist)
       window.localStorage.removeItem('senali_demo_user');
-      window.localStorage.removeItem('senali_family_profiles');
+      // DON'T remove family profiles - users want these to persist across sessions
+      // window.localStorage.removeItem('senali_family_profiles'); 
       window.localStorage.removeItem('senali_messages');
       window.localStorage.removeItem('senali_conversation_summary');
       
