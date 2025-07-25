@@ -21,6 +21,22 @@ interface ChatInterfaceProps {
 }
 
 export default function ChatInterface({ user, onSignOut, onManageProfiles, onManageSubscription }: ChatInterfaceProps) {
+  // Authentication guard - redirect if user is not properly authenticated
+  if (!user || !user.uid) {
+    console.error('🔴 ChatInterface: User not authenticated, redirecting...');
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white mb-4">Authentication required...</p>
+          <Button onClick={() => window.location.reload()} className="bg-green-500 hover:bg-green-600">
+            Sign In Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -157,6 +173,12 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
       // Get recent messages for context (last 10 messages)
       const recentMessages = updatedMessages.slice(-10);
       
+      // Check if user is properly authenticated
+      if (!user || !user.uid) {
+        console.error('🔴 User not properly authenticated:', user);
+        throw new Error('User not authenticated. Please sign in again.');
+      }
+
       const requestPayload = {
         message: inputMessage,
         familyContext: familyProfiles,
