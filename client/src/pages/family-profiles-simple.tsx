@@ -41,10 +41,13 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
   });
 
   // Fetch profiles from database
-  const { data: profiles = [], isLoading } = useQuery({
+  const { data: profiles = [], isLoading, error } = useQuery({
     queryKey: ['/api/children'],
     enabled: true
   });
+
+  // Debug authentication issues
+  console.log('Family profiles query:', { profiles, isLoading, error });
 
   // Create profile mutation
   const createProfileMutation = useMutation({
@@ -96,6 +99,20 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
       }
     }
   };
+
+  // Show error state for authentication issues
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center">
+        <div className="text-center">
+          <InfinityIcon className="w-12 h-12 mx-auto mb-4 text-red-600" />
+          <p className="text-gray-600 mb-4">Unable to load family profiles</p>
+          <p className="text-sm text-gray-500">Authentication error: {error.message}</p>
+          <Button onClick={onBack} className="mt-4">Go Back</Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

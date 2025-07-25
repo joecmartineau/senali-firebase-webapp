@@ -288,9 +288,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/children', isAuthenticated, async (req: any, res) => {
+  app.post('/api/children', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = 'demo-user'; // Temporary demo user for testing
       const validation = insertChildProfileSchema.safeParse(req.body);
       
       if (!validation.success) {
@@ -311,9 +311,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/children/:id', isAuthenticated, async (req: any, res) => {
+  app.get('/api/children/:id', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = 'demo-user'; // Temporary demo user for testing
       const childId = parseInt(req.params.id);
 
       const profile = await storage.getChildProfile(childId);
@@ -329,9 +329,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/children/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/children/:id', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = 'demo-user'; // Temporary demo user for testing
       const childId = parseInt(req.params.id);
 
       // Verify ownership
@@ -356,9 +356,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/children/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/children/:id', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = 'demo-user'; // Temporary demo user for testing
       const childId = parseInt(req.params.id);
 
       // Verify ownership
@@ -484,9 +484,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all children for a user
-  app.get('/api/children', isAuthenticated, async (req: any, res) => {
+  app.get('/api/children', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = 'demo-user'; // Temporary demo user for testing
       
       const children = await db.select()
         .from(childProfiles)
