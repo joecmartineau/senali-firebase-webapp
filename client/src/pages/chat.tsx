@@ -48,7 +48,7 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
         // First time - add welcome message
         const welcomeMessage: Message = {
           id: '1',
-          content: "Hi there! I'm Senali, your AI therapist and friend. What's been on your mind lately?",
+          content: "Hi there! I'm Senali, your AI parenting coach and friend. What's been on your mind lately?",
           role: 'assistant',
           timestamp: new Date()
         };
@@ -256,7 +256,7 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
                 Senali
               </h1>
               <p className="text-sm text-gray-300">
-                Your AI therapist and friend
+                Your AI parenting coach and friend
               </p>
             </div>
             {creditsRemaining !== null && (

@@ -194,7 +194,7 @@ function SenaliApp() {
               <div className="text-center">
                 <h1 className="text-3xl font-bold text-white mb-2">Welcome to Senali</h1>
                 <p className="text-gray-300 text-lg">
-                  Sign in to connect with your AI therapist and friend
+                  Sign in to connect with your AI parenting coach and friend
                 </p>
               </div>
             </div>

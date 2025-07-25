@@ -518,7 +518,7 @@ export class AssessmentProcessor {
     
     // Extract therapy information
     const therapies = [];
-    if (lowerMessage.includes('speech therapy') || lowerMessage.includes('speech therapist')) {
+    if (lowerMessage.includes('speech therapy') || lowerMessage.includes('speech-language pathologist')) {
       therapies.push('speech therapy');
     }
     if (lowerMessage.includes('occupational therapy') || lowerMessage.includes('ot ')) {

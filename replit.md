@@ -2,7 +2,7 @@
 
 ## Overview
 
-Senali is an AI-powered companion designed to act as both a therapist and a friend for parents. The application provides empathetic conversation, active listening, and supportive guidance through AI chat interactions and daily tips focused on emotional well-being and family relationships. Senali specializes in building meaningful connections by asking personalized questions about users' children, spouses, and family dynamics.
+Senali is an AI-powered companion designed to act as both a parenting coach and a friend for parents. The application provides empathetic conversation, active listening, and supportive guidance through AI chat interactions and daily tips focused on emotional well-being and family relationships. Senali specializes in building meaningful connections by asking personalized questions about users' children, spouses, and family dynamics.
 
 ## User Preferences
 
@@ -49,7 +49,7 @@ This is a full-stack TypeScript application built with a privacy-first, local st
 
 ### AI Integration
 - **Provider**: OpenAI GPT-4o model  
-- **AI Personality**: Senali - therapist and friend companion with empathetic conversation style
+- **AI Personality**: Senali - parenting coach and friend companion with empathetic conversation style
 - **Specialization**: Custom system prompt for therapeutic support and active listening without medical advice
 - **Features**: 
   - Contextual chat conversations with message history and emotional validation
@@ -192,7 +192,7 @@ This is a full-stack TypeScript application built with a privacy-first, local st
   - **LTV/CAC Ratio**: 12-24x with $5 customer acquisition cost and $60-120 lifetime value
 
 ### Major Role Change (2025-01-24)
-- **Senali Role Transformation**: Complete shift from neurodivergent parenting specialist to therapist/friend companion
+- **Senali Role Transformation**: Complete shift from neurodivergent parenting specialist to parenting coach/friend companion
   - Updated system prompts to focus on active listening, empathy, and therapeutic conversation
   - Removed specialized neurodivergent content in favor of general family and emotional support
   - Changed greeting to warm, open-ended invitation to share ("What's been on your mind lately?")
@@ -223,7 +223,16 @@ This is a full-stack TypeScript application built with a privacy-first, local st
   - Updates profiles when new information is shared
   - Maintains comprehensive family context for therapeutic responses
 
-### Latest Updates (2025-01-24)
+### Latest Updates (2025-01-25)
+
+#### Critical Legal Compliance Update (2025-01-25)
+- **Complete "Therapist" Removal**: Systematically removed ALL references to "therapist" throughout entire application for legal compliance
+  - **Legal Protection**: AI companies face active lawsuits for claiming to provide therapy services without licensed therapists
+  - **Terminology Change**: Replaced "AI therapist" with "AI parenting coach" across all UI, system prompts, and documentation
+  - **Files Updated**: App.tsx, chat.tsx, openai.ts, functions/index.ts, conversation-context-manager.ts, routes/chat.ts, assessment-processor.ts
+  - **Safe Alternative**: "Parenting coach" accurately describes supportive guidance without implying licensed therapeutic services
+  - **Complete Coverage**: Updated welcome messages, system prompts, API documentation, and user-facing text
+  - **Maintained Functionality**: All empathetic conversation and supportive guidance features preserved with safer terminology
 
 #### Restored Simple Family Profile System (2025-01-24)
 - **Back to Working Version**: Restored the clean, simple family profile creation system that was working well before admin complexity

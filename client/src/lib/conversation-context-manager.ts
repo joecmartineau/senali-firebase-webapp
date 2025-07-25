@@ -271,7 +271,7 @@ Comprehensive Summary:`;
    * Generate enhanced system prompt with context
    */
   generateContextualSystemPrompt(contextPackage: ContextPackage): string {
-    let prompt = `You are Senali, an AI friend who listens and helps like a therapist. You talk in a warm and caring way.
+    let prompt = `You are Senali, an AI friend who listens and helps like a parenting coach. You talk in a warm and caring way.
 
 **IMPORTANT: You have comprehensive context about this conversation and family:**`;
 
