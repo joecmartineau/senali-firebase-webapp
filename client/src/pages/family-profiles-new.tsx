@@ -12,7 +12,7 @@ interface FamilyMember {
   name: string;
   age: string;
   gender: 'male' | 'female' | 'other' | '';
-  relation: 'child' | 'spouse' | 'parent' | 'sibling' | 'other' | '';
+  relation: 'self' | 'child' | 'spouse' | 'parent' | 'sibling' | 'other' | '';
   questionnaire?: QuestionnaireResponse[];
 }
 
@@ -328,6 +328,7 @@ export default function FamilyProfilesNew({ onBack }: FamilyProfilesNewProps) {
                     <SelectValue placeholder="Select relation" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="self">Self</SelectItem>
                     <SelectItem value="child">Child</SelectItem>
                     <SelectItem value="spouse">Spouse/Partner</SelectItem>
                     <SelectItem value="parent">Parent</SelectItem>
