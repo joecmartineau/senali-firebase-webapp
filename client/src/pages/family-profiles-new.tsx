@@ -260,17 +260,25 @@ export default function FamilyProfilesNew({ onBack }: FamilyProfilesNewProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <Button onClick={onBack} variant="ghost" className="p-2">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-3">
-            <InfinityIcon size={32} glowing />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Family Profiles</h1>
-              <p className="text-gray-600">Manage your family members and assessments</p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Button onClick={onBack} variant="ghost" className="p-2">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <InfinityIcon size={32} glowing />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800">Family Profiles</h1>
+                <p className="text-gray-600">Manage your family members and assessments</p>
+              </div>
             </div>
           </div>
+          <Button 
+            onClick={onBack} 
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2"
+          >
+            Back to Chat
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
