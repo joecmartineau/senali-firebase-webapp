@@ -463,24 +463,12 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
                           </div>
                         )}
 
-                        {/* Diagnostic Results Section */}
-                        {diagnosticResults.length > 0 && completionPercentage >= 25 && (
+                        {/* AI-Powered Diagnostic Results Section */}
+                        {completionPercentage >= 25 && (
                           <div className="text-sm">
                             <span className="text-gray-400">Probable Conditions:</span>
-                            <div className="mt-2 space-y-1">
-                              {diagnosticResults.slice(0, 2).map((result, idx) => (
-                                <Badge 
-                                  key={idx}
-                                  className={`text-xs flex items-center gap-1 ${getDiagnosticColor(result.probability)}`}
-                                >
-                                  {getDiagnosticIcon(result.probability)}
-                                  <span className="truncate">{result.condition}</span>
-                                  <span className="text-xs opacity-75">({result.probability})</span>
-                                </Badge>
-                              ))}
-                              {diagnosticResults.length > 2 && (
-                                <p className="text-xs text-gray-500">+{diagnosticResults.length - 2} more</p>
-                              )}
+                            <div className="mt-2">
+                              <DiagnosticResultsDisplay profile={profile} />
                             </div>
                           </div>
                         )}

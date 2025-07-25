@@ -41,18 +41,27 @@ export function DiagnosticResultsDisplay({ profile }: DiagnosticResultsDisplayPr
       });
 
       const yesCount = Object.values(responses).filter(r => r === 'yes').length;
-      console.log('🤖 Loading diagnostics for', profile.name, 'with', yesCount, 'positive symptoms');
+      const totalResponses = Object.keys(responses).length;
+      console.log('🤖 DIAGNOSTIC DEBUG for', profile.name);
+      console.log('   - Total responses:', totalResponses);
+      console.log('   - Yes responses:', yesCount);
+      console.log('   - Raw symptoms:', profile.symptoms);
+      console.log('   - Converted responses:', responses);
 
-      // Only run AI analysis if there are enough responses
-      if (yesCount >= 3 && Object.keys(responses).length >= 5) {
+      // Always try AI analysis if there are any positive responses
+      if (yesCount >= 1 && totalResponses >= 3) {
+        console.log('🤖 Triggering AI analysis for', profile.name);
         try {
           const aiResults = await getAIDiagnosticAnalysis(profile, responses);
+          console.log('🤖 Raw AI response:', aiResults);
           const formattedResults = convertAIResultsToUIFormat(aiResults);
-          console.log('🤖 AI diagnostic results for', profile.name, ':', formattedResults);
+          console.log('🤖 Formatted AI results:', formattedResults);
           setDiagnosticResults(formattedResults);
         } catch (error) {
-          console.error('AI diagnostic analysis failed, using fallback:', error);
+          console.error('🤖 AI analysis FAILED:', error);
+          console.log('🤖 Using fallback rule-based analysis');
           const fallbackResults = calculateDiagnosticProbabilities(responses);
+          console.log('🤖 Fallback results:', fallbackResults);
           setDiagnosticResults(fallbackResults);
         }
       } else {
