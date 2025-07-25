@@ -223,12 +223,24 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
     // Convert profile symptoms to questionnaire format
     const responses: Record<string, 'yes' | 'no' | 'unsure'> = {};
     
+    // Debug logging to see what's actually stored
+    console.log('🐛 DEBUG: profile.symptoms data:', profile.symptoms);
+    console.log('🐛 DEBUG: profile.symptoms entries:', Object.entries(profile.symptoms));
+    
     Object.entries(profile.symptoms).forEach(([key, value]) => {
-      if (value === 'yes') responses[key] = 'yes';
-      else if (value === 'no') responses[key] = 'no';
-      else responses[key] = 'unsure';
+      // Handle both string and boolean values from different sources
+      if (value === 'yes' || value === true) {
+        responses[key] = 'yes';
+      } else if (value === 'no' || value === false) {
+        responses[key] = 'no';
+      } else {
+        responses[key] = 'unsure';
+      }
     });
 
+    console.log('🐛 DEBUG: converted responses:', responses);
+    console.log('🐛 DEBUG: total yes responses:', Object.values(responses).filter(r => r === 'yes').length);
+    
     return calculateDiagnosticProbabilities(responses);
   };
 
