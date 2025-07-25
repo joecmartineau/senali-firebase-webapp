@@ -218,46 +218,57 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
   // Main family profiles view
   if (!selectedProfile) {
     return (
-      <div className="min-h-screen bg-black text-white">
-        {/* Header */}
-        <div className="bg-gray-900 border-b border-gray-700 p-4">
-          <div className="max-w-4xl mx-auto flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-black font-bold text-lg">∞</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">Family Profiles</h1>
-                <p className="text-sm text-gray-400">Manage your family members and questionnaires</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
+        {/* Mobile-Optimized Header */}
+        <div className="bg-black/40 backdrop-blur-sm border-b border-green-500/20 p-3 shadow-lg">
+          <div className="max-w-4xl mx-auto">
+            {/* Top row - Logo and title */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-black font-bold text-sm">∞</span>
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold bg-gradient-to-r from-white to-green-300 bg-clip-text text-transparent">
+                    Family Profiles
+                  </h1>
+                  <p className="text-xs text-gray-300 leading-none">
+                    Manage your family members and questionnaires
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex gap-2">
+            
+            {/* Bottom row - Action buttons */}
+            <div className="flex items-center gap-1.5 overflow-x-auto">
               <Button
                 onClick={onBack}
                 variant="outline"
-                className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+                size="sm"
+                className="bg-gray-800/50 border-gray-600/50 text-white hover:bg-gray-700/70 text-xs whitespace-nowrap flex-shrink-0 px-2 py-1 h-7"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
+                <ArrowLeft className="w-3 h-3 mr-1" />
                 Back to Setup
               </Button>
               <Button
                 onClick={onStartChat}
-                className="bg-green-500 hover:bg-green-600 text-black font-semibold"
+                size="sm"
+                className="bg-green-500/90 hover:bg-green-600 text-black font-semibold text-xs whitespace-nowrap flex-shrink-0 px-2 py-1 h-7"
               >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Start Chatting
+                <MessageCircle className="w-3 h-3 mr-1" />
+                Start Chat
               </Button>
             </div>
           </div>
         </div>
 
         {/* Family Members Grid */}
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="max-w-4xl mx-auto p-3">
           {/* Add New Member Button */}
-          <div className="mb-6">
+          <div className="mb-4">
             <Button
               onClick={() => setIsCreatingNew(true)}
-              className="bg-green-500 hover:bg-green-600 text-black font-semibold"
+              className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-black font-semibold shadow-lg"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add New Family Member
@@ -266,41 +277,45 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
 
           {/* New Member Creation Form */}
           {isCreatingNew && (
-            <Card className="bg-gray-900 border-gray-700 mb-6">
-              <CardHeader>
-                <CardTitle className="text-white">Add New Family Member</CardTitle>
+            <Card className="bg-black/60 backdrop-blur-sm border border-green-500/20 shadow-xl mb-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-white text-lg flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-green-400" />
+                  Add New Family Member
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="newName" className="text-white">Name *</Label>
+                    <Label htmlFor="newName" className="text-green-300 text-sm font-medium">Name *</Label>
                     <Input
                       id="newName"
                       value={newProfile.name || ''}
                       onChange={(e) => setNewProfile({ ...newProfile, name: e.target.value })}
                       placeholder="Enter family member's name"
-                      className="bg-gray-800 border-gray-600 text-white"
+                      className="bg-gray-800/70 border-gray-600/50 text-white placeholder-gray-400 focus:border-green-500/50 mt-1"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="newAge" className="text-white">Age</Label>
+                    <Label htmlFor="newAge" className="text-green-300 text-sm font-medium">Age</Label>
                     <Input
                       id="newAge"
                       type="number"
-                      value={newProfile.age || 0}
+                      value={newProfile.age || ''}
                       onChange={(e) => setNewProfile({ ...newProfile, age: parseInt(e.target.value) || 0 })}
-                      className="bg-gray-800 border-gray-600 text-white"
+                      placeholder="Age"
+                      className="bg-gray-800/70 border-gray-600/50 text-white placeholder-gray-400 focus:border-green-500/50 mt-1"
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="newRelationship" className="text-white">Relationship</Label>
+                    <Label htmlFor="newRelationship" className="text-green-300 text-sm font-medium">Relationship</Label>
                     <Select
                       value={newProfile.relationship}
                       onValueChange={(value: any) => setNewProfile({ ...newProfile, relationship: value })}
                     >
-                      <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                      <SelectTrigger className="bg-gray-800/70 border-gray-600/50 text-white focus:border-green-500/50 mt-1">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-gray-800 border-gray-600">
@@ -312,47 +327,47 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="newHeight" className="text-white">Height</Label>
+                    <Label htmlFor="newHeight" className="text-green-300 text-sm font-medium">Height</Label>
                     <Input
                       id="newHeight"
                       value={newProfile.height || ''}
                       onChange={(e) => setNewProfile({ ...newProfile, height: e.target.value })}
                       placeholder="e.g., 5'6&quot;"
-                      className="bg-gray-800 border-gray-600 text-white"
+                      className="bg-gray-800/70 border-gray-600/50 text-white placeholder-gray-400 focus:border-green-500/50 mt-1"
                     />
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="newMedical" className="text-white">Medical Diagnoses</Label>
+                  <Label htmlFor="newMedical" className="text-green-300 text-sm font-medium">Medical Diagnoses</Label>
                   <Input
                     id="newMedical"
                     value={newProfile.medicalDiagnoses || ''}
                     onChange={(e) => setNewProfile({ ...newProfile, medicalDiagnoses: e.target.value })}
                     placeholder="Any medical diagnoses or conditions"
-                    className="bg-gray-800 border-gray-600 text-white"
+                    className="bg-gray-800/70 border-gray-600/50 text-white placeholder-gray-400 focus:border-green-500/50 mt-1"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="newWork" className="text-white">Work/School Info</Label>
+                  <Label htmlFor="newWork" className="text-green-300 text-sm font-medium">Work/School Info</Label>
                   <Input
                     id="newWork"
                     value={newProfile.workSchoolInfo || ''}
                     onChange={(e) => setNewProfile({ ...newProfile, workSchoolInfo: e.target.value })}
                     placeholder="Work, school, or daily activity information"
-                    className="bg-gray-800 border-gray-600 text-white"
+                    className="bg-gray-800/70 border-gray-600/50 text-white placeholder-gray-400 focus:border-green-500/50 mt-1"
                   />
                 </div>
-                <div className="flex gap-2 pt-4">
+                <div className="flex flex-col sm:flex-row gap-2 pt-4">
                   <Button
                     onClick={createNewProfile}
-                    className="bg-green-500 hover:bg-green-600 text-black font-semibold"
+                    className="bg-green-500/90 hover:bg-green-600 text-black font-semibold shadow-lg"
                   >
                     Create Family Member
                   </Button>
                   <Button
                     onClick={cancelNewProfile}
                     variant="outline"
-                    className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+                    className="bg-gray-800/50 border-gray-600/50 text-white hover:bg-gray-700/70"
                   >
                     Cancel
                   </Button>
@@ -361,73 +376,91 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
             </Card>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {profiles.map((profile, index) => {
-              const stats = getCompletionStats(profile);
-              const completionPercentage = Math.round((stats.completed / stats.total) * 100);
-              
-              return (
-                <Card
-                  key={index}
-                  className="bg-gray-900 border-gray-700 hover:border-green-500 transition-colors cursor-pointer"
-                  onClick={() => setSelectedProfile(profile)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                        <User className="w-6 h-6 text-black" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-white text-lg">{profile.name}</CardTitle>
-                        <p className="text-sm text-gray-400 capitalize">{profile.relationship}</p>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Age:</span>
-                        <span className="text-white">{profile.age}</span>
-                      </div>
-                      {profile.medicalDiagnoses && (
-                        <div className="text-sm">
-                          <span className="text-gray-400">Diagnoses:</span>
-                          <p className="text-white text-xs mt-1">{profile.medicalDiagnoses}</p>
+          {/* Family Members Display */}
+          {profiles.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-400/20 to-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <User className="w-8 h-8 text-green-400" />
+              </div>
+              <h3 className="text-lg font-medium text-white mb-2">No Family Members Yet</h3>
+              <p className="text-gray-400 text-sm">Click "Add New Family Member" to get started</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {profiles.map((profile, index) => {
+                const stats = getCompletionStats(profile);
+                const completionPercentage = Math.round((stats.completed / stats.total) * 100);
+                
+                return (
+                  <Card
+                    key={index}
+                    className="bg-black/60 backdrop-blur-sm border border-green-500/20 hover:border-green-500/40 transition-all duration-200 cursor-pointer group shadow-lg hover:shadow-xl"
+                    onClick={() => setSelectedProfile(profile)}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+                          <User className="w-5 h-5 text-black" />
                         </div>
-                      )}
-                      <div className="pt-2 border-t border-gray-700">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-400">Questionnaire:</span>
-                          <span className={`font-medium ${
-                            completionPercentage === 100 ? 'text-green-400' :
-                            completionPercentage > 0 ? 'text-yellow-400' : 'text-gray-400'
-                          }`}>
-                            {completionPercentage}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-700 rounded-full h-2 mt-1">
-                          <div
-                            className={`h-2 rounded-full transition-all ${
-                              completionPercentage === 100 ? 'bg-green-500' :
-                              completionPercentage > 0 ? 'bg-yellow-500' : 'bg-gray-600'
-                            }`}
-                            style={{ width: `${completionPercentage}%` }}
-                          ></div>
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-white text-base font-semibold truncate">{profile.name}</CardTitle>
+                          <p className="text-xs text-green-300 capitalize">{profile.relationship}</p>
                         </div>
                       </div>
-                    </div>
-                    <Button
-                      className="w-full mt-4 bg-gray-800 hover:bg-gray-700 text-white border border-gray-600"
-                      variant="outline"
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Profile
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-3">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">Age:</span>
+                          <span className="text-white font-medium">{profile.age || 'Not set'}</span>
+                        </div>
+                        
+                        {profile.medicalDiagnoses && (
+                          <div className="text-sm">
+                            <span className="text-gray-400">Diagnoses:</span>
+                            <p className="text-white text-xs mt-1 line-clamp-2">{profile.medicalDiagnoses}</p>
+                          </div>
+                        )}
+                        
+                        <div className="pt-2 border-t border-gray-600/50">
+                          <div className="flex justify-between items-center text-sm mb-2">
+                            <span className="text-gray-400">Questionnaire:</span>
+                            <span className={`font-medium text-xs px-2 py-1 rounded-full ${
+                              completionPercentage === 100 ? 'bg-green-500/20 text-green-400' :
+                              completionPercentage > 0 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-500/20 text-gray-400'
+                            }`}>
+                              {completionPercentage}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-700/50 rounded-full h-1.5">
+                            <div
+                              className={`h-1.5 rounded-full transition-all duration-300 ${
+                                completionPercentage === 100 ? 'bg-green-500' :
+                                completionPercentage > 0 ? 'bg-yellow-500' : 'bg-gray-600'
+                              }`}
+                              style={{ width: `${completionPercentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                        
+                        <Button
+                          className="w-full mt-3 bg-gray-800/70 hover:bg-gray-700/80 text-white border border-gray-600/50 hover:border-green-500/50 transition-colors text-sm h-8"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedProfile(profile);
+                          }}
+                        >
+                          <Edit className="w-3 h-3 mr-2" />
+                          Edit Profile
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     );
