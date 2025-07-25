@@ -13,6 +13,7 @@ import {
   type DiagnosticQuestion,
   type DiagnosticResult 
 } from '@/lib/diagnostic-questions';
+import { generateAIAnalysis, type AIAnalysisResult } from '@/lib/questionnaire-ai-analysis';
 
 interface ProfileQuestionnaireProps {
   profile: ChildProfile;
@@ -22,7 +23,9 @@ interface ProfileQuestionnaireProps {
 export function ProfileQuestionnaire({ profile, onClose }: ProfileQuestionnaireProps) {
   const [responses, setResponses] = useState<Record<string, 'yes' | 'no' | 'unsure'>>({});
   const [diagnosticResults, setDiagnosticResults] = useState<DiagnosticResult[]>([]);
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingAI, setLoadingAI] = useState(false);
 
   useEffect(() => {
     // Load existing responses from profile symptoms
@@ -42,8 +45,32 @@ export function ProfileQuestionnaire({ profile, onClose }: ProfileQuestionnaireP
     if (Object.keys(responses).length > 0) {
       const results = calculateDiagnosticProbabilities(responses);
       setDiagnosticResults(results);
+      
+      // Generate AI analysis if enough questions are answered
+      if (Object.keys(responses).length >= 15) {
+        generateAIInsights(results);
+      }
     }
   }, [responses]);
+
+  const generateAIInsights = async (results: DiagnosticResult[]) => {
+    if (loadingAI) return;
+    
+    setLoadingAI(true);
+    try {
+      const analysis = await generateAIAnalysis(
+        profile.childName,
+        profile.age?.toString() || 'unknown',
+        results,
+        responses
+      );
+      setAiAnalysis(analysis);
+    } catch (error) {
+      console.error('Failed to generate AI analysis:', error);
+    } finally {
+      setLoadingAI(false);
+    }
+  };
 
   const handleResponse = async (questionId: string, response: 'yes' | 'no' | 'unsure') => {
     const newResponses = { ...responses, [questionId]: response };
@@ -77,10 +104,13 @@ export function ProfileQuestionnaire({ profile, onClose }: ProfileQuestionnaireP
 
   const groupQuestionsByCategory = () => {
     const groups = {
-      'ADHD - Attention Problems': allDiagnosticQuestions.filter(q => q.category === 'adhd_inattentive'),
-      'ADHD - Hyperactivity & Impulsivity': allDiagnosticQuestions.filter(q => q.category === 'adhd_hyperactive'),
-      'Autism - Social Communication': allDiagnosticQuestions.filter(q => q.category === 'autism_social'),
-      'Autism - Repetitive Behaviors': allDiagnosticQuestions.filter(q => q.category === 'autism_repetitive')
+      'Attention and Focus': allDiagnosticQuestions.filter(q => q.category === 'adhd_inattentive'),
+      'Hyperactivity and Impulsivity': allDiagnosticQuestions.filter(q => q.category === 'adhd_hyperactive'),
+      'Social Communication': allDiagnosticQuestions.filter(q => q.category === 'autism_social'),
+      'Repetitive Behaviors and Routines': allDiagnosticQuestions.filter(q => q.category === 'autism_repetitive'),
+      'Anxiety and Worry': allDiagnosticQuestions.filter(q => q.category === 'anxiety'),
+      'Sensory Processing': allDiagnosticQuestions.filter(q => q.category === 'sensory'),
+      'Planning and Organization': allDiagnosticQuestions.filter(q => q.category === 'executive_function')
     };
     return groups;
   };
@@ -132,11 +162,72 @@ export function ProfileQuestionnaire({ profile, onClose }: ProfileQuestionnaireP
 
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-6">
+          {/* AI Analysis */}
+          {aiAnalysis && (
+            <Card className="border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50">
+              <CardHeader>
+                <CardTitle className="text-lg text-emerald-800 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  Personalized Insights for {profile.childName}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-white rounded-lg">
+                  <h4 className="font-medium text-emerald-800 mb-2">Summary</h4>
+                  <p className="text-sm text-gray-700 leading-relaxed">{aiAnalysis.summary}</p>
+                </div>
+                
+                <div className="p-4 bg-white rounded-lg">
+                  <h4 className="font-medium text-emerald-800 mb-3">Key Insights</h4>
+                  <ul className="space-y-2">
+                    {aiAnalysis.insights.map((insight, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0" />
+                        <span className="text-sm text-gray-700">{insight}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="p-4 bg-white rounded-lg">
+                  <h4 className="font-medium text-emerald-800 mb-3">Next Steps</h4>
+                  <ol className="space-y-2">
+                    {aiAnalysis.nextSteps.map((step, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <span className="bg-emerald-100 text-emerald-800 text-xs font-medium px-2 py-1 rounded-full mt-0.5">
+                          {index + 1}
+                        </span>
+                        <span className="text-sm text-gray-700">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+                
+                <div className="p-4 bg-emerald-100 rounded-lg">
+                  <h4 className="font-medium text-emerald-800 mb-2">For You as a Parent</h4>
+                  <p className="text-sm text-emerald-700 leading-relaxed">{aiAnalysis.parentGuidance}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Loading AI Analysis */}
+          {loadingAI && (
+            <Card className="border-2 border-emerald-200">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                  <span className="text-emerald-700">Creating personalized insights for {profile.childName}...</span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Diagnostic Results */}
           {diagnosticResults.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Assessment Results</CardTitle>
+                <CardTitle className="text-lg">Detailed Assessment Results</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {diagnosticResults.map((result, index) => (
@@ -163,12 +254,13 @@ export function ProfileQuestionnaire({ profile, onClose }: ProfileQuestionnaireP
                   </div>
                 ))}
                 
-                <div className="p-3 bg-blue-50 rounded-lg text-blue-800">
-                  <div className="flex items-start gap-2">
-                    <Info className="w-4 h-4 mt-0.5" />
-                    <div className="text-sm">
-                      <strong>Important:</strong> This assessment is for informational purposes only. 
-                      Please consult with a healthcare professional for proper diagnosis and treatment.
+                <div className="p-4 bg-blue-50 rounded-lg text-blue-800">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 mt-0.5" />
+                    <div className="text-sm leading-relaxed">
+                      <strong>Important Note:</strong> This questionnaire helps identify possible areas of concern. 
+                      It is NOT a medical diagnosis. Only a trained doctor or specialist can diagnose conditions like ADHD or autism. 
+                      If the results suggest concerns, please talk to your child's doctor or a child psychologist.
                     </div>
                   </div>
                 </div>
@@ -182,7 +274,7 @@ export function ProfileQuestionnaire({ profile, onClose }: ProfileQuestionnaireP
               <CardHeader>
                 <CardTitle className="text-lg">{categoryName}</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Answer these questions based on behavior over the past 6 months
+                  Think about how your child usually acts. Answer based on what you see most of the time.
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">

@@ -225,6 +225,32 @@ This is a full-stack TypeScript application built with a privacy-first, local st
 
 ### Latest Updates (2025-01-25)
 
+#### Enhanced Questionnaire System (2025-01-25)
+- **7th Grade Reading Level**: Completely rewrote all diagnostic questionnaire questions using simple, accessible language
+  - **Simple Language**: Changed complex terms like "often has trouble with nonverbal communication like eye contact or gestures" to "does not look at people when talking or use hand gestures"
+  - **Everyday Examples**: Added concrete examples like "loses important things like homework, pencils, toys, or books" instead of abstract descriptions
+  - **Clear Instructions**: Updated guidance to "Think about how your child usually acts. Answer based on what you see most of the time"
+  - **Parent-Friendly Categories**: Renamed technical categories to accessible names like "Attention and Focus" and "Planning and Organization"
+
+- **Comprehensive Diagnostic Evaluation**: Enhanced assessment system with expanded coverage and professional insights
+  - **New Question Categories**: Added anxiety, sensory processing, and executive function questions beyond ADHD and autism
+  - **Improved Analysis Algorithm**: Enhanced diagnostic probability calculations using DSM-5 criteria with clear thresholds
+  - **Practical Recommendations**: Provided specific, actionable next steps written in plain language for parents
+  - **Professional Disclaimers**: Clear messaging that results are informational and require professional evaluation
+
+- **AI-Powered Personalized Insights**: Implemented OpenAI GPT-4o integration for questionnaire analysis
+  - **Custom Analysis Engine**: Created `questionnaire-ai-analysis.ts` for generating personalized family insights
+  - **Structured AI Output**: JSON-formatted responses with summary, insights, next steps, and parent guidance
+  - **Enhanced API Support**: Modified chat endpoint to handle questionnaire analysis with specialized prompts
+  - **Beautiful UI**: Designed emerald-themed cards with organized sections for easy reading
+  - **Fallback System**: Comprehensive error handling with meaningful default responses
+
+- **User Experience Improvements**: Enhanced questionnaire interface with better organization and flow
+  - **Progress Tracking**: Visual progress bar showing completion percentage
+  - **Smart AI Triggering**: Generates personalized insights after 15+ questions answered
+  - **Loading States**: Clear feedback during AI analysis with personalized messages
+  - **Category Organization**: Grouped questions by developmental areas with descriptive headers
+
 #### Critical Legal Compliance Update (2025-01-25)
 - **Complete "Therapist" Removal**: Systematically removed ALL references to "therapist" throughout entire application for legal compliance
   - **Legal Protection**: AI companies face active lawsuits for claiming to provide therapy services without licensed therapists

@@ -24,7 +24,7 @@ function sanitizeForPrompt(input: string | null | undefined): string {
 
 router.post('/chat', async (req, res) => {
   try {
-    const { message, familyContext, userUid, conversationSummary, recentMessages } = req.body;
+    const { message, familyContext, userUid, conversationSummary, recentMessages, isQuestionnaire } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
@@ -132,12 +132,18 @@ Guidelines:
     // Add the current user message
     messages.push({ role: 'user', content: message });
 
-    // Use GPT-4o for admin, GPT-3.5-turbo for regular users
+    // Handle questionnaire analysis differently
+    const modelToUse = isQuestionnaire ? 'gpt-4o' : (isAdmin ? 'gpt-4o' : 'gpt-3.5-turbo');
+    const maxTokens = isQuestionnaire ? 1000 : (isAdmin ? 1000 : 500);
+    const temperature = isQuestionnaire ? 0.3 : (isAdmin ? 0.8 : 0.7);
+    
+    // Use GPT-4o for questionnaire analysis and admin, GPT-3.5-turbo for regular users
     const completion = await openai.chat.completions.create({
-      model: isAdmin ? 'gpt-4o' : 'gpt-3.5-turbo',
+      model: modelToUse,
       messages: messages,
-      max_tokens: isAdmin ? 1000 : 500, // Admin gets longer responses
-      temperature: isAdmin ? 0.8 : 0.7, // Admin gets more creative responses
+      max_tokens: maxTokens,
+      temperature: temperature,
+      response_format: isQuestionnaire ? { type: "json_object" } : undefined
     });
 
     const response = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response right now.";
