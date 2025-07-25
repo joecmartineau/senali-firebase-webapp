@@ -164,21 +164,22 @@ function SenaliApp() {
   }, []);
 
   const checkForExistingProfiles = () => {
-    try {
-      const saved = localStorage.getItem('senali_family_profiles');
-      console.log('Checking for profiles:', { saved: !!saved, raw: saved });
-      
-      if (saved) {
+    const saved = localStorage.getItem('senali_family_profiles');
+    console.log('Profile check - raw data:', saved);
+    
+    if (saved && saved !== 'null') {
+      try {
         const parsed = JSON.parse(saved);
-        const hasValidProfiles = Array.isArray(parsed) && parsed.length > 0;
-        console.log('Profile check result:', { hasValidProfiles, profileCount: parsed.length });
-        setHasProfiles(hasValidProfiles);
-      } else {
-        console.log('No saved profiles found');
+        const isValid = Array.isArray(parsed) && parsed.length > 0;
+        console.log('Profile check result:', isValid, 'Count:', parsed.length);
+        setHasProfiles(isValid);
+      } catch (e) {
+        console.log('Parse error, clearing invalid data');
+        localStorage.removeItem('senali_family_profiles');
         setHasProfiles(false);
       }
-    } catch (error) {
-      console.error('Error checking profiles:', error);
+    } else {
+      console.log('No profiles found');
       setHasProfiles(false);
     }
   };
