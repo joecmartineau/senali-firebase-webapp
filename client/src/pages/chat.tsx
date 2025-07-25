@@ -19,21 +19,73 @@ interface ChatInterfaceProps {
 }
 
 export default function ChatInterface({ user, onSignOut, onManageProfiles }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: "Hi there! I'm Senali, your AI therapist and friend. What's been on your mind lately?",
-      role: 'assistant',
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [familyProfiles, setFamilyProfiles] = useState<any[]>([]);
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
+  const [conversationSummary, setConversationSummary] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Local storage keys
+  const MESSAGES_KEY = `senali_messages_${user.uid}`;
+  const SUMMARY_KEY = `senali_summary_${user.uid}`;
+  const MAX_MESSAGES = 1000;
+
+  // Load messages from local storage
+  const loadMessages = () => {
+    try {
+      const savedMessages = window.localStorage.getItem(MESSAGES_KEY);
+      const savedSummary = window.localStorage.getItem(SUMMARY_KEY);
+      
+      if (savedMessages) {
+        const parsedMessages = JSON.parse(savedMessages).map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+        setMessages(parsedMessages);
+      } else {
+        // First time - add welcome message
+        const welcomeMessage: Message = {
+          id: '1',
+          content: "Hi there! I'm Senali, your AI therapist and friend. What's been on your mind lately?",
+          role: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages([welcomeMessage]);
+        saveMessagesToStorage([welcomeMessage]);
+      }
+      
+      if (savedSummary) {
+        setConversationSummary(savedSummary);
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  // Save messages to local storage (keep only last 1000)
+  const saveMessagesToStorage = (messagesArray: Message[]) => {
+    try {
+      const messagesToSave = messagesArray.slice(-MAX_MESSAGES);
+      window.localStorage.setItem(MESSAGES_KEY, JSON.stringify(messagesToSave));
+    } catch (error) {
+      console.error('Error saving messages:', error);
+    }
+  };
+
+  // Save conversation summary
+  const saveSummaryToStorage = (summary: string) => {
+    try {
+      window.localStorage.setItem(SUMMARY_KEY, summary);
+    } catch (error) {
+      console.error('Error saving summary:', error);
+    }
+  };
+
   useEffect(() => {
+    loadMessages();
+    
     // Load family profiles from localStorage
     try {
       const saved = window.localStorage.getItem('senali_family_profiles');
@@ -93,12 +145,15 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInputMessage('');
     setIsLoading(true);
 
     try {
-      // Simple AI response simulation - replace with actual OpenAI API call
+      // Get recent messages for context (last 10 messages)
+      const recentMessages = updatedMessages.slice(-10);
+      
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -107,7 +162,12 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
         body: JSON.stringify({
           message: inputMessage,
           familyContext: familyProfiles,
-          userUid: user.uid
+          userUid: user.uid,
+          conversationSummary: conversationSummary,
+          recentMessages: recentMessages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
         })
       });
 
@@ -119,7 +179,18 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
           role: 'assistant',
           timestamp: new Date()
         };
-        setMessages(prev => [...prev, aiMessage]);
+        
+        const finalMessages = [...updatedMessages, aiMessage];
+        setMessages(finalMessages);
+        
+        // Save messages to local storage
+        saveMessagesToStorage(finalMessages);
+        
+        // Update conversation summary if provided
+        if (data.updatedSummary) {
+          setConversationSummary(data.updatedSummary);
+          saveSummaryToStorage(data.updatedSummary);
+        }
         
         // Update credits if provided
         if (typeof data.creditsRemaining === 'number') {
@@ -134,7 +205,9 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
           role: 'assistant',
           timestamp: new Date()
         };
-        setMessages(prev => [...prev, errorMessage]);
+        const finalMessages = [...updatedMessages, errorMessage];
+        setMessages(finalMessages);
+        saveMessagesToStorage(finalMessages);
         setCreditsRemaining(0);
       } else {
         throw new Error('Failed to get AI response');
@@ -147,7 +220,9 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
         role: 'assistant',
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, errorMessage]);
+      const finalMessages = [...updatedMessages, errorMessage];
+      setMessages(finalMessages);
+      saveMessagesToStorage(finalMessages);
     } finally {
       setIsLoading(false);
     }
