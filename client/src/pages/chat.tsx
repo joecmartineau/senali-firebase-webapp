@@ -159,7 +159,7 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
         body: JSON.stringify({
           message: inputMessage,
           familyContext: familyProfiles,
-          userUid: user.uid,
+          userUid: user.email === 'joecmartineau@gmail.com' ? 'admin-user' : user.uid,
           conversationSummary: conversationSummary,
           recentMessages: recentMessages.map(msg => ({
             role: msg.role,

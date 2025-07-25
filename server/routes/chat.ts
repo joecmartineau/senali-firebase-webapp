@@ -19,20 +19,32 @@ router.post('/chat', async (req, res) => {
       return res.status(400).json({ error: 'Message is required' });
     }
 
+    console.log(`Chat request from userUid: ${userUid}`);
+
     // Get user for admin check and credit management
     let user = null;
     let isAdmin = false;
     
     if (userUid) {
+      // First try to find user by their Firebase UID
       const [foundUser] = await db.select().from(users).where(eq(users.id, userUid)).limit(1);
       user = foundUser;
       
+      // If no user found by UID, this could be admin accessing via Firebase auth
       if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+        // Check if we have the admin user record and this could be admin
+        const [adminUser] = await db.select().from(users).where(eq(users.email, 'joecmartineau@gmail.com')).limit(1);
+        if (adminUser) {
+          user = adminUser;
+          isAdmin = true;
+          console.log('Admin user detected via fallback lookup - unlimited access');
+        } else {
+          return res.status(404).json({ error: 'User not found' });
+        }
+      } else {
+        // Check if the found user is admin
+        isAdmin = user.email === 'joecmartineau@gmail.com';
       }
-      
-      // Check if user is admin (no restrictions)
-      isAdmin = user.email === 'joecmartineau@gmail.com';
       
       // Only check credits for non-admin users
       if (!isAdmin && user.credits <= 0) {
@@ -42,7 +54,7 @@ router.post('/chat', async (req, res) => {
         });
       }
       
-      console.log(`User ${user.email} has ${user.credits} credits before chat${isAdmin ? ' (ADMIN - unlimited access)' : ''}`);
+      console.log(`User ${user?.email || userUid} has ${user?.credits || 'unlimited'} credits before chat${isAdmin ? ' (ADMIN - unlimited access)' : ''}`);
     }
 
     // Build system prompt with family context - special handling for admin
