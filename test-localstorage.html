@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LocalStorage Test for Senali</title>
+</head>
+<body>
+    <h1>LocalStorage Persistence Test</h1>
+    <p>Open browser developer console to see results</p>
+
+    <script>
+        console.log('🧪 TESTING: localStorage persistence for Senali family profiles');
+        
+        // Test 1: Save sample family data
+        const testFamilyData = [
+            {
+                name: "Test User",
+                age: 35,
+                relationship: "self",
+                height: "5'8\"",
+                medicalDiagnoses: "None",
+                workSchoolInfo: "Software Developer",
+                symptoms: []
+            }
+        ];
+        
+        console.log('📝 TEST 1: Saving test family data to localStorage');
+        localStorage.setItem('senali_family_profiles', JSON.stringify(testFamilyData));
+        
+        // Test 2: Immediate retrieval
+        const retrievedData = localStorage.getItem('senali_family_profiles');
+        console.log('📖 TEST 2: Immediate retrieval:', !!retrievedData);
+        console.log('📖 TEST 2: Retrieved data:', retrievedData);
+        
+        // Test 3: Parse and validate
+        try {
+            const parsed = JSON.parse(retrievedData);
+            console.log('✅ TEST 3: Data parses correctly:', Array.isArray(parsed) && parsed.length > 0);
+            console.log('✅ TEST 3: Parsed data:', parsed);
+        } catch (e) {
+            console.error('❌ TEST 3: Parse error:', e);
+        }
+        
+        // Test 4: Check all localStorage contents
+        console.log('📦 TEST 4: All localStorage contents:');
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            console.log(`  ${key}: ${localStorage.getItem(key)}`);
+        }
+        
+        console.log('🔍 INSTRUCTIONS:');
+        console.log('1. Refresh this page - data should persist');
+        console.log('2. Open Senali app in new tab - should detect existing profiles');
+        console.log('3. If data disappears, localStorage is being cleared somehow');
+    </script>
+</body>
+</html>

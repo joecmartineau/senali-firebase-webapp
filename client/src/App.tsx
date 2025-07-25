@@ -149,33 +149,15 @@ function SenaliApp() {
 
 
   useEffect(() => {
-    if (user) {
-      checkForExistingProfiles();
-    }
+    checkForExistingProfiles();
   }, [user]);
 
-  const checkForExistingProfiles = async () => {
+  const checkForExistingProfiles = () => {
     try {
-      // Check if user has saved family profiles in browser localStorage
-      const saved = window.localStorage.getItem('senali_family_profiles');
-      const hasLocalProfiles = saved ? JSON.parse(saved).length > 0 : false;
-      
-      console.log('🔍 PROFILE CHECK: Checking for existing profiles:', {
-        hasLocalProfiles,
-        rawSaved: saved,
-        savedProfilesLength: saved ? JSON.parse(saved).length : 0,
-        user: user?.email
-      });
-      
-      if (hasLocalProfiles) {
-        console.log('✅ PROFILE CHECK: Found existing profiles, user should skip setup');
-      } else {
-        console.log('❌ PROFILE CHECK: No profiles found, user needs setup');
-      }
-      
-      setHasProfiles(hasLocalProfiles);
+      const saved = localStorage.getItem('senali_family_profiles');
+      const hasLocalProfiles = saved && JSON.parse(saved).length > 0;
+      setHasProfiles(!!hasLocalProfiles);
     } catch (error) {
-      console.error('Error checking profiles:', error);
       setHasProfiles(false);
     }
   };
@@ -317,11 +299,9 @@ function SenaliApp() {
 
   // Check for family profiles - if user has them, go to chat; if not, go to setup
   if (!hasProfiles) {
-    console.log('No family profiles found, showing family setup');
     return <FamilySetup onComplete={() => { 
-      console.log('Family setup completed, setting hasProfiles to true');
       setHasProfiles(true); 
-      setShowProfilesMenu(false); // Go directly to chat after setup
+      setShowProfilesMenu(false);
     }} />;
   }
 
