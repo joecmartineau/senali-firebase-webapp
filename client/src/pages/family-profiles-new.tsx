@@ -59,9 +59,10 @@ const diagnosticQuestions: DiagnosticQuestion[] = [
 
 interface FamilyProfilesNewProps {
   onBack: () => void;
+  user?: any; // Add user prop to associate profiles with specific users
 }
 
-export default function FamilyProfilesNew({ onBack }: FamilyProfilesNewProps) {
+export default function FamilyProfilesNew({ onBack, user }: FamilyProfilesNewProps) {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
@@ -72,22 +73,36 @@ export default function FamilyProfilesNew({ onBack }: FamilyProfilesNewProps) {
     relation: ''
   });
 
-  // Load family members from localStorage
+  // Get user-specific storage key
+  const getStorageKey = () => {
+    const userId = user?.uid || user?.email || 'demo-user';
+    return `senali_family_members_${userId}`;
+  };
+
+  // Load family members from localStorage for specific user
   useEffect(() => {
-    const saved = localStorage.getItem('senali_family_members');
+    const storageKey = getStorageKey();
+    const saved = localStorage.getItem(storageKey);
+    console.log('Loading profiles for user:', user?.email, 'Storage key:', storageKey);
     if (saved) {
       try {
-        setFamilyMembers(JSON.parse(saved));
+        const profiles = JSON.parse(saved);
+        console.log('Loaded profiles:', profiles.length);
+        setFamilyMembers(profiles);
       } catch (e) {
         console.error('Error loading family members:', e);
       }
+    } else {
+      console.log('No profiles found for this user');
     }
-  }, []);
+  }, [user]);
 
-  // Save family members to localStorage
+  // Save family members to localStorage for specific user
   const saveFamilyMembers = (members: FamilyMember[]) => {
+    const storageKey = getStorageKey();
+    console.log('Saving profiles for user:', user?.email, 'Count:', members.length);
     setFamilyMembers(members);
-    localStorage.setItem('senali_family_members', JSON.stringify(members));
+    localStorage.setItem(storageKey, JSON.stringify(members));
   };
 
   const addFamilyMember = () => {

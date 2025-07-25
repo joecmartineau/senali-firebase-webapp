@@ -209,18 +209,20 @@ function SenaliApp() {
 
   // Simple landing page or session recovery
   if (!user) {
-    // Check if user has existing family profiles (session recovery)
-    const savedProfiles = window.localStorage.getItem('senali_family_profiles');
-    if (savedProfiles && JSON.parse(savedProfiles).length > 0) {
-      console.log('🔄 Session recovery: Found family profiles, creating demo user');
+    // Check if user has existing family profiles (session recovery) - check for any user-specific storage
+    const allKeys = Object.keys(localStorage).filter(key => key.startsWith('senali_family_members_'));
+    if (allKeys.length > 0) {
+      console.log('🔄 Session recovery: Found family profiles for previous users');
+      // For session recovery, use the first found profile set
+      const firstKey = allKeys[0];
+      const userId = firstKey.replace('senali_family_members_', '');
       const demoUser = {
-        uid: 'demo-user-' + Date.now(),
-        email: 'user@demo.local',
+        uid: userId,
+        email: userId.includes('@') ? userId : 'user@demo.local',
         displayName: 'Demo User',
         photoURL: null
       };
       setUser(demoUser as any);
-      // setHasProfiles(true); // Removed - family profile system deleted
       return null; // Will re-render with user set
     }
     
@@ -292,6 +294,7 @@ function SenaliApp() {
     return (
       <FamilyProfilesNew 
         onBack={() => setShowProfilesMenu(false)}
+        user={user}
       />
     );
   }
