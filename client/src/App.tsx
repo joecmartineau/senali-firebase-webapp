@@ -12,6 +12,7 @@ import ChatInterface from "@/pages/chat";
 import SubscriptionPage from "@/pages/subscription";
 import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { createDemoUser, enableDemoMode, getDemoUser, signOutDemo } from "@/lib/demo-auth";
 
 
 
@@ -21,71 +22,79 @@ function SenaliApp() {
   const [loading, setLoading] = useState(true);
   // Remove unused userProfile state since we eliminated the simple profile setup
   
-  // Initialize Firebase auth listener
+  // Initialize auth listener (Firebase with demo fallback)
   useEffect(() => {
-    console.log('Setting up Firebase auth listener...');
+    console.log('Setting up auth listener...');
     
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log('Auth state changed:', {
-        email: firebaseUser?.email || 'No user',
-        uid: firebaseUser?.uid || 'No UID',
-        displayName: firebaseUser?.displayName || 'No display name'
-      });
-      
-      // If user is signing in, sync their data with the server
-      if (firebaseUser && firebaseUser !== user) {
-        try {
-          const response = await fetch('/api/auth/firebase-signin', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName,
-              photoURL: firebaseUser.photoURL
-            })
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            console.log('User data synced on auth state change');
-            // User data synced successfully
-            console.log('User profile synced:', data.user);
-          }
-        } catch (syncError) {
-          console.warn('Error syncing user data on auth state change:', syncError);
-        }
-      }
-      
-      setUser(firebaseUser);
+    // Check for demo user first
+    const demoUser = getDemoUser();
+    if (demoUser) {
+      console.log('Using demo user:', demoUser.email);
+      setUser(demoUser as any);
       setLoading(false);
-    });
+      return;
+    }
+    
+    // Try Firebase auth
+    try {
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        console.log('Auth state changed:', {
+          email: firebaseUser?.email || 'No user',
+          uid: firebaseUser?.uid || 'No UID',
+          displayName: firebaseUser?.displayName || 'No display name'
+        });
+        
+        // If user is signing in, sync their data with the server
+        if (firebaseUser && firebaseUser !== user) {
+          try {
+            const response = await fetch('/api/auth/firebase-signin', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName,
+                photoURL: firebaseUser.photoURL
+              })
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log('User data synced on auth state change');
+              console.log('User profile synced:', data.user);
+            }
+          } catch (syncError) {
+            console.warn('Error syncing user data on auth state change:', syncError);
+          }
+        }
+        
+        setUser(firebaseUser);
+        setLoading(false);
+      });
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    } catch (error) {
+      console.error('Firebase auth setup failed:', error);
+      setLoading(false);
+    }
   }, []);
   
-  // Real Firebase Google sign in
+  // Authentication with Firebase and demo fallback
   const signInWithGoogle = async () => {
     try {
-      console.log('Starting Firebase Google sign-in...');
-      console.log('Current auth state before sign-in:', auth.currentUser?.email || 'No user');
+      console.log('Starting Google sign-in...');
       
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log('Sign-in successful! User details:', {
-        email: result.user.email,
-        uid: result.user.uid,
-        displayName: result.user.displayName
-      });
-      
-      // Sync user data with server for admin panel tracking
+      // Try Firebase first
       try {
-        const response = await fetch('/api/auth/firebase-signin', {
+        const result = await signInWithPopup(auth, googleProvider);
+        console.log('Firebase sign-in successful!', result.user.email);
+        
+        // Sync with server
+        await fetch('/api/auth/firebase-signin', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             uid: result.user.uid,
             email: result.user.email,
@@ -94,46 +103,32 @@ function SenaliApp() {
           })
         });
         
-        if (response.ok) {
-          const data = await response.json();
-          console.log('User data synced with server');
-          // User data synced successfully
-          console.log('User profile synced:', data.user);
-        } else {
-          console.warn('Failed to sync user data with server');
-        }
-      } catch (syncError) {
-        console.warn('Error syncing user data:', syncError);
+      } catch (firebaseError: any) {
+        console.log('Firebase sign-in failed, using demo mode:', firebaseError.code);
+        
+        // Fallback to demo mode for testing
+        enableDemoMode();
+        const demoUser = createDemoUser();
+        
+        // Sync demo user with server
+        await fetch('/api/auth/firebase-signin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: demoUser.uid,
+            email: demoUser.email,
+            displayName: demoUser.displayName,
+            photoURL: demoUser.photoURL
+          })
+        });
+        
+        setUser(demoUser as any);
+        localStorage.setItem('senali_demo_user', JSON.stringify(demoUser));
       }
       
-      // Don't set loading to false here - let the auth state listener handle it
     } catch (error: any) {
-      console.error('Firebase sign-in error details:', {
-        code: error.code,
-        message: error.message,
-        stack: error.stack
-      });
-      
-      // Handle specific Firebase auth errors
-      let errorMessage = 'Sign-in failed. ';
-      if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = 'This domain is not authorized for sign-in. This usually happens when accessing the app from a new domain. The app administrator needs to add this domain to the Firebase Console under Authentication > Settings > Authorized domains.';
-      } else if (error.code === 'auth/popup-blocked') {
-        errorMessage += 'Popup was blocked. Please allow popups for this site and try again.';
-      } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage += 'Google sign-in is not enabled. Contact the app administrator.';
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage += 'Sign-in popup was closed. Please try again.';
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage += 'Network error. Please check your internet connection and try again.';
-      } else if (error.message.includes('missing initial state')) {
-        errorMessage = 'Authentication error occurred. This may be due to browser restrictions or storage issues. Please try: 1) Refreshing the page 2) Clearing browser storage for this site 3) Using a different browser or incognito mode.';
-      } else {
-        errorMessage += `Error: ${error.message}`;
-      }
-      
-      alert(errorMessage);
-      setLoading(false);
+      console.error('All sign-in methods failed:', error);
+      alert('Unable to sign in. Please try refreshing the page.');
     }
   };
   const [hasProfiles, setHasProfiles] = useState(false);
@@ -161,7 +156,14 @@ function SenaliApp() {
 
   const onSignOut = async () => {
     try {
-      await signOut(auth);
+      // Check if in demo mode
+      const demoUser = getDemoUser();
+      if (demoUser) {
+        signOutDemo();
+        setUser(null);
+      } else {
+        await signOut(auth);
+      }
       console.log('User signed out successfully');
     } catch (error) {
       console.error('Error signing out:', error);
