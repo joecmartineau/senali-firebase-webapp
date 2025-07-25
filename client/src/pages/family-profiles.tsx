@@ -26,6 +26,16 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
   const [selectedProfile, setSelectedProfile] = useState<FamilyProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [newProfile, setNewProfile] = useState<Partial<FamilyProfile>>({
+    name: '',
+    age: 0,
+    relationship: 'other',
+    height: '',
+    medicalDiagnoses: '',
+    workSchoolInfo: '',
+    symptoms: {}
+  });
 
   // Neurodiversity symptoms checklist
   const symptoms = {
@@ -131,6 +141,57 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
     setSelectedProfile(updatedProfile);
   };
 
+  const createNewProfile = () => {
+    if (!newProfile.name?.trim()) {
+      alert('Please enter a name for the family member');
+      return;
+    }
+
+    // Check if name already exists
+    if (profiles.some(p => p.name.toLowerCase() === newProfile.name?.toLowerCase())) {
+      alert('A family member with this name already exists');
+      return;
+    }
+
+    const completeProfile: FamilyProfile = {
+      name: newProfile.name.trim(),
+      age: newProfile.age || 0,
+      relationship: newProfile.relationship as 'child' | 'spouse' | 'self' | 'other',
+      height: newProfile.height || '',
+      medicalDiagnoses: newProfile.medicalDiagnoses || '',
+      workSchoolInfo: newProfile.workSchoolInfo || '',
+      symptoms: {}
+    };
+
+    const updatedProfiles = [...profiles, completeProfile];
+    saveProfiles(updatedProfiles);
+    
+    // Reset form and close create mode
+    setNewProfile({
+      name: '',
+      age: 0,
+      relationship: 'other',
+      height: '',
+      medicalDiagnoses: '',
+      workSchoolInfo: '',
+      symptoms: {}
+    });
+    setIsCreatingNew(false);
+  };
+
+  const cancelNewProfile = () => {
+    setNewProfile({
+      name: '',
+      age: 0,
+      relationship: 'other',
+      height: '',
+      medicalDiagnoses: '',
+      workSchoolInfo: '',
+      symptoms: {}
+    });
+    setIsCreatingNew(false);
+  };
+
   const updateSymptom = (category: string, symptom: string, value: 'yes' | 'no' | 'unknown') => {
     if (!selectedProfile) return;
     
@@ -192,6 +253,114 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
 
         {/* Family Members Grid */}
         <div className="max-w-4xl mx-auto p-6">
+          {/* Add New Member Button */}
+          <div className="mb-6">
+            <Button
+              onClick={() => setIsCreatingNew(true)}
+              className="bg-green-500 hover:bg-green-600 text-black font-semibold"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Family Member
+            </Button>
+          </div>
+
+          {/* New Member Creation Form */}
+          {isCreatingNew && (
+            <Card className="bg-gray-900 border-gray-700 mb-6">
+              <CardHeader>
+                <CardTitle className="text-white">Add New Family Member</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="newName" className="text-white">Name *</Label>
+                    <Input
+                      id="newName"
+                      value={newProfile.name || ''}
+                      onChange={(e) => setNewProfile({ ...newProfile, name: e.target.value })}
+                      placeholder="Enter family member's name"
+                      className="bg-gray-800 border-gray-600 text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="newAge" className="text-white">Age</Label>
+                    <Input
+                      id="newAge"
+                      type="number"
+                      value={newProfile.age || 0}
+                      onChange={(e) => setNewProfile({ ...newProfile, age: parseInt(e.target.value) || 0 })}
+                      className="bg-gray-800 border-gray-600 text-white"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="newRelationship" className="text-white">Relationship</Label>
+                    <Select
+                      value={newProfile.relationship}
+                      onValueChange={(value: any) => setNewProfile({ ...newProfile, relationship: value })}
+                    >
+                      <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-600">
+                        <SelectItem value="self">Self (You)</SelectItem>
+                        <SelectItem value="child">Child</SelectItem>
+                        <SelectItem value="spouse">Spouse/Partner</SelectItem>
+                        <SelectItem value="other">Other Family Member</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="newHeight" className="text-white">Height</Label>
+                    <Input
+                      id="newHeight"
+                      value={newProfile.height || ''}
+                      onChange={(e) => setNewProfile({ ...newProfile, height: e.target.value })}
+                      placeholder="e.g., 5'6&quot;"
+                      className="bg-gray-800 border-gray-600 text-white"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="newMedical" className="text-white">Medical Diagnoses</Label>
+                  <Input
+                    id="newMedical"
+                    value={newProfile.medicalDiagnoses || ''}
+                    onChange={(e) => setNewProfile({ ...newProfile, medicalDiagnoses: e.target.value })}
+                    placeholder="Any medical diagnoses or conditions"
+                    className="bg-gray-800 border-gray-600 text-white"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="newWork" className="text-white">Work/School Info</Label>
+                  <Input
+                    id="newWork"
+                    value={newProfile.workSchoolInfo || ''}
+                    onChange={(e) => setNewProfile({ ...newProfile, workSchoolInfo: e.target.value })}
+                    placeholder="Work, school, or daily activity information"
+                    className="bg-gray-800 border-gray-600 text-white"
+                  />
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    onClick={createNewProfile}
+                    className="bg-green-500 hover:bg-green-600 text-black font-semibold"
+                  >
+                    Create Family Member
+                  </Button>
+                  <Button
+                    onClick={cancelNewProfile}
+                    variant="outline"
+                    className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {profiles.map((profile, index) => {
               const stats = getCompletionStats(profile);
