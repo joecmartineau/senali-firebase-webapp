@@ -11,6 +11,17 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Helper function to sanitize user input for prompt safety
+function sanitizeForPrompt(input: string | null | undefined): string {
+  if (!input) return '';
+  // Remove template literal injection characters and limit length
+  return input
+    .replace(/[`${}]/g, '') // Remove template literal special characters
+    .replace(/\n{3,}/g, '\n\n') // Limit excessive newlines
+    .trim()
+    .slice(0, 2000); // Limit length to prevent prompt bloat
+}
+
 router.post('/chat', async (req, res) => {
   try {
     const { message, familyContext, userUid, conversationSummary, recentMessages } = req.body;
@@ -96,16 +107,16 @@ Guidelines:
     if (familyContext && familyContext.length > 0) {
       systemPrompt += `\n\nFamily Context:\n`;
       familyContext.forEach((member: any) => {
-        systemPrompt += `- ${member.name} (${member.relationship})`;
-        if (member.age) systemPrompt += `, age ${member.age}`;
-        if (member.medicalDiagnoses) systemPrompt += `, diagnoses: ${member.medicalDiagnoses}`;
+        systemPrompt += `- ${sanitizeForPrompt(member.name)} (${sanitizeForPrompt(member.relationship)})`;
+        if (member.age) systemPrompt += `, age ${sanitizeForPrompt(member.age)}`;
+        if (member.medicalDiagnoses) systemPrompt += `, diagnoses: ${sanitizeForPrompt(member.medicalDiagnoses)}`;
         systemPrompt += `\n`;
       });
     }
 
     // Add conversation summary if available
     if (conversationSummary) {
-      systemPrompt += `\n\nPrevious Conversation Summary:\n${conversationSummary}`;
+      systemPrompt += `\n\nPrevious Conversation Summary:\n${sanitizeForPrompt(conversationSummary)}`;
     }
 
     // Build messages array with recent context
@@ -147,7 +158,7 @@ Guidelines:
 
 Keep the summary under 200 words and focus on information that would help maintain continuity in future conversations.
 
-Previous summary: ${conversationSummary || 'No previous summary'}
+Previous summary: ${sanitizeForPrompt(conversationSummary) || 'No previous summary'}
 
 Recent conversation to summarize:` 
           },
