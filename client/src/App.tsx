@@ -6,7 +6,7 @@ import { InfinityIcon } from "@/components/ui/infinity-icon";
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 // import FamilySetup from "@/pages/family-setup"; // Removed - causes React hook errors
-// import FamilyProfiles from "@/pages/family-profiles"; // Removed - deleting family profile system
+import FamilyProfilesNew from "@/pages/family-profiles-new";
 import AdminPanel from "@/components/admin/admin-panel";
 import ChatInterface from "@/pages/chat";
 import SubscriptionPage from "@/pages/subscription";
@@ -140,8 +140,7 @@ function SenaliApp() {
       alert('Unable to sign in. Please try refreshing the page.');
     }
   };
-  // const [hasProfiles, setHasProfiles] = React.useState(false); // Removed - deleting family profile system
-  // const [showProfilesMenu, setShowProfilesMenu] = React.useState(false); // Removed - deleting family profile system
+  const [showProfilesMenu, setShowProfilesMenu] = React.useState(false); // Restored for new profiles system
   const [showSubscription, setShowSubscription] = React.useState(false);
   const [showAdminChat, setShowAdminChat] = React.useState(false);
   const [location] = useLocation();
@@ -221,7 +220,7 @@ function SenaliApp() {
         photoURL: null
       };
       setUser(demoUser as any);
-      setHasProfiles(true);
+      // setHasProfiles(true); // Removed - family profile system deleted
       return null; // Will re-render with user set
     }
     
@@ -288,7 +287,14 @@ function SenaliApp() {
     );
   }
 
-  // Family profile system removed - skip family setup, go directly to chat
+  // Show family profiles management
+  if (showProfilesMenu) {
+    return (
+      <FamilyProfilesNew 
+        onBack={() => setShowProfilesMenu(false)}
+      />
+    );
+  }
 
   // Show subscription page
   if (showSubscription) {
@@ -305,7 +311,7 @@ function SenaliApp() {
     <ChatInterface 
       user={user} 
       onSignOut={onSignOut}
-      onManageProfiles={() => {}} // No-op since family profiles removed
+      onManageProfiles={() => setShowProfilesMenu(true)} // Restore profiles functionality
       onManageSubscription={() => setShowSubscription(true)}
     />
   );
