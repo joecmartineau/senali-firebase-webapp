@@ -36,6 +36,9 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   credits: serial("credits"), // Credits for user - default 25 handled in application
   subscription: varchar("subscription", { enum: ["free", "premium"] }).default("free"),
+  // User profile completion tracking
+  fullName: varchar("full_name"), // User's preferred full name
+  hasCompletedProfile: boolean("has_completed_profile").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

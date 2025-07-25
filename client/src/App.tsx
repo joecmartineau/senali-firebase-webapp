@@ -9,6 +9,7 @@ import FamilySetup from "@/pages/family-setup";
 import FamilyProfiles from "@/pages/family-profiles";
 import AdminPanel from "@/components/admin/admin-panel";
 import ChatInterface from "@/pages/chat";
+import UserProfileSetup from "@/pages/user-profile-setup";
 import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, onAuthStateChanged, signOut, User } from 'firebase/auth';
 
@@ -18,6 +19,7 @@ function SenaliApp() {
   // Firebase authentication state
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<{hasCompletedProfile: boolean; fullName: string | null} | null>(null);
   
   // Initialize Firebase auth listener
   useEffect(() => {
@@ -47,7 +49,14 @@ function SenaliApp() {
           });
           
           if (response.ok) {
+            const data = await response.json();
             console.log('User data synced on auth state change');
+            if (data.user) {
+              setUserProfile({
+                hasCompletedProfile: data.user.hasCompletedProfile,
+                fullName: data.user.fullName
+              });
+            }
           }
         } catch (syncError) {
           console.warn('Error syncing user data on auth state change:', syncError);
@@ -90,7 +99,14 @@ function SenaliApp() {
         });
         
         if (response.ok) {
+          const data = await response.json();
           console.log('User data synced with server');
+          if (data.user) {
+            setUserProfile({
+              hasCompletedProfile: data.user.hasCompletedProfile,
+              fullName: data.user.fullName
+            });
+          }
         } else {
           console.warn('Failed to sync user data with server');
         }
@@ -221,6 +237,19 @@ function SenaliApp() {
   // Show admin panel for specific email only
   if (user?.email === 'joecmartineau@gmail.com') {
     return <AdminPanel />;
+  }
+
+  // Check if user needs to complete their profile first
+  if (userProfile && !userProfile.hasCompletedProfile) {
+    return (
+      <UserProfileSetup 
+        user={user} 
+        onProfileComplete={() => {
+          setUserProfile(prev => prev ? { ...prev, hasCompletedProfile: true } : null);
+          checkForExistingProfiles(); // Refresh family profiles check
+        }} 
+      />
+    );
   }
 
   // Regular user flow - family setup, then profiles menu, then chat

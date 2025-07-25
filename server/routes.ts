@@ -72,10 +72,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Updated existing user record for:', email, 'Credits preserved:', existingUser[0].credits);
       }
       
-      res.json({ success: true });
+      // Return user info including profile completion status
+      const [updatedUser] = await db.select().from(users).where(eq(users.id, uid)).limit(1);
+      
+      res.json({ 
+        success: true,
+        user: {
+          uid,
+          email,
+          hasCompletedProfile: updatedUser?.hasCompletedProfile || false,
+          fullName: updatedUser?.fullName || null
+        }
+      });
     } catch (error) {
       console.error('Error storing Firebase user:', error);
       res.status(500).json({ error: 'Failed to store user data' });
+    }
+  });
+
+  // Complete user profile setup
+  app.post('/api/auth/complete-profile', async (req, res) => {
+    try {
+      const { uid, fullName } = req.body;
+
+      if (!uid || !fullName) {
+        return res.status(400).json({ error: 'UID and full name are required' });
+      }
+
+      // Update user profile
+      const [updatedUser] = await db.update(users)
+        .set({ 
+          fullName: fullName.trim(),
+          hasCompletedProfile: true,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, uid))
+        .returning();
+
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      console.log('Profile completed for user:', updatedUser.email);
+      res.json({ 
+        message: 'Profile completed successfully',
+        user: {
+          uid: updatedUser.id,
+          email: updatedUser.email,
+          fullName: updatedUser.fullName,
+          hasCompletedProfile: updatedUser.hasCompletedProfile
+        }
+      });
+    } catch (error) {
+      console.error('Complete profile error:', error);
+      res.status(500).json({ error: 'Failed to complete profile' });
     }
   });
 
