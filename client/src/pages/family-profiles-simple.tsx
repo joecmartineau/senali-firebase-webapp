@@ -40,9 +40,10 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
     symptoms: {}
   });
 
-  // Fetch profiles from database
+  // Fetch profiles from Firebase Functions
   const { data: profiles = [], isLoading, error } = useQuery({
-    queryKey: ['/api/children'],
+    queryKey: ['family-profiles'],
+    queryFn: getFamilyProfiles,
     enabled: true
   });
 
@@ -51,10 +52,9 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
 
   // Create profile mutation
   const createProfileMutation = useMutation({
-    mutationFn: (profileData: Partial<FamilyProfile>) => 
-      apiRequest('/api/children', 'POST', profileData),
+    mutationFn: createFamilyProfile,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/children'] });
+      queryClient.invalidateQueries({ queryKey: ['family-profiles'] });
       setIsCreatingNew(false);
       setNewProfile({
         childName: '',
@@ -70,9 +70,9 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
 
   // Delete profile mutation
   const deleteProfileMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/children/${id}`, 'DELETE'),
+    mutationFn: deleteFamilyProfile,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/children'] });
+      queryClient.invalidateQueries({ queryKey: ['family-profiles'] });
       setSelectedProfile(null);
     }
   });
@@ -90,7 +90,7 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
     }
   };
 
-  const handleDeleteProfile = async (profileId: number) => {
+  const handleDeleteProfile = async (profileId: string) => {
     if (confirm('Are you sure you want to delete this profile?')) {
       try {
         await deleteProfileMutation.mutateAsync(profileId);

@@ -25,539 +25,263 @@ var __importStar = (this && this.__importStar) || function (mod) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminAdjustCredits = exports.adminGetUsers = exports.getSubscriptionStatus = exports.firebaseSignin = exports.generateTip = exports.chat = void 0;
-const https_1 = require("firebase-functions/v2/https");
-const v2_1 = require("firebase-functions/v2");
+exports.firebaseSignin = exports.chat = exports.deleteFamilyProfile = exports.createFamilyProfile = exports.getFamilyProfiles = void 0;
+const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
-const openai_1 = __importDefault(require("openai"));
 const cors_1 = __importDefault(require("cors"));
-// Set global options for all functions
-(0, v2_1.setGlobalOptions)({ maxInstances: 10 });
+const openai_1 = __importDefault(require("openai"));
 // Initialize Firebase Admin
 admin.initializeApp();
-const db = admin.firestore();
-const auth = admin.auth();
-// Initialize CORS
-const corsHandler = (0, cors_1.default)({ origin: true });
 // Initialize OpenAI
 const openai = new openai_1.default({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: ((_a = functions.config().openai) === null || _a === void 0 ? void 0 : _a.key) || process.env.OPENAI_API_KEY,
 });
-// Helper function to verify admin access
-async function verifyAdmin(request) {
-    try {
-        const authHeader = request.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return false;
+// CORS configuration
+const corsHandler = (0, cors_1.default)({ origin: true });
+// Get all family profiles for user
+exports.getFamilyProfiles = functions.https.onRequest((req, res) => {
+    return corsHandler(req, res, async () => {
+        var _a;
+        if (req.method !== 'GET') {
+            return res.status(405).json({ error: 'Method not allowed' });
         }
-        const token = authHeader.split('Bearer ')[1];
-        const decodedToken = await auth.verifyIdToken(token);
-        return decodedToken.email === 'joecmartineau@gmail.com';
-    }
-    catch (error) {
-        console.error('Admin verification error:', error);
-        return false;
-    }
-}
-// Helper function to sanitize input
-function sanitizeForPrompt(input) {
-    if (!input && input !== 0)
-        return '';
-    const stringInput = String(input);
-    return stringInput
-        .replace(/[`${}]/g, '')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim()
-        .slice(0, 2000);
-}
-// System prompt for Senali - parenting coach and friend role with efficient context handling
-const SYSTEM_PROMPT = `You are Senali, an AI friend who listens and helps like a parenting coach. You talk in a warm and caring way.
-
-**Context Efficiency:** You only receive the last few messages for immediate context. If someone refers to something from earlier in your conversation that isn't clear, gently ask them to remind you rather than guessing.
-
-**MANDATORY DIAGNOSTIC COMMUNICATION:** When you receive family context containing diagnostic analysis (marked with 🤖 AI DIAGNOSTIC ANALYSIS), you MUST immediately acknowledge and discuss these results with the user:
-
-CRITICAL REQUIREMENT: You must use these EXACT phrases:
-- For HIGH probability (🔴): "Based on your questionnaire responses, you most likely have [condition name]"
-- For MODERATE probability (🟡): "Your assessment indicates you might have [condition name]"
-- For LOW probability (🟢): "There's a possibility you have [condition name]"
-
-EXAMPLE RESPONSE: "Based on your questionnaire responses, you most likely have Inattentive ADHD. This could explain the focus and attention challenges you've mentioned. Having this information can be really helpful for understanding your experiences better."
-
-IMPORTANT: 
-- Never say "I don't have access to questionnaire results" if diagnostic data is present
-- Always acknowledge the screening results and provide relevant support
-- Remind users these are screening results requiring professional confirmation
-- Provide condition-specific guidance and validation
-
-**How to Help:**
-
-* **Listen Well:** Let people share their feelings. Don't cut them off. Show you understand what they're going through.
-* **Be Kind:** Talk in a friendly way. Use simple words and contractions like "you're" and "can't." Be caring and don't judge.
-* **Ask Good Questions:** When it feels right, ask questions to learn more about how they feel. Ask about their kids, partner, or family.
-* **Learn About Their Family:** Ask about their children, spouse, and family life. If they mention school, ask how it's going. If they talk about work, ask how it affects the family. If you don't know much, ask simple questions about their family.
-* **Give Ideas:** Share tips or different ways to think about things. Say things like "Maybe you could try..." or "Some people find it helps to..." Don't tell them what they must do.
-* **Be Flexible:** Sometimes people need to talk. Sometimes they need advice. Sometimes they need you to ask questions to help them think.
-* **Share Assessment Results:** When family context shows diagnostic probabilities, tell users what the assessment found and provide targeted strategies.
-* **When Context is Missing:** If someone mentions something you don't have context for, say things like "Can you remind me about...?" or "Tell me more about that situation..." rather than pretending to remember.
-
-**How to Talk:**
-
-* **When someone is upset:** Say things like "That sounds really hard. How is this affecting your daily life?" or "It sounds like you're dealing with a lot. What's been the toughest part?"
-* **When someone shares a little:** Ask gentle questions like "You said your kids are busy with sports. How does that change family time?" or "Your partner works a lot. How do you both handle that?"
-* **When giving tips:** Say "Something that might help is..." or "Have you thought about trying...?" or "Maybe this could work..."
-* **To learn more:** Say "Tell me more about [name] and what you're thinking about them."
-* **When clarifying:** Say "Can you help me understand...?" or "Remind me about...?" when you need more context.
-
-**Starting Conversations:**
-Begin with a warm greeting that makes them want to share what's on their mind.
-
-**Writing Style:**
-- Use 7th grade reading level
-- Keep sentences short and simple
-- Use everyday words instead of big ones
-- Write like you're talking to a friend
-- Use contractions (you're, can't, don't, etc.)
-- Be warm but not too casual
-
-Remember: You're here to listen, understand, and gently help people talk about their family and feelings. It's better to ask for clarification than to assume context you don't have.`;
-// Chat endpoint - enhanced version with credit management and admin support
-exports.chat = (0, https_1.onRequest)(async (request, response) => {
-    return corsHandler(request, response, async () => {
-        var _a, _b;
         try {
-            if (request.method !== 'POST') {
-                response.status(405).json({ error: 'Method not allowed' });
-                return;
-            }
-            const { message, familyContext, userUid, conversationSummary, recentMessages, isQuestionnaire, diagnosticAnalysis } = request.body;
-            if (!message) {
-                response.status(400).json({ error: 'Message is required' });
-                return;
-            }
-            console.log(`Chat request from userUid: ${userUid}`);
-            // Get user for admin check and credit management
-            let user = null;
-            let isAdmin = false;
-            if (userUid) {
+            // Get user ID from Firebase Auth token
+            const idToken = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split('Bearer ')[1];
+            let userId = 'demo-user'; // Default for demo
+            if (idToken) {
                 try {
-                    const userDoc = await db.collection('users').doc(userUid).get();
-                    if (!userDoc.exists) {
-                        // Check if this could be admin accessing via Firebase auth
-                        const adminDoc = await db.collection('users').where('email', '==', 'joecmartineau@gmail.com').limit(1).get();
-                        if (!adminDoc.empty) {
-                            user = Object.assign({ id: adminDoc.docs[0].id }, adminDoc.docs[0].data());
-                            isAdmin = true;
-                            console.log('Admin user detected via fallback lookup - unlimited access');
-                        }
-                        else {
-                            return response.status(404).json({ error: 'User not found' });
-                        }
-                    }
-                    else {
-                        user = Object.assign({ id: userDoc.id }, userDoc.data());
-                        isAdmin = user.email === 'joecmartineau@gmail.com';
-                    }
-                    // Only check credits for non-admin users
-                    if (!isAdmin && user.credits <= 0) {
-                        return response.status(403).json({
-                            error: 'No credits remaining',
-                            message: 'You have no credits left. Please upgrade to continue chatting.'
-                        });
-                    }
-                    console.log(`User ${(user === null || user === void 0 ? void 0 : user.email) || userUid} has ${(user === null || user === void 0 ? void 0 : user.credits) || 'unlimited'} credits before chat${isAdmin ? ' (ADMIN - unlimited access)' : ''}`);
+                    const decodedToken = await admin.auth().verifyIdToken(idToken);
+                    userId = decodedToken.uid;
                 }
-                catch (error) {
-                    console.error('Error fetching user:', error);
+                catch (authError) {
+                    console.log('Auth verification failed, using demo user');
                 }
             }
-            // Build system prompt with family context and diagnostic awareness
-            let systemPrompt;
-            if (isAdmin) {
-                systemPrompt = `You are Senali, an AI assistant with full capabilities. You can discuss any topic without restrictions. Be helpful, informative, and conversational. You have access to GPT-4o and can provide detailed, comprehensive responses on any subject the user wants to explore.`;
-            }
-            else {
-                systemPrompt = SYSTEM_PROMPT;
-            }
-            // Add family context - now supports both string format (with diagnostics) and legacy array format
-            if (familyContext) {
-                if (typeof familyContext === 'string') {
-                    // New format: comprehensive family context string with diagnostic results
-                    systemPrompt += `\n\n${familyContext}`;
-                    console.log('📋 Using comprehensive family context with diagnostic results');
-                }
-                else if (Array.isArray(familyContext) && familyContext.length > 0) {
-                    // Legacy format: array of family members (fallback)
-                    systemPrompt += `\n\nFamily Context:\n`;
-                    familyContext.forEach((member) => {
-                        systemPrompt += `- ${sanitizeForPrompt(member.name)} (${sanitizeForPrompt(member.relationship)})`;
-                        if (member.age)
-                            systemPrompt += `, age ${sanitizeForPrompt(member.age)}`;
-                        if (member.medicalDiagnoses)
-                            systemPrompt += `, diagnoses: ${sanitizeForPrompt(member.medicalDiagnoses)}`;
-                        systemPrompt += `\n`;
-                    });
-                    console.log('📋 Using legacy family context format (no diagnostics)');
-                }
-            }
-            // Add conversation summary if available
-            if (conversationSummary) {
-                systemPrompt += `\n\nPrevious Conversation Summary:\n${sanitizeForPrompt(conversationSummary)}`;
-            }
-            // Handle diagnostic analysis with specialized system prompt
-            let messages;
-            let modelToUse;
-            let maxTokens;
-            let temperature;
-            let responseFormat = undefined;
-            if (diagnosticAnalysis) {
-                // Use specialized diagnostic system prompt for AI-powered diagnosis
-                const diagnosticSystemPrompt = `You are a clinical assessment AI that analyzes symptom questionnaire data to determine probable diagnoses based on DSM-5 criteria. You provide structured diagnostic probability assessments for screening purposes only.
-
-IMPORTANT: You are providing screening assessments, not formal diagnoses. All results should include disclaimers about professional evaluation.
-
-Your task is to:
-1. Analyze symptom patterns using established diagnostic criteria
-2. Calculate probability levels based on symptom clusters and severity
-3. Provide specific condition names with confidence levels
-4. Give clear reasoning for each probable diagnosis
-5. Recommend appropriate next steps for families
-
-For ADHD: Use DSM-5 criteria requiring 6+ symptoms in inattentive OR hyperactive-impulsive categories for children, 5+ for adults
-For Autism: Use DSM-5 criteria requiring deficits in social communication AND restricted/repetitive behaviors
-For other conditions: Apply appropriate clinical thresholds
-
-Probability Levels:
-- HIGH (80-100%): Strong symptom cluster match, meets most criteria
-- MODERATE (50-79%): Some criteria met, requires further evaluation  
-- LOW (20-49%): Few criteria met, monitoring recommended
-
-Always respond with properly formatted JSON containing diagnoses array, summary, and overall assessment. Include confidence percentages and specific recommendations.`;
-                messages = [
-                    { role: 'system', content: diagnosticSystemPrompt },
-                    { role: 'user', content: message }
-                ];
-                modelToUse = 'gpt-4o';
-                maxTokens = 1500;
-                temperature = 0.2; // Lower temperature for more consistent diagnostic analysis
-                responseFormat = { type: "json_object" };
-                console.log('Processing diagnostic analysis request with GPT-4o');
-            }
-            else {
-                // Regular chat conversation
-                messages = [{ role: 'system', content: systemPrompt }];
-                // Add recent messages for immediate context (last 10 messages)
-                if (recentMessages && recentMessages.length > 0) {
-                    const contextMessages = recentMessages.slice(0, -1);
-                    messages.push(...contextMessages);
-                }
-                // Add the current user message
-                messages.push({ role: 'user', content: message });
-                // Handle questionnaire analysis differently
-                modelToUse = isQuestionnaire ? 'gpt-4o' : (isAdmin ? 'gpt-4o' : 'gpt-3.5-turbo');
-                maxTokens = isQuestionnaire ? 1000 : (isAdmin ? 1000 : 500);
-                temperature = isQuestionnaire ? 0.3 : (isAdmin ? 0.8 : 0.7);
-                responseFormat = isQuestionnaire ? { type: "json_object" } : undefined;
-            }
-            const completion = await openai.chat.completions.create({
-                model: modelToUse,
-                messages: messages,
-                max_tokens: maxTokens,
-                temperature: temperature,
-                response_format: responseFormat
-            });
-            const aiResponse = ((_b = (_a = completion.choices[0]) === null || _a === void 0 ? void 0 : _a.message) === null || _b === void 0 ? void 0 : _b.content) || "I'm sorry, I couldn't generate a response right now.";
-            console.log('OpenAI response received');
-            // Deduct credit for non-admin users
-            let updatedCredits = user === null || user === void 0 ? void 0 : user.credits;
-            if (user && !isAdmin) {
-                const newCredits = Math.max(0, user.credits - 1);
-                await db.collection('users').doc(user.id).update({
-                    credits: newCredits,
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                });
-                updatedCredits = newCredits;
-                console.log(`Credit deducted: ${user.email} now has ${newCredits} credits`);
-            }
-            response.json({
-                response: aiResponse,
-                creditsRemaining: isAdmin ? 999999 : updatedCredits
-            });
+            // Get profiles from Firestore
+            const profilesSnapshot = await admin.firestore()
+                .collection('childProfiles')
+                .where('userId', '==', userId)
+                .get();
+            const profiles = profilesSnapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
+            console.log(`Found ${profiles.length} profiles for user ${userId}`);
+            return res.json(profiles);
         }
         catch (error) {
-            console.error('Chat API error:', error);
-            if (error.code === 'insufficient_quota') {
-                response.status(429).json({
-                    error: 'AI service temporarily unavailable. Please try again later.'
-                });
-            }
-            else if (error.code === 'invalid_api_key') {
-                response.status(500).json({
-                    error: 'AI service configuration error. Please contact support.'
-                });
-            }
-            else {
-                response.status(500).json({
-                    error: 'Failed to get AI response. Please try again.'
-                });
-            }
+            console.error('Error getting family profiles:', error);
+            return res.status(500).json({ error: 'Failed to get profiles' });
         }
     });
 });
-// Tips generation endpoint
-exports.generateTip = (0, https_1.onRequest)(async (request, response) => {
-    return corsHandler(request, response, async () => {
-        var _a, _b, _c;
+// Create family profile
+exports.createFamilyProfile = functions.https.onRequest((req, res) => {
+    return corsHandler(req, res, async () => {
+        var _a;
+        if (req.method !== 'POST') {
+            return res.status(405).json({ error: 'Method not allowed' });
+        }
         try {
-            if (request.method !== 'POST') {
-                response.status(405).json({ error: 'Method not allowed' });
-                return;
+            // Get user ID from Firebase Auth token
+            const idToken = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split('Bearer ')[1];
+            let userId = 'demo-user'; // Default for demo
+            if (idToken) {
+                try {
+                    const decodedToken = await admin.auth().verifyIdToken(idToken);
+                    userId = decodedToken.uid;
+                }
+                catch (authError) {
+                    console.log('Auth verification failed, using demo user');
+                }
             }
-            const { userId, preferences = {} } = request.body;
-            if (!userId) {
-                response.status(400).json({ error: 'User ID is required' });
-                return;
+            const profileData = Object.assign(Object.assign({}, req.body), { userId, createdAt: admin.firestore.FieldValue.serverTimestamp(), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+            // Add profile to Firestore
+            const docRef = await admin.firestore()
+                .collection('childProfiles')
+                .add(profileData);
+            const createdProfile = await docRef.get();
+            const profile = Object.assign({ id: createdProfile.id }, createdProfile.data());
+            console.log(`Created profile for ${profileData.childName}`);
+            return res.status(201).json(profile);
+        }
+        catch (error) {
+            console.error('Error creating family profile:', error);
+            return res.status(500).json({ error: 'Failed to create profile' });
+        }
+    });
+});
+// Delete family profile
+exports.deleteFamilyProfile = functions.https.onRequest((req, res) => {
+    return corsHandler(req, res, async () => {
+        var _a, _b;
+        if (req.method !== 'DELETE') {
+            return res.status(405).json({ error: 'Method not allowed' });
+        }
+        try {
+            const profileId = req.path.split('/').pop();
+            if (!profileId) {
+                return res.status(400).json({ error: 'Profile ID required' });
             }
-            // Generate tip using OpenAI
-            const tipPrompt = `Generate a supportive, practical parenting tip focused on emotional well-being and family relationships. 
-      
-      The tip should be:
-      - Written at a 7th grade reading level
-      - Warm and encouraging in tone
-      - Actionable and specific
-      - Focused on connection, understanding, or emotional support
-      - About 2-3 sentences long
-      
-      Please provide a title and content for the tip.`;
+            // Get user ID from Firebase Auth token
+            const idToken = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split('Bearer ')[1];
+            let userId = 'demo-user'; // Default for demo
+            if (idToken) {
+                try {
+                    const decodedToken = await admin.auth().verifyIdToken(idToken);
+                    userId = decodedToken.uid;
+                }
+                catch (authError) {
+                    console.log('Auth verification failed, using demo user');
+                }
+            }
+            // Verify ownership
+            const profileDoc = await admin.firestore()
+                .collection('childProfiles')
+                .doc(profileId)
+                .get();
+            if (!profileDoc.exists || ((_b = profileDoc.data()) === null || _b === void 0 ? void 0 : _b.userId) !== userId) {
+                return res.status(404).json({ error: 'Profile not found' });
+            }
+            // Delete profile
+            await admin.firestore()
+                .collection('childProfiles')
+                .doc(profileId)
+                .delete();
+            console.log(`Deleted profile ${profileId}`);
+            return res.json({ success: true });
+        }
+        catch (error) {
+            console.error('Error deleting family profile:', error);
+            return res.status(500).json({ error: 'Failed to delete profile' });
+        }
+    });
+});
+// Chat function
+exports.chat = functions.https.onRequest((req, res) => {
+    return corsHandler(req, res, async () => {
+        if (req.method !== 'POST') {
+            return res.status(405).json({ error: 'Method not allowed' });
+        }
+        try {
+            const { message, familyContext } = req.body;
+            if (!message) {
+                return res.status(400).json({ error: 'Message is required' });
+            }
+            // Build family context for Senali
+            let contextText = '';
+            if (familyContext && familyContext.length > 0) {
+                contextText = `## Family Members:\n\n`;
+                familyContext.forEach((member, index) => {
+                    contextText += `### ${index + 1}. ${member.name}\n`;
+                    if (member.age)
+                        contextText += `- **Age**: ${member.age}\n`;
+                    if (member.relationship)
+                        contextText += `- **Relationship**: ${member.relationship}\n`;
+                    if (member.medicalInfo)
+                        contextText += `- **Medical Info**: ${member.medicalInfo}\n`;
+                    contextText += '\n';
+                });
+            }
+            // System prompt for Senali
+            const systemPrompt = `You are Senali, an AI parenting coach and friend companion. You provide empathetic conversation, active listening, and supportive guidance for parents.
+
+${contextText}
+
+Key guidelines:
+- Use simple, everyday language at a 7th grade reading level
+- Be warm, empathetic, and supportive
+- Ask thoughtful follow-up questions to learn more about the family
+- Reference family details naturally in conversation
+- Provide practical parenting advice and emotional support
+- Never provide medical diagnoses, but offer supportive guidance
+
+Respond naturally and conversationally to help this parent feel heard and supported.`;
+            // Call OpenAI
             const completion = await openai.chat.completions.create({
                 model: 'gpt-4o',
                 messages: [
-                    { role: 'system', content: 'You are a supportive parenting expert who gives warm, practical advice.' },
-                    { role: 'user', content: tipPrompt }
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: message }
                 ],
-                max_tokens: 200,
-                temperature: 0.8,
+                temperature: 0.7,
+                max_tokens: 1000
             });
-            const tipContent = ((_b = (_a = completion.choices[0]) === null || _a === void 0 ? void 0 : _a.message) === null || _b === void 0 ? void 0 : _b.content) || 'Take time today to really listen to your child without offering solutions. Sometimes they just need to be heard.';
-            // Parse title and content from response
-            const lines = tipContent.split('\n').filter(line => line.trim());
-            const title = ((_c = lines[0]) === null || _c === void 0 ? void 0 : _c.replace(/^(Title:|Tip:)/i, '').trim()) || 'Daily Parenting Reminder';
-            const content = lines.slice(1).join(' ').trim() || tipContent;
-            const tipData = {
-                title,
-                content,
-                category: 'emotional-support',
-                targetAge: getAgeRange(preferences.childAge),
-                difficulty: 'beginner',
-                estimatedTime: '5-15 minutes',
-                tags: ['parenting', 'emotional-support', 'connection']
-            };
-            response.json(tipData);
+            const aiResponse = completion.choices[0].message.content;
+            return res.json({
+                message: aiResponse,
+                timestamp: new Date().toISOString()
+            });
         }
         catch (error) {
-            console.error('Tip generation error:', error);
-            response.status(500).json({
-                error: 'Failed to generate tip',
-                details: error.message || 'Unknown error'
-            });
+            console.error('Chat error:', error);
+            return res.status(500).json({ error: 'Failed to process chat message' });
         }
     });
 });
-// Helper function to determine age range from child age
-function getAgeRange(age) {
-    if (!age)
-        return 'all ages';
-    if (age <= 3)
-        return '0-3';
-    if (age <= 6)
-        return '3-6';
-    if (age <= 12)
-        return '7-12';
-    if (age <= 18)
-        return '13-18';
-    return 'adult';
-}
-// Firebase Auth Sign-in endpoint
-exports.firebaseSignin = (0, https_1.onRequest)(async (request, response) => {
-    return corsHandler(request, response, async () => {
+// Firebase signin function
+exports.firebaseSignin = functions.https.onRequest((req, res) => {
+    return corsHandler(req, res, async () => {
+        var _a, _b, _c, _d;
+        if (req.method !== 'POST') {
+            return res.status(405).json({ error: 'Method not allowed' });
+        }
         try {
-            if (request.method !== 'POST') {
-                response.status(405).json({ error: 'Method not allowed' });
-                return;
-            }
-            const { uid, email, displayName, photoURL } = request.body;
+            const { uid, email, displayName, photoURL } = req.body;
             if (!uid || !email) {
-                response.status(400).json({ error: 'UID and email are required' });
-                return;
+                return res.status(400).json({ error: 'Missing required user data' });
             }
             // Check if user exists in Firestore
-            let userDoc = await db.collection('users').doc(uid).get();
+            const userDoc = await admin.firestore()
+                .collection('users')
+                .doc(uid)
+                .get();
             if (!userDoc.exists) {
-                // Create new user with default credits
-                await db.collection('users').doc(uid).set({
+                // Create new user with starting credits
+                await admin.firestore()
+                    .collection('users')
+                    .doc(uid)
+                    .set({
                     email,
                     displayName: displayName || email.split('@')[0],
-                    profileImageUrl: photoURL || null,
-                    credits: 25, // Default starting credits
+                    photoURL: photoURL || null,
+                    credits: 25,
                     subscription: 'free',
+                    subscriptionStatus: 'inactive',
                     createdAt: admin.firestore.FieldValue.serverTimestamp(),
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
-                userDoc = await db.collection('users').doc(uid).get();
-                console.log(`New user created: ${email} with 25 credits`);
+                console.log('Created new user:', email);
             }
             else {
-                // Update existing user's last sign-in
-                await db.collection('users').doc(uid).update({
+                // Update existing user
+                await admin.firestore()
+                    .collection('users')
+                    .doc(uid)
+                    .update({
+                    displayName: displayName || ((_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.displayName),
+                    photoURL: photoURL || ((_b = userDoc.data()) === null || _b === void 0 ? void 0 : _b.photoURL),
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
-                console.log(`Existing user signed in: ${email}`);
+                console.log('Updated existing user:', email);
             }
-            const userData = userDoc.data();
-            response.json({
+            const updatedUser = await admin.firestore()
+                .collection('users')
+                .doc(uid)
+                .get();
+            return res.json({
+                success: true,
                 user: {
                     uid,
-                    email: (userData === null || userData === void 0 ? void 0 : userData.email) || email,
-                    displayName: (userData === null || userData === void 0 ? void 0 : userData.displayName) || displayName,
-                    credits: (userData === null || userData === void 0 ? void 0 : userData.credits) || 25,
-                    subscription: (userData === null || userData === void 0 ? void 0 : userData.subscription) || 'free'
+                    email,
+                    hasCompletedProfile: ((_c = updatedUser.data()) === null || _c === void 0 ? void 0 : _c.hasCompletedProfile) || false,
+                    fullName: ((_d = updatedUser.data()) === null || _d === void 0 ? void 0 : _d.fullName) || null
                 }
             });
         }
         catch (error) {
             console.error('Firebase signin error:', error);
-            response.status(500).json({ error: 'Failed to sign in user' });
-        }
-    });
-});
-// Get subscription status
-exports.getSubscriptionStatus = (0, https_1.onRequest)(async (request, response) => {
-    return corsHandler(request, response, async () => {
-        var _a;
-        try {
-            if (request.method !== 'GET') {
-                response.status(405).json({ error: 'Method not allowed' });
-                return;
-            }
-            const uid = (_a = request.url) === null || _a === void 0 ? void 0 : _a.split('/').pop();
-            if (!uid) {
-                response.status(400).json({ error: 'User ID is required' });
-                return;
-            }
-            const userDoc = await db.collection('users').doc(uid).get();
-            if (!userDoc.exists) {
-                response.status(404).json({ error: 'User not found' });
-                return;
-            }
-            const userData = userDoc.data();
-            response.json({
-                credits: (userData === null || userData === void 0 ? void 0 : userData.credits) || 0,
-                subscription: (userData === null || userData === void 0 ? void 0 : userData.subscription) || 'free',
-                subscriptionStatus: (userData === null || userData === void 0 ? void 0 : userData.subscription) === 'premium' ? 'active' : 'trial'
-            });
-        }
-        catch (error) {
-            console.error('Get subscription status error:', error);
-            response.status(500).json({ error: 'Failed to get subscription status' });
-        }
-    });
-});
-// Admin: Get all users
-exports.adminGetUsers = (0, https_1.onRequest)(async (request, response) => {
-    return corsHandler(request, response, async () => {
-        try {
-            if (request.method !== 'GET') {
-                response.status(405).json({ error: 'Method not allowed' });
-                return;
-            }
-            const isAdmin = await verifyAdmin(request);
-            if (!isAdmin) {
-                response.status(403).json({ error: 'Access denied' });
-                return;
-            }
-            console.log('Admin: Fetching all users...');
-            // Get users from Firestore
-            const usersSnapshot = await db.collection('users').get();
-            const users = usersSnapshot.docs.map(doc => {
-                var _a, _b, _c, _d, _e, _f, _g;
-                const data = doc.data();
-                return {
-                    uid: doc.id,
-                    email: data.email || '',
-                    displayName: data.displayName || ((_a = data.email) === null || _a === void 0 ? void 0 : _a.split('@')[0]) || 'Unknown',
-                    photoURL: data.profileImageUrl || null,
-                    createdAt: ((_c = (_b = data.createdAt) === null || _b === void 0 ? void 0 : _b.toDate()) === null || _c === void 0 ? void 0 : _c.toISOString()) || new Date().toISOString(),
-                    lastSignIn: ((_e = (_d = data.updatedAt) === null || _d === void 0 ? void 0 : _d.toDate()) === null || _e === void 0 ? void 0 : _e.toISOString()) || ((_g = (_f = data.createdAt) === null || _f === void 0 ? void 0 : _f.toDate()) === null || _g === void 0 ? void 0 : _g.toISOString()) || new Date().toISOString(),
-                    credits: data.credits || 25,
-                    subscriptionStatus: data.subscription === 'premium' ? 'premium' : 'free'
-                };
-            });
-            console.log(`Found ${users.length} users`);
-            response.json({ users, totalCount: users.length });
-        }
-        catch (error) {
-            console.error('Error fetching users:', error);
-            response.status(500).json({ error: 'Failed to fetch users' });
-        }
-    });
-});
-// Admin: Adjust user credits
-exports.adminAdjustCredits = (0, https_1.onRequest)(async (request, response) => {
-    return corsHandler(request, response, async () => {
-        var _a, _b, _c, _d, _e, _f;
-        try {
-            if (request.method !== 'PATCH') {
-                response.status(405).json({ error: 'Method not allowed' });
-                return;
-            }
-            const isAdmin = await verifyAdmin(request);
-            if (!isAdmin) {
-                response.status(403).json({ error: 'Access denied' });
-                return;
-            }
-            const uid = (_a = request.url) === null || _a === void 0 ? void 0 : _a.split('/')[4]; // Extract UID from URL path
-            const { adjustment, setAbsolute } = request.body;
-            if (typeof adjustment !== 'number') {
-                response.status(400).json({ error: 'Invalid adjustment value' });
-                return;
-            }
-            console.log(`Admin: ${setAbsolute ? 'Setting' : 'Adjusting'} credits for user ${uid} ${setAbsolute ? 'to' : 'by'} ${adjustment}`);
-            // Get current user first
-            const userDoc = await db.collection('users').doc(uid).get();
-            if (!userDoc.exists) {
-                response.status(404).json({ error: 'User not found' });
-                return;
-            }
-            const userData = userDoc.data();
-            const currentCredits = (userData === null || userData === void 0 ? void 0 : userData.credits) || 25;
-            // Either set absolute value or adjust relative to current
-            const newCredits = setAbsolute ? Math.max(0, adjustment) : Math.max(0, currentCredits + adjustment);
-            console.log(`Credits change: ${currentCredits} → ${newCredits} (${setAbsolute ? 'absolute' : 'relative'})`);
-            // Update in Firestore
-            await db.collection('users').doc(uid).update({
-                credits: newCredits,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-            const updatedDoc = await db.collection('users').doc(uid).get();
-            const updatedData = updatedDoc.data();
-            console.log(`Credits updated: ${updatedData === null || updatedData === void 0 ? void 0 : updatedData.email} now has ${updatedData === null || updatedData === void 0 ? void 0 : updatedData.credits} credits`);
-            // Return formatted user data
-            const responseUser = {
-                uid: uid,
-                email: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.email) || '',
-                displayName: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.displayName) || ((_b = updatedData === null || updatedData === void 0 ? void 0 : updatedData.email) === null || _b === void 0 ? void 0 : _b.split('@')[0]) || 'Unknown',
-                photoURL: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.profileImageUrl) || null,
-                createdAt: ((_d = (_c = updatedData === null || updatedData === void 0 ? void 0 : updatedData.createdAt) === null || _c === void 0 ? void 0 : _c.toDate()) === null || _d === void 0 ? void 0 : _d.toISOString()) || new Date().toISOString(),
-                lastSignIn: ((_f = (_e = updatedData === null || updatedData === void 0 ? void 0 : updatedData.updatedAt) === null || _e === void 0 ? void 0 : _e.toDate()) === null || _f === void 0 ? void 0 : _f.toISOString()) || new Date().toISOString(),
-                credits: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.credits) || 0,
-                subscriptionStatus: (updatedData === null || updatedData === void 0 ? void 0 : updatedData.subscription) === 'premium' ? 'active' : 'trial'
-            };
-            response.json(responseUser);
-        }
-        catch (error) {
-            console.error('Error adjusting credits:', error);
-            response.status(500).json({ error: 'Failed to adjust credits' });
+            return res.status(500).json({ error: 'Failed to process signin' });
         }
     });
 });

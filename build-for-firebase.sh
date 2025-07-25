@@ -4,29 +4,22 @@ echo "🔥 Building Senali for Firebase deployment..."
 
 # Clean previous builds
 echo "🧹 Cleaning previous builds..."
-rm -rf dist/
-rm -rf functions/lib/
+rm -rf dist
+rm -rf functions/lib
 
-# Install Firebase CLI if not present
-if ! command -v firebase &> /dev/null; then
-    echo "📦 Installing Firebase CLI..."
-    npm install -g firebase-tools
-fi
-
-# Build the client application
-echo "⚛️ Building React client..."
+# Build the client
+echo "🏗️ Building React client..."
 npm run build
 
 # Build Firebase Functions
-echo "🔧 Building Firebase Functions..."
+echo "⚡ Building Firebase Functions..."
 cd functions
-npm install
 npm run build
 cd ..
 
-# Deploy to Firebase
-echo "🚀 Deploying to Firebase..."
-firebase deploy
+# Set Firebase API key in environment
+echo "🔑 Setting up Firebase configuration..."
+firebase functions:config:set openai.key="$OPENAI_API_KEY"
 
-echo "✅ Firebase deployment complete!"
-echo "🌐 Your app is now live at: https://senali-235fb.web.app"
+echo "✅ Build complete! Ready for Firebase deployment."
+echo "💡 Run 'firebase deploy' to deploy to Firebase Hosting + Functions"

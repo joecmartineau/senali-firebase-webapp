@@ -28,6 +28,22 @@
         "function": "firebaseSignin"
       },
       {
+        "source": "/api/children",
+        "function": "getFamilyProfiles"
+      },
+      {
+        "source": "/api/children/create",
+        "function": "createFamilyProfile"
+      },
+      {
+        "source": "/api/children/*/update",
+        "function": "updateFamilyProfile"
+      },
+      {
+        "source": "/api/children/*/delete",
+        "function": "deleteFamilyProfile"
+      },
+      {
         "source": "/api/subscriptions/status/*",
         "function": "getSubscriptionStatus"
       },
