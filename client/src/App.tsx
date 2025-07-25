@@ -230,10 +230,10 @@ function SenaliApp() {
   // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white">Loading Senali...</p>
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center">
+        <div className="text-center bg-white rounded-2xl p-8 shadow-xl">
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-800 text-lg">Loading Senali...</p>
         </div>
       </div>
     );
@@ -261,14 +261,16 @@ function SenaliApp() {
     }
     
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center p-4">
         <div className="max-w-md w-full space-y-8 text-center">
-          <div className="space-y-6">
+          <div className="space-y-6 bg-white rounded-2xl p-8 shadow-xl">
             <div className="flex flex-col items-center gap-4">
-              <InfinityIcon size={64} glowing />
+              <div className="w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-2xl font-bold">∞</span>
+              </div>
               <div className="text-center">
-                <h1 className="text-3xl font-bold text-white mb-2">Welcome to Senali</h1>
-                <p className="text-gray-300 text-lg">
+                <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome to Senali</h1>
+                <p className="text-gray-600 text-lg">
                   Sign in to connect with your AI parenting coach and friend
                 </p>
               </div>
@@ -277,12 +279,12 @@ function SenaliApp() {
             <div className="max-w-sm mx-auto">
               <Button
                 onClick={signInWithGoogle}
-                className="w-full bg-white text-black hover:bg-gray-100 font-medium py-3 px-6 rounded-xl"
+                className="w-full bg-emerald-600 text-white hover:bg-emerald-700 font-medium py-3 px-6 rounded-xl"
                 disabled={loading}
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-gray-400 border-t-black rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-emerald-200 border-t-white rounded-full animate-spin"></div>
                     Signing in...
                   </div>
                 ) : (
