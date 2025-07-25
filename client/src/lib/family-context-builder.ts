@@ -190,10 +190,21 @@ export class FamilyContextBuilder {
             else responses[key] = 'unsure';
           });
           
-          // Calculate diagnostic probabilities
-          const diagnosticResults = calculateDiagnosticProbabilities(responses);
-          if (diagnosticResults.length > 0) {
-            memberInfo.diagnosticResults = diagnosticResults;
+          // First try to get cached AI diagnostic results
+          const cachedResults = await this.getCachedDiagnosticResults(profile);
+          if (cachedResults && cachedResults.length > 0) {
+            memberInfo.diagnosticResults = cachedResults;
+            console.log('💾 Using cached AI diagnostics for', profile.childName);
+          } else {
+            // Fallback to rule-based if no cache available
+            const diagnosticResults = calculateDiagnosticProbabilities(responses);
+            if (diagnosticResults.length > 0) {
+              memberInfo.diagnosticResults = diagnosticResults;
+              console.log('📊 Using rule-based diagnostics for', profile.childName);
+            }
+          }
+          
+          if (memberInfo.diagnosticResults && memberInfo.diagnosticResults.length > 0) {
             memberInfo.questionnairesCompleted = ['Comprehensive Neurodevelopmental Assessment'];
           }
           
@@ -366,6 +377,35 @@ export class FamilyContextBuilder {
   async getFamilyMemberNames(userId: string): Promise<string[]> {
     const profiles = await localStorage.getChildProfiles(userId);
     return profiles.map(p => p.childName);
+  }
+
+  /**
+   * Get cached diagnostic results for a profile with proper cache invalidation
+   */
+  private async getCachedDiagnosticResults(profile: any): Promise<any[] | null> {
+    try {
+      // Create cache key based on profile symptoms
+      const symptomData = JSON.stringify(profile.symptoms || {});
+      const symptomHash = btoa(symptomData).slice(0, 10);
+      const cacheKey = `diagnostic_results_${profile.id}_${symptomHash}`;
+      const cacheTimeKey = `diagnostic_time_${profile.id}_${symptomHash}`;
+      
+      // Check for cached results (24-hour expiry)
+      const cachedResults = window.localStorage.getItem(cacheKey);
+      const cacheTime = window.localStorage.getItem(cacheTimeKey);
+      const isExpired = !cacheTime || (Date.now() - parseInt(cacheTime)) > (24 * 60 * 60 * 1000);
+      
+      if (cachedResults && !isExpired) {
+        console.log('💾 Using cached diagnostic results for', profile.childName);
+        return JSON.parse(cachedResults);
+      }
+      
+      console.log('🔄 Cache miss/expired for', profile.childName);
+      return null;
+    } catch (error) {
+      console.error('Cache error:', error);
+      return null;
+    }
   }
 }
 

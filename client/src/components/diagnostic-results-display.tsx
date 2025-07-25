@@ -22,10 +22,29 @@ export function DiagnosticResultsDisplay({ profile }: DiagnosticResultsDisplayPr
 
   useEffect(() => {
     loadDiagnosticResults();
-  }, [profile.symptoms]);
+  }, [profile.id]); // Only reload when profile ID changes, not symptoms
 
   const loadDiagnosticResults = async () => {
+    // Create a unique cache key based on symptoms for this profile
+    const symptomData = JSON.stringify(profile.symptoms);
+    const symptomHash = btoa(symptomData).slice(0, 10); // Simple hash for cache key
+    const cacheKey = `diagnostic_results_${profile.id}_${symptomHash}`;
+    const cacheTimeKey = `diagnostic_time_${profile.id}_${symptomHash}`;
+    
+    // Check for cached results (valid for 24 hours)
+    const cachedResults = localStorage.getItem(cacheKey);
+    const cacheTime = localStorage.getItem(cacheTimeKey);
+    const isExpired = !cacheTime || (Date.now() - parseInt(cacheTime)) > (24 * 60 * 60 * 1000);
+    
+    if (cachedResults && !isExpired) {
+      console.log('💾 Using cached diagnostic results for', profile.name);
+      setDiagnosticResults(JSON.parse(cachedResults));
+      return;
+    }
+
     setLoading(true);
+    console.log('🤖 Running NEW diagnostic analysis for', profile.name, '(cache expired or missing)');
+    
     try {
       // Convert profile symptoms to questionnaire format
       const responses: Record<string, 'yes' | 'no' | 'unsure'> = {};
@@ -42,40 +61,39 @@ export function DiagnosticResultsDisplay({ profile }: DiagnosticResultsDisplayPr
 
       const yesCount = Object.values(responses).filter(r => r === 'yes').length;
       const totalResponses = Object.keys(responses).length;
-      console.log('🤖 DIAGNOSTIC DEBUG for', profile.name);
-      console.log('   - Total responses:', totalResponses);
-      console.log('   - Yes responses:', yesCount);
-      console.log('   - Raw symptoms:', profile.symptoms);
-      console.log('   - Converted responses:', responses);
 
-      // Always try AI analysis if there are any positive responses
+      let results: DiagnosticResult[] = [];
+
+      // Always try AI analysis if there are enough responses
       if (yesCount >= 1 && totalResponses >= 3) {
-        console.log('🤖 Triggering AI analysis for', profile.name);
         try {
+          console.log('🤖 Calling GPT-4o for', profile.name, `(${yesCount}/${totalResponses} symptoms)`);
           const aiResults = await getAIDiagnosticAnalysis(profile, responses);
-          console.log('🤖 Raw AI response:', aiResults);
-          const formattedResults = convertAIResultsToUIFormat(aiResults);
-          console.log('🤖 Formatted AI results:', formattedResults);
-          setDiagnosticResults(formattedResults);
+          results = convertAIResultsToUIFormat(aiResults);
+          console.log('✅ GPT-4o analysis completed for', profile.name);
         } catch (error) {
-          console.error('🤖 AI analysis FAILED:', error);
-          console.log('🤖 Using fallback rule-based analysis');
-          const fallbackResults = calculateDiagnosticProbabilities(responses);
-          console.log('🤖 Fallback results:', fallbackResults);
-          setDiagnosticResults(fallbackResults);
+          console.error('❌ GPT-4o analysis failed:', error);
+          console.log('🔄 Using rule-based fallback');
+          results = calculateDiagnosticProbabilities(responses);
         }
       } else {
         // Use rule-based analysis for insufficient data
-        const fallbackResults = calculateDiagnosticProbabilities(responses);
-        setDiagnosticResults(fallbackResults);
+        results = calculateDiagnosticProbabilities(responses);
       }
+
+      // Cache the results
+      localStorage.setItem(cacheKey, JSON.stringify(results));
+      localStorage.setItem(cacheTimeKey, Date.now().toString());
+      console.log('💾 Diagnostic results cached for', profile.name);
+      
+      setDiagnosticResults(results);
     } catch (error) {
       console.error('Failed to load diagnostic results:', error);
       setDiagnosticResults([{
-        condition: 'Analysis Error',
+        condition: 'Analysis Unavailable',
         probability: 'low',
-        description: 'Unable to analyze symptoms at this time',
-        recommendedActions: ['Please try again later']
+        description: 'Unable to analyze symptoms. Please check your connection and try again.',
+        recommendedActions: ['Please refresh the page and try again']
       }]);
     } finally {
       setLoading(false);
@@ -102,9 +120,19 @@ export function DiagnosticResultsDisplay({ profile }: DiagnosticResultsDisplayPr
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-sm text-gray-600">
+      <div className="flex items-center gap-2 text-sm text-blue-600">
         <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full" />
-        <span>Analyzing symptoms with AI...</span>
+        <span>Running GPT-4o analysis...</span>
+      </div>
+    );
+  }
+
+  if (diagnosticResults.length === 0) {
+    return (
+      <div className="text-sm text-gray-500">
+        <Badge className="bg-gray-100 text-gray-600 border-gray-200">
+          Complete questionnaire for analysis
+        </Badge>
       </div>
     );
   }
