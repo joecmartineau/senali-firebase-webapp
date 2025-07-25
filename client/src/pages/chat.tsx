@@ -369,7 +369,7 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
       </div>
 
       {/* Family Profiles Summary */}
-      {familyProfiles.length > 0 && (
+      {familyProfiles.length > 0 ? (
         <div className="bg-black/30 backdrop-blur-sm border-b border-green-500/10 p-2">
           <div className="max-w-4xl mx-auto">
             <p className="text-xs text-green-300 font-medium mb-2">Family Members:</p>
@@ -383,6 +383,17 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-black/30 backdrop-blur-sm border-b border-green-500/10 p-2">
+          <div className="max-w-4xl mx-auto">
+            <p className="text-xs text-green-300 font-medium mb-1">
+              Optional: Add family members for personalized guidance
+            </p>
+            <p className="text-xs text-gray-400">
+              You can chat without profiles, or click "Family Profiles" above to add family members for better support
+            </p>
           </div>
         </div>
       )}

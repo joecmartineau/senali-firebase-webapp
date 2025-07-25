@@ -321,13 +321,7 @@ function SenaliApp() {
     );
   }
 
-  // Check for family profiles - if user has them, go to chat; if not, go to setup
-  if (!hasProfiles) {
-    return <FamilySetup onComplete={() => { 
-      setHasProfiles(true); 
-      setShowProfilesMenu(false);
-    }} />;
-  }
+  // Skip family setup - go directly to chat (family profiles are now optional)
 
   // Show family profiles management
   if (showProfilesMenu) {
@@ -349,7 +343,7 @@ function SenaliApp() {
     );
   }
 
-  // User has profiles and is ready to chat
+  // Go directly to chat - family profiles are optional
   return (
     <ChatInterface 
       user={user} 
