@@ -1,243 +1,294 @@
-import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Crown, Zap, Star, Users, Download, Shield, MessageCircle, Clock } from 'lucide-react';
-import { subscriptionService, SubscriptionStatus } from '@/services/subscription-service';
-import { useLocation } from 'wouter';
+import { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { User } from 'firebase/auth';
+import { Crown, Zap, Star, CreditCard, ArrowLeft } from 'lucide-react';
 
-export default function SubscriptionPage() {
+interface SubscriptionPageProps {
+  user: User;
+  onBack: () => void;
+}
+
+interface SubscriptionStatus {
+  credits: number;
+  subscription: string;
+  subscriptionStatus: string;
+  subscriptionPlatform?: string;
+  lastCreditRefill?: string;
+}
+
+export default function SubscriptionPage({ user, onBack }: SubscriptionPageProps) {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [, setLocation] = useLocation();
+  const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
-    const loadStatus = async () => {
-      await subscriptionService.initialize();
-      setSubscriptionStatus(subscriptionService.getStatus());
+    fetchSubscriptionStatus();
+  }, [user]);
+
+  const fetchSubscriptionStatus = async () => {
+    try {
+      const response = await fetch(`/api/subscriptions/status/${user.uid}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSubscriptionStatus(data);
+      }
+    } catch (error) {
+      console.error('Error fetching subscription status:', error);
+    } finally {
       setLoading(false);
-    };
-    loadStatus();
-  }, []);
-
-  const handleStartTrial = () => {
-    subscriptionService.startFreeTrial();
-    setSubscriptionStatus(subscriptionService.getStatus());
-    setLocation('/chat');
+    }
   };
 
-  const handleSubscribe = (planType: 'monthly' | 'yearly') => {
-    // In mobile app, this would trigger App Store/Play Store purchase
-    // For web demo, we'll simulate the purchase
-    alert(`📱 In the mobile app, this would open ${planType === 'monthly' ? 'monthly ($7.99)' : 'yearly ($79.99)'} subscription purchase through your device's app store.`);
-    
-    // Simulate successful purchase for demo
-    subscriptionService.activateSubscription(planType);
-    setSubscriptionStatus(subscriptionService.getStatus());
-    setLocation('/chat');
+  const handleSubscribe = async () => {
+    setPurchasing(true);
+    try {
+      // In a real app, this would integrate with App Store/Play Store
+      // For now, simulate subscription activation
+      const response = await fetch('/api/subscriptions/activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: user.uid,
+          subscriptionId: `sub_${Date.now()}`,
+          platform: 'web' // Would be 'app_store' or 'play_store' in mobile
+        })
+      });
+
+      if (response.ok) {
+        await fetchSubscriptionStatus();
+        alert('Subscription activated successfully! You now have 1000 credits.');
+      } else {
+        throw new Error('Failed to activate subscription');
+      }
+    } catch (error) {
+      console.error('Subscription error:', error);
+      alert('Failed to activate subscription. Please try again.');
+    } finally {
+      setPurchasing(false);
+    }
   };
 
-  const daysRemaining = subscriptionStatus ? subscriptionService.getDaysRemaining() : 0;
+  const handlePurchaseCredits = async (credits: number, price: string) => {
+    setPurchasing(true);
+    try {
+      // In a real app, this would integrate with App Store/Play Store
+      const response = await fetch('/api/subscriptions/purchase-credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: user.uid,
+          credits: credits,
+          purchaseToken: `token_${Date.now()}`,
+          platform: 'web'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        await fetchSubscriptionStatus();
+        alert(`Successfully added ${credits} credits to your account!`);
+      } else {
+        throw new Error('Failed to purchase credits');
+      }
+    } catch (error) {
+      console.error('Purchase error:', error);
+      alert('Failed to purchase credits. Please try again.');
+    } finally {
+      setPurchasing(false);
+    }
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white">Loading subscription info...</p>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4">
-      <div className="max-w-4xl mx-auto py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="mx-auto mb-4 w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center">
-            <Crown className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Senali Premium
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Unlock unlimited conversations, family profiles, and advanced parenting insights with your AI companion
-          </p>
-        </div>
+  const isPremium = subscriptionStatus?.subscription === 'premium' && subscriptionStatus?.subscriptionStatus === 'active';
 
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
+      {/* Header */}
+      <div className="bg-black/40 backdrop-blur-sm border-b border-green-500/20 p-4">
+        <div className="max-w-4xl mx-auto flex items-center gap-4">
+          <Button
+            onClick={onBack}
+            variant="outline"
+            size="sm"
+            className="bg-gray-800/50 border-gray-600/50 text-white hover:bg-gray-700/70"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Chat
+          </Button>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+              <span className="text-black font-bold text-xl">∞</span>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-green-300 bg-clip-text text-transparent">
+                Subscription & Credits
+              </h1>
+              <p className="text-sm text-gray-300">Manage your Senali subscription</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Current Status */}
-        {subscriptionStatus && (
-          <Card className="mb-8">
-            <CardContent className="flex items-center justify-between p-6">
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  subscriptionStatus.isActive ? 'bg-green-100' : 
-                  subscriptionStatus.isTrialActive ? 'bg-amber-100' : 'bg-gray-100'
-                }`}>
-                  {subscriptionStatus.isActive ? (
-                    <Crown className="w-6 h-6 text-green-600" />
-                  ) : subscriptionStatus.isTrialActive ? (
-                    <Clock className="w-6 h-6 text-amber-600" />
-                  ) : (
-                    <Star className="w-6 h-6 text-gray-600" />
-                  )}
+        <Card className="bg-gray-800/50 border-gray-700/50">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Zap className="w-5 h-5 text-green-400" />
+              Current Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">Credits Remaining:</span>
+              <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30">
+                {subscriptionStatus?.credits || 0} credits
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">Subscription:</span>
+              <Badge variant={isPremium ? "default" : "secondary"} 
+                     className={isPremium ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/30" : "bg-gray-500/20 text-gray-300"}>
+                {isPremium ? "Premium Active" : "Free Plan"}
+                {isPremium && <Crown className="w-4 h-4 ml-1" />}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Premium Subscription */}
+        {!isPremium && (
+          <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 border-yellow-500/30">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Crown className="w-5 h-5 text-yellow-400" />
+                Premium Subscription
+                <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">Recommended</Badge>
+              </CardTitle>
+              <CardDescription className="text-gray-300">
+                Get unlimited conversations and priority support
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-green-300">
+                  <Star className="w-4 h-4" />
+                  <span>1,000 credits every month</span>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold">
-                      {subscriptionStatus.isActive ? 'Premium Active' : 
-                       subscriptionStatus.isTrialActive ? 'Trial Active' : 'Trial Expired'}
-                    </span>
-                    <Badge variant={subscriptionStatus.isActive || subscriptionStatus.isTrialActive ? 'default' : 'secondary'}>
-                      {subscriptionStatus.planType === 'yearly' ? 'Yearly' :
-                       subscriptionStatus.planType === 'monthly' ? 'Monthly' : 'Free'}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {subscriptionStatus.isActive || subscriptionStatus.isTrialActive ? 
-                      `${daysRemaining} days remaining` : 
-                      'Trial messages used up - upgrade to continue'
-                    }
-                  </p>
+                <div className="flex items-center gap-2 text-green-300">
+                  <Star className="w-4 h-4" />
+                  <span>Premium AI model (GPT-4o)</span>
+                </div>
+                <div className="flex items-center gap-2 text-green-300">
+                  <Star className="w-4 h-4" />
+                  <span>Priority customer support</span>
+                </div>
+                <div className="flex items-center gap-2 text-green-300">
+                  <Star className="w-4 h-4" />
+                  <span>Data export capabilities</span>
                 </div>
               </div>
-              {!subscriptionStatus.isActive && (
-                <Button onClick={() => setLocation('/chat')}>
-                  Continue to Chat
+              
+              <Separator className="border-gray-600" />
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-bold text-white">$7.99</p>
+                  <p className="text-sm text-gray-400">per month</p>
+                </div>
+                <Button 
+                  onClick={handleSubscribe}
+                  disabled={purchasing}
+                  className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-medium px-6 py-2"
+                >
+                  {purchasing ? 'Processing...' : 'Subscribe Now'}
                 </Button>
-              )}
+              </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Features */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-green-600" />
-                Trial
-              </CardTitle>
-              <CardDescription>Try Senali with 25 messages</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">25 total messages</span>
+        {/* Buy Credits */}
+        <Card className="bg-gray-800/50 border-gray-700/50">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-blue-400" />
+              Buy Additional Credits
+            </CardTitle>
+            <CardDescription className="text-gray-300">
+              Purchase credits without a subscription
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Credit packages */}
+              <div className="bg-gray-700/30 rounded-lg p-4 border border-gray-600/30">
+                <h3 className="font-medium text-white mb-2">Starter Pack</h3>
+                <p className="text-2xl font-bold text-white mb-1">100 credits</p>
+                <p className="text-sm text-gray-400 mb-3">$2.99</p>
+                <Button 
+                  onClick={() => handlePurchaseCredits(100, '$2.99')}
+                  disabled={purchasing}
+                  variant="outline"
+                  className="w-full bg-gray-700/50 border-gray-600 hover:bg-gray-600"
+                >
+                  {purchasing ? 'Processing...' : 'Buy Now'}
+                </Button>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">Basic family profiles</span>
+              
+              <div className="bg-gray-700/30 rounded-lg p-4 border border-gray-600/30">
+                <h3 className="font-medium text-white mb-2">Value Pack</h3>
+                <p className="text-2xl font-bold text-white mb-1">500 credits</p>
+                <p className="text-sm text-gray-400 mb-3">$9.99</p>
+                <Button 
+                  onClick={() => handlePurchaseCredits(500, '$9.99')}
+                  disabled={purchasing}
+                  variant="outline"
+                  className="w-full bg-gray-700/50 border-gray-600 hover:bg-gray-600"
+                >
+                  {purchasing ? 'Processing...' : 'Buy Now'}
+                </Button>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">Basic daily tips</span>
+              
+              <div className="bg-gray-700/30 rounded-lg p-4 border border-gray-600/30">
+                <h3 className="font-medium text-white mb-2">Power Pack</h3>
+                <p className="text-2xl font-bold text-white mb-1">1,200 credits</p>
+                <p className="text-sm text-gray-400 mb-3">$19.99</p>
+                <Button 
+                  onClick={() => handlePurchaseCredits(1200, '$19.99')}
+                  disabled={purchasing}
+                  variant="outline"
+                  className="w-full bg-gray-700/50 border-gray-600 hover:bg-gray-600"
+                >
+                  {purchasing ? 'Processing...' : 'Buy Now'}
+                </Button>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">Local data storage</span>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <div className="text-2xl font-bold">Free</div>
-            </CardFooter>
-          </Card>
-
-          <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Crown className="w-5 h-5 text-green-600" />
-                Premium Plan
-                <Badge className="bg-green-100 text-green-800">Most Popular</Badge>
-              </CardTitle>
-              <CardDescription>For families who want the full experience</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">1,000 credits per month</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-green-500" />
-                <span className="text-sm">Unlimited child profiles</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Download className="w-4 h-4 text-green-500" />
-                <span className="text-sm">Export your family data</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-green-500" />
-                <span className="text-sm">Advanced parenting insights</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-green-500" />
-                <span className="text-sm">Priority support</span>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-3">
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold">$7.99</span>
-                <span className="text-muted-foreground">/month</span>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-lg font-semibold text-green-600">$79.99</span>
-                <span className="text-sm text-muted-foreground">/year (2 months free)</span>
-              </div>
-            </CardFooter>
-          </Card>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="text-center space-y-4">
-          {!subscriptionStatus?.isActive && !subscriptionStatus?.isTrialActive && (
-            <>
-              <Button 
-                size="lg" 
-                onClick={handleStartTrial}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-8"
-              >
-                Start 7-Day Free Trial
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                No payment required • Cancel anytime
-              </p>
-            </>
-          )}
-
-          {!subscriptionStatus?.isActive && (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => handleSubscribe('monthly')}
-                className="px-8"
-              >
-                Subscribe Monthly - $7.99
-              </Button>
-              <Button 
-                size="lg"
-                onClick={() => handleSubscribe('yearly')}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-8"
-              >
-                Subscribe Yearly - $79.99
-              </Button>
             </div>
-          )}
+          </CardContent>
+        </Card>
 
-          <div className="pt-6">
-            <Button 
-              variant="ghost"
-              onClick={() => setLocation('/chat')}
-            >
-              Continue with Current Plan
-            </Button>
-          </div>
-        </div>
-
-        {/* Fine Print */}
-        <div className="text-center mt-8 space-y-2 text-xs text-muted-foreground">
-          <p>Subscriptions are managed through the App Store or Google Play Store</p>
-          <p>You can cancel or change your subscription at any time in your device settings</p>
-          <p>Payment will be charged to your App Store or Google Play account</p>
-        </div>
+        {/* App Store Info */}
+        <Card className="bg-blue-500/10 border-blue-500/30">
+          <CardContent className="p-4">
+            <p className="text-sm text-blue-300">
+              💡 <strong>Mobile App Users:</strong> Subscriptions and credit purchases are processed through the App Store or Google Play Store. 
+              Your subscription can be managed through your device settings.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

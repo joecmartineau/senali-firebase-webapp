@@ -9,6 +9,7 @@ import FamilySetup from "@/pages/family-setup";
 import FamilyProfiles from "@/pages/family-profiles";
 import AdminPanel from "@/components/admin/admin-panel";
 import ChatInterface from "@/pages/chat";
+import SubscriptionPage from "@/pages/subscription";
 import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, onAuthStateChanged, signOut, User } from 'firebase/auth';
 
@@ -137,6 +138,7 @@ function SenaliApp() {
   };
   const [hasProfiles, setHasProfiles] = useState(false);
   const [showProfilesMenu, setShowProfilesMenu] = useState(false);
+  const [showSubscription, setShowSubscription] = useState(false);
   const [location] = useLocation();
 
 
@@ -250,12 +252,23 @@ function SenaliApp() {
     );
   }
 
+  // Show subscription page
+  if (showSubscription) {
+    return (
+      <SubscriptionPage 
+        user={user}
+        onBack={() => setShowSubscription(false)}
+      />
+    );
+  }
+
   // User has profiles and is ready to chat
   return (
     <ChatInterface 
       user={user} 
       onSignOut={onSignOut}
       onManageProfiles={() => setShowProfilesMenu(true)}
+      onManageSubscription={() => setShowSubscription(true)}
     />
   );
 }

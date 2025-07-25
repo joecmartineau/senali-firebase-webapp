@@ -60,8 +60,8 @@ router.get('/users', verifyAdmin, async (req, res) => {
           photoURL: userRecord.photoURL || null,
           createdAt: userRecord.metadata.creationTime,
           lastSignIn: userRecord.metadata.lastSignInTime || userRecord.metadata.creationTime,
-          credits: 25, // Default trial credits
-          subscriptionStatus: 'trial'
+          credits: 25, // Default starting credits
+          subscriptionStatus: 'free'
         }));
 
         console.log(`Firebase Admin: Found ${users.length} users`);
@@ -84,7 +84,7 @@ router.get('/users', verifyAdmin, async (req, res) => {
       createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
       lastSignIn: user.updatedAt?.toISOString() || user.createdAt?.toISOString() || new Date().toISOString(),
       credits: user.credits || 25,
-      subscriptionStatus: user.subscription === 'premium' ? 'active' : 'trial'
+      subscriptionStatus: user.subscription === 'premium' ? 'premium' : 'free'
     }));
 
     console.log(`Database: Found ${mappedUsers.length} users`);

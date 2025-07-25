@@ -17,6 +17,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes - import dynamically to avoid circular dependency
   const { default: adminRoutes } = await import('./routes/admin');
   app.use('/api/admin', adminRoutes);
+  
+  // Subscription routes
+  const { default: subscriptionRoutes } = await import('./routes/subscriptions');
+  app.use('/api/subscriptions', subscriptionRoutes);
 
   // Auth middleware
   await setupAuth(app);
@@ -48,14 +52,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingUser = await db.select().from(users).where(eq(users.id, uid)).limit(1);
       
       if (existingUser.length === 0) {
-        // Create new user record with trial credits
+        // Create new user record with starting credits
         await db.insert(users).values({
           id: uid,
           email,
           displayName: displayName || email.split('@')[0],
           profileImageUrl: photoURL || null,
-          credits: 25, // Trial credits for new users only
-          subscription: 'trial',
+          credits: 25, // Starting credits for new users
+          subscription: 'free',
+          subscriptionStatus: 'inactive',
           createdAt: new Date(),
           updatedAt: new Date()
         });

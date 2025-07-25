@@ -34,8 +34,12 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  credits: serial("credits"), // Credits for user - default 25 handled in application
+  credits: serial("credits"), // Credits for user - starts with 25
   subscription: varchar("subscription", { enum: ["free", "premium"] }).default("free"),
+  subscriptionStatus: varchar("subscription_status", { enum: ["active", "inactive", "cancelled"] }).default("inactive"),
+  subscriptionPlatform: varchar("subscription_platform", { enum: ["app_store", "play_store", "web"] }),
+  subscriptionId: varchar("subscription_id"), // Platform-specific subscription ID
+  lastCreditRefill: timestamp("last_credit_refill"), // When credits were last refilled for subscription
   // User profile completion tracking
   fullName: varchar("full_name"), // User's preferred full name
   hasCompletedProfile: boolean("has_completed_profile").default(false),

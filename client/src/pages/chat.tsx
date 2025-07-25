@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User } from 'firebase/auth';
-import { MessageCircle, Send, LogOut, Users } from 'lucide-react';
+import { MessageCircle, Send, LogOut, Users, Crown } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -16,9 +16,10 @@ interface ChatInterfaceProps {
   user: User;
   onSignOut: () => void;
   onManageProfiles: () => void;
+  onManageSubscription: () => void;
 }
 
-export default function ChatInterface({ user, onSignOut, onManageProfiles }: ChatInterfaceProps) {
+export default function ChatInterface({ user, onSignOut, onManageProfiles, onManageSubscription }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -96,10 +97,11 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
       console.error('Error loading family profiles:', error);
     }
 
-    // Load initial credit count
+    // Load initial credit count using new subscription endpoint
     const loadCredits = async () => {
       try {
-        const response = await fetch('/api/auth/firebase-signin', {
+        // First ensure user exists in database
+        await fetch('/api/auth/firebase-signin', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -112,16 +114,11 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
           })
         });
         
+        // Get subscription status and credits
+        const response = await fetch(`/api/subscriptions/status/${user.uid}`);
         if (response.ok) {
-          // Fetch user credits from admin endpoint to display current count
-          const userResponse = await fetch(`/api/test-admin-users`);
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            const currentUser = userData.find((u: any) => u.uid === user.uid);
-            if (currentUser) {
-              setCreditsRemaining(currentUser.credits);
-            }
-          }
+          const data = await response.json();
+          setCreditsRemaining(data.credits);
         }
       } catch (error) {
         console.error('Error loading credits:', error);
@@ -201,7 +198,7 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
         const errorData = await response.json();
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
-          content: errorData.message || "You have no credits left. Please upgrade to continue chatting.",
+          content: "You've used all your credits! To continue our conversation, you can subscribe for $7.99/month to get 1,000 credits, or purchase additional credits. Click the 'Subscription' button above to see your options.",
           role: 'assistant',
           timestamp: new Date()
         };
@@ -276,6 +273,15 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
             >
               <Users className="w-4 h-4 mr-2" />
               Manage Profiles
+            </Button>
+            <Button
+              onClick={onManageSubscription}
+              variant="outline"
+              size="sm"
+              className="bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border-yellow-500/50 text-yellow-300 hover:from-yellow-500/30 hover:to-yellow-600/30 hover:border-yellow-500/70 transition-all duration-200"
+            >
+              <Crown className="w-4 h-4 mr-2" />
+              Subscription
             </Button>
             <Button
               onClick={onSignOut}
@@ -410,8 +416,19 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
             <div className="mt-3 text-center">
               <p className="text-yellow-400 text-sm">
                 ⚠️ {creditsRemaining} credits remaining
-                {creditsRemaining === 0 && " - Please upgrade to continue chatting"}
               </p>
+              {creditsRemaining === 0 && (
+                <div className="mt-2">
+                  <Button
+                    onClick={onManageSubscription}
+                    size="sm"
+                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-medium"
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    Get More Credits
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
