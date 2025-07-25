@@ -63,13 +63,20 @@ export default function AdminPanel({ onGoToChat }: { onGoToChat?: () => void }) 
 
     try {
       const adjustment = parseInt(creditAdjustment);
+      // Check if the input starts with '=' to set absolute value
+      const isAbsolute = creditAdjustment.startsWith('=');
+      const actualValue = isAbsolute ? parseInt(creditAdjustment.substring(1)) : adjustment;
+      
       const response = await fetch(`/api/admin/users/${selectedUser.uid}/credits`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ adjustment })
+        body: JSON.stringify({ 
+          adjustment: actualValue,
+          setAbsolute: isAbsolute
+        })
       });
 
       if (response.ok) {
@@ -255,9 +262,8 @@ export default function AdminPanel({ onGoToChat }: { onGoToChat?: () => void }) 
                         id="credit-adjustment"
                         value={creditAdjustment}
                         onChange={(e) => setCreditAdjustment(e.target.value)}
-                        placeholder="Enter adjustment (+/- number)"
+                        placeholder="=100 (set to 100) or +50/-25 (adjust)"
                         className="bg-gray-800 border-gray-600 text-white"
-                        type="number"
                       />
                       <Button
                         onClick={adjustCredits}
@@ -268,7 +274,7 @@ export default function AdminPanel({ onGoToChat }: { onGoToChat?: () => void }) 
                       </Button>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Use positive numbers to add credits, negative to subtract
+                      Use =100 to set exact amount, +50 to add, -25 to subtract
                     </p>
                   </div>
                 </>
