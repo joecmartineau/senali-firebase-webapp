@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User } from 'firebase/auth';
-import { MessageCircle, Send, LogOut, Users, Crown } from 'lucide-react';
+import { MessageCircle, Send, LogOut, Users, Crown, Settings } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -274,10 +274,22 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
               onClick={onManageProfiles}
               variant="outline"
               size="sm"
-              className="bg-gray-800/50 border-gray-600/50 text-white hover:bg-gray-700/70 text-xs whitespace-nowrap flex-shrink-0 px-2 py-1 h-7"
+              className={`${user.email === 'joecmartineau@gmail.com' 
+                ? 'bg-blue-500/20 border-blue-500/50 text-blue-300 hover:bg-blue-500/30' 
+                : 'bg-gray-800/50 border-gray-600/50 text-white hover:bg-gray-700/70'
+              } text-xs whitespace-nowrap flex-shrink-0 px-2 py-1 h-7`}
             >
-              <Users className="w-3 h-3 mr-1" />
-              Profiles
+              {user.email === 'joecmartineau@gmail.com' ? (
+                <>
+                  <Settings className="w-3 h-3 mr-1" />
+                  Admin Panel
+                </>
+              ) : (
+                <>
+                  <Users className="w-3 h-3 mr-1" />
+                  Profiles
+                </>
+              )}
             </Button>
             <Button
               onClick={onManageSubscription}
