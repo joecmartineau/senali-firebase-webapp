@@ -136,6 +136,11 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
+    console.log('🔴 CHAT DEBUG: Starting sendMessage');
+    console.log('🔴 User object:', user);
+    console.log('🔴 User email:', user?.email);
+    console.log('🔴 User UID:', user?.uid);
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputMessage,
@@ -152,25 +157,34 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
       // Get recent messages for context (last 10 messages)
       const recentMessages = updatedMessages.slice(-10);
       
+      const requestPayload = {
+        message: inputMessage,
+        familyContext: familyProfiles,
+        userUid: user.email === 'joecmartineau@gmail.com' ? 'admin-user' : user.uid,
+        conversationSummary: conversationSummary,
+        recentMessages: recentMessages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))
+      };
+
+      console.log('🔴 API Request payload:', requestPayload);
+      
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          message: inputMessage,
-          familyContext: familyProfiles,
-          userUid: user.email === 'joecmartineau@gmail.com' ? 'admin-user' : user.uid,
-          conversationSummary: conversationSummary,
-          recentMessages: recentMessages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          }))
-        })
+        body: JSON.stringify(requestPayload)
       });
+
+      console.log('🔴 API Response status:', response.status);
+      console.log('🔴 API Response ok:', response.ok);
 
       if (response.ok) {
         const data = await response.json();
+        console.log('🔴 API Response data:', data);
+        
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
           content: data.response,
@@ -197,6 +211,8 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
       } else if (response.status === 403) {
         // Handle no credits error
         const errorData = await response.json();
+        console.log('🔴 403 Error data:', errorData);
+        
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
           content: "You've used all your credits! To continue our conversation, you can subscribe for $7.99/month to get 1,000 credits, or purchase additional credits. Click the 'Subscription' button above to see your options.",
@@ -208,13 +224,19 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
         saveMessagesToStorage(finalMessages);
         setCreditsRemaining(0);
       } else {
-        throw new Error('Failed to get AI response');
+        const errorText = await response.text();
+        console.log('🔴 HTTP Error Response:', errorText);
+        throw new Error(`Failed to get AI response: ${response.status} - ${errorText}`);
       }
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('🔴 DETAILED ERROR sending message:', error);
+      console.error('🔴 Error type:', typeof error);
+      console.error('🔴 Error message:', error instanceof Error ? error.message : String(error));
+      console.error('🔴 Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I'm sorry, I'm having trouble responding right now. Please try again.",
+        content: `I'm sorry, I'm having trouble responding right now. Error: ${error instanceof Error ? error.message : String(error)}. Please try again.`,
         role: 'assistant',
         timestamp: new Date()
       };
