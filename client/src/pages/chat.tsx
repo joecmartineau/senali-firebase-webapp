@@ -21,16 +21,18 @@ interface ChatInterfaceProps {
 }
 
 export default function ChatInterface({ user, onSignOut, onManageProfiles, onManageSubscription }: ChatInterfaceProps) {
-  // Authentication guard - redirect if user is not properly authenticated
+  console.log('🔴 ChatInterface rendered with user:', user);
+  
+  // Simplified authentication check with better error handling
   if (!user || !user.uid) {
-    console.error('🔴 ChatInterface: User not authenticated, redirecting...');
+    console.error('🔴 ChatInterface: Invalid user object');
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white mb-4">Authentication required...</p>
+          <p className="text-white mb-4">Loading user session...</p>
           <Button onClick={() => window.location.reload()} className="bg-green-500 hover:bg-green-600">
-            Sign In Again
+            Refresh
           </Button>
         </div>
       </div>

@@ -77,6 +77,15 @@ function SenaliApp() {
       return () => unsubscribe();
     } catch (error) {
       console.error('Firebase auth setup failed:', error);
+      
+      // If Firebase fails, check if we have cached family profiles and create a demo user
+      const savedProfiles = window.localStorage.getItem('senali_family_profiles');
+      if (savedProfiles) {
+        console.log('Found cached family profiles, creating demo user for session');
+        const demoUser = createDemoUser();
+        setUser(demoUser as any);
+      }
+      
       setLoading(false);
     }
   }, []);
@@ -186,8 +195,23 @@ function SenaliApp() {
 
 
 
-  // Simple landing page
+  // Simple landing page or session recovery
   if (!user) {
+    // Check if user has existing family profiles (session recovery)
+    const savedProfiles = window.localStorage.getItem('senali_family_profiles');
+    if (savedProfiles && JSON.parse(savedProfiles).length > 0) {
+      console.log('🔄 Session recovery: Found family profiles, creating demo user');
+      const demoUser = {
+        uid: 'demo-user-' + Date.now(),
+        email: 'user@demo.local',
+        displayName: 'Demo User',
+        photoURL: null
+      };
+      setUser(demoUser as any);
+      setHasProfiles(true);
+      return null; // Will re-render with user set
+    }
+    
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
         <div className="max-w-md w-full space-y-8 text-center">
