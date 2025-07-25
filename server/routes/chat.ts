@@ -24,13 +24,18 @@ function sanitizeForPrompt(input: string | null | undefined): string {
 
 router.post('/chat', async (req, res) => {
   try {
+    console.log('🚨 CHAT API: Received request');
+    console.log('🚨 Request body:', JSON.stringify(req.body, null, 2));
+    console.log('🚨 Request headers:', req.headers);
+    
     const { message, familyContext, userUid, conversationSummary, recentMessages, isQuestionnaire } = req.body;
 
     if (!message) {
+      console.log('🚨 ERROR: No message provided');
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    console.log(`Chat request from userUid: ${userUid}`);
+    console.log(`🚨 Chat request from userUid: ${userUid}`);
 
     // Get user for admin check and credit management
     let user = null;
@@ -213,7 +218,11 @@ Recent conversation to summarize:`
       });
     }
   } catch (error) {
-    console.error('Chat API error:', error);
+    console.error('🚨 DETAILED Chat API error:', error);
+    console.error('🚨 Error type:', typeof error);
+    console.error('🚨 Error message:', error instanceof Error ? error.message : String(error));
+    console.error('🚨 Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
     res.status(500).json({ 
       error: 'Failed to get AI response',
       response: "I'm having trouble connecting right now. Please try again in a moment."
