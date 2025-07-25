@@ -10,7 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 
 interface FamilyProfile {
-  id?: number;
+  id?: string;
   childName: string;
   age?: string;
   relationshipToUser: 'child' | 'spouse' | 'self' | 'other';
@@ -40,10 +40,9 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
     symptoms: {}
   });
 
-  // Fetch profiles from Firebase Functions
-  const { data: profiles = [], isLoading, error } = useQuery({
-    queryKey: ['family-profiles'],
-    queryFn: getFamilyProfiles,
+  // Fetch profiles using apiRequest
+  const { data: profiles = [], isLoading, error } = useQuery<FamilyProfile[]>({
+    queryKey: ['/api/children'],
     enabled: true
   });
 
@@ -52,9 +51,10 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
 
   // Create profile mutation
   const createProfileMutation = useMutation({
-    mutationFn: createFamilyProfile,
+    mutationFn: (profileData: Partial<FamilyProfile>) => 
+      apiRequest('/api/children/create', 'POST', profileData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['family-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/children'] });
       setIsCreatingNew(false);
       setNewProfile({
         childName: '',
@@ -70,9 +70,9 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
 
   // Delete profile mutation
   const deleteProfileMutation = useMutation({
-    mutationFn: deleteFamilyProfile,
+    mutationFn: (id: string) => apiRequest(`/api/children/${id}/delete`, 'DELETE'),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['family-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/children'] });
       setSelectedProfile(null);
     }
   });

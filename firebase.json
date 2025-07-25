@@ -16,44 +16,8 @@
     ],
     "rewrites": [
       {
-        "source": "/api/chat",
-        "function": "chat"
-      },
-      {
-        "source": "/api/tips/generate",
-        "function": "generateTip"
-      },
-      {
-        "source": "/api/auth/firebase-signin",
-        "function": "firebaseSignin"
-      },
-      {
-        "source": "/api/children",
-        "function": "getFamilyProfiles"
-      },
-      {
-        "source": "/api/children/create",
-        "function": "createFamilyProfile"
-      },
-      {
-        "source": "/api/children/*/update",
-        "function": "updateFamilyProfile"
-      },
-      {
-        "source": "/api/children/*/delete",
-        "function": "deleteFamilyProfile"
-      },
-      {
-        "source": "/api/subscriptions/status/*",
-        "function": "getSubscriptionStatus"
-      },
-      {
-        "source": "/api/admin/users",
-        "function": "adminGetUsers"
-      },
-      {
-        "source": "/api/admin/users/*/credits",
-        "function": "adminAdjustCredits"
+        "source": "/api/**",
+        "destination": "http://localhost:8081/api/**"
       },
       {
         "source": "**",
