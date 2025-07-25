@@ -16,12 +16,23 @@ try {
   console.log("React app rendered successfully");
 } catch (error) {
   console.error("Failed to start app:", error);
-  document.body.innerHTML = `
-    <div style="padding: 20px; color: red; font-family: monospace;">
-      <h1>Error starting Senali app</h1>
-      <pre>${error}</pre>
-    </div>
-  `;
+  
+  // Create error display using safe DOM methods
+  const errorDiv = document.createElement('div');
+  errorDiv.style.padding = '20px';
+  errorDiv.style.color = 'red';
+  errorDiv.style.fontFamily = 'monospace';
+  
+  const title = document.createElement('h1');
+  title.textContent = 'Error starting Senali app';
+  
+  const errorPre = document.createElement('pre');
+  errorPre.textContent = String(error);
+  
+  errorDiv.appendChild(title);
+  errorDiv.appendChild(errorPre);
+  
+  document.body.appendChild(errorDiv);
 }
 
 // Register service worker for PWA functionality
