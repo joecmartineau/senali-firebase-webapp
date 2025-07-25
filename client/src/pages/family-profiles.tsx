@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { User, Edit, MessageCircle, Brain, Plus, ArrowLeft, AlertCircle, CheckCircle, Info } from 'lucide-react';
 import { InfinityIcon } from '@/components/ui/infinity-icon';
 import { calculateDiagnosticProbabilities, type DiagnosticResult } from '@/lib/diagnostic-questions';
+import { DiagnosticResultsDisplay } from '@/components/diagnostic-results-display';
 import { Badge } from '@/components/ui/badge';
 
 interface FamilyProfile {
@@ -218,14 +219,10 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
     return { completed: completedSymptoms, total: totalSymptoms };
   };
 
-  // Calculate diagnostic results for profile
-  const getDiagnosticResults = (profile: FamilyProfile): DiagnosticResult[] => {
+  // Simple diagnostic results calculation for display (used for quick stats)
+  const getQuickDiagnosticResults = (profile: FamilyProfile): DiagnosticResult[] => {
     // Convert profile symptoms to questionnaire format
     const responses: Record<string, 'yes' | 'no' | 'unsure'> = {};
-    
-    // Debug logging to see what's actually stored
-    console.log('🐛 DEBUG: profile.symptoms data:', profile.symptoms);
-    console.log('🐛 DEBUG: profile.symptoms entries:', Object.entries(profile.symptoms));
     
     Object.entries(profile.symptoms).forEach(([key, value]) => {
       // Handle both string and boolean values from different sources
@@ -237,10 +234,8 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
         responses[key] = 'unsure';
       }
     });
-
-    console.log('🐛 DEBUG: converted responses:', responses);
-    console.log('🐛 DEBUG: total yes responses:', Object.values(responses).filter(r => r === 'yes').length);
     
+    // Use rule-based calculation for quick display
     return calculateDiagnosticProbabilities(responses);
   };
 
@@ -435,7 +430,7 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
               {profiles.map((profile, index) => {
                 const stats = getCompletionStats(profile);
                 const completionPercentage = Math.round((stats.completed / stats.total) * 100);
-                const diagnosticResults = getDiagnosticResults(profile);
+                const diagnosticResults = getQuickDiagnosticResults(profile);
                 
                 return (
                   <Card

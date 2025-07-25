@@ -95,7 +95,7 @@ export const chat = onRequest(async (request: any, response: any) => {
         return;
       }
 
-      const { message, familyContext, userUid, conversationSummary, recentMessages, isQuestionnaire } = request.body;
+      const { message, familyContext, userUid, conversationSummary, recentMessages, isQuestionnaire, diagnosticAnalysis } = request.body;
 
       if (!message) {
         response.status(400).json({ error: 'Message is required' });
@@ -165,29 +165,73 @@ export const chat = onRequest(async (request: any, response: any) => {
         systemPrompt += `\n\nPrevious Conversation Summary:\n${sanitizeForPrompt(conversationSummary)}`;
       }
 
-      // Build messages array with recent context
-      const messages: any[] = [{ role: 'system', content: systemPrompt }];
-      
-      // Add recent messages for immediate context (last 10 messages)
-      if (recentMessages && recentMessages.length > 0) {
-        const contextMessages = recentMessages.slice(0, -1);
-        messages.push(...contextMessages);
-      }
-      
-      // Add the current user message
-      messages.push({ role: 'user', content: message });
+      // Handle diagnostic analysis with specialized system prompt
+      let messages: any[];
+      let modelToUse: string;
+      let maxTokens: number;
+      let temperature: number;
+      let responseFormat: any = undefined;
 
-      // Handle questionnaire analysis differently
-      const modelToUse = isQuestionnaire ? 'gpt-4o' : (isAdmin ? 'gpt-4o' : 'gpt-3.5-turbo');
-      const maxTokens = isQuestionnaire ? 1000 : (isAdmin ? 1000 : 500);
-      const temperature = isQuestionnaire ? 0.3 : (isAdmin ? 0.8 : 0.7);
+      if (diagnosticAnalysis) {
+        // Use specialized diagnostic system prompt for AI-powered diagnosis
+        const diagnosticSystemPrompt = `You are a clinical assessment AI that analyzes symptom questionnaire data to determine probable diagnoses based on DSM-5 criteria. You provide structured diagnostic probability assessments for screening purposes only.
+
+IMPORTANT: You are providing screening assessments, not formal diagnoses. All results should include disclaimers about professional evaluation.
+
+Your task is to:
+1. Analyze symptom patterns using established diagnostic criteria
+2. Calculate probability levels based on symptom clusters and severity
+3. Provide specific condition names with confidence levels
+4. Give clear reasoning for each probable diagnosis
+5. Recommend appropriate next steps for families
+
+For ADHD: Use DSM-5 criteria requiring 6+ symptoms in inattentive OR hyperactive-impulsive categories for children, 5+ for adults
+For Autism: Use DSM-5 criteria requiring deficits in social communication AND restricted/repetitive behaviors
+For other conditions: Apply appropriate clinical thresholds
+
+Probability Levels:
+- HIGH (80-100%): Strong symptom cluster match, meets most criteria
+- MODERATE (50-79%): Some criteria met, requires further evaluation  
+- LOW (20-49%): Few criteria met, monitoring recommended
+
+Always respond with properly formatted JSON containing diagnoses array, summary, and overall assessment. Include confidence percentages and specific recommendations.`;
+
+        messages = [
+          { role: 'system', content: diagnosticSystemPrompt },
+          { role: 'user', content: message }
+        ];
+        modelToUse = 'gpt-4o';
+        maxTokens = 1500;
+        temperature = 0.2; // Lower temperature for more consistent diagnostic analysis
+        responseFormat = { type: "json_object" };
+        
+        console.log('Processing diagnostic analysis request with GPT-4o');
+      } else {
+        // Regular chat conversation
+        messages = [{ role: 'system', content: systemPrompt }];
+        
+        // Add recent messages for immediate context (last 10 messages)
+        if (recentMessages && recentMessages.length > 0) {
+          const contextMessages = recentMessages.slice(0, -1);
+          messages.push(...contextMessages);
+        }
+        
+        // Add the current user message
+        messages.push({ role: 'user', content: message });
+
+        // Handle questionnaire analysis differently
+        modelToUse = isQuestionnaire ? 'gpt-4o' : (isAdmin ? 'gpt-4o' : 'gpt-3.5-turbo');
+        maxTokens = isQuestionnaire ? 1000 : (isAdmin ? 1000 : 500);
+        temperature = isQuestionnaire ? 0.3 : (isAdmin ? 0.8 : 0.7);
+        responseFormat = isQuestionnaire ? { type: "json_object" } : undefined;
+      }
       
       const completion = await openai.chat.completions.create({
         model: modelToUse,
         messages: messages,
         max_tokens: maxTokens,
         temperature: temperature,
-        response_format: isQuestionnaire ? { type: "json_object" } : undefined
+        response_format: responseFormat
       });
 
       const aiResponse = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response right now.";

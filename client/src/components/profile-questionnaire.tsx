@@ -13,6 +13,7 @@ import {
   type DiagnosticQuestion,
   type DiagnosticResult 
 } from '@/lib/diagnostic-questions';
+import { getAIDiagnosticAnalysis, convertAIResultsToUIFormat, type AIDiagnosticResponse } from '@/lib/ai-diagnostic-system';
 import { generateAIAnalysis, type AIAnalysisResult } from '@/lib/questionnaire-ai-analysis';
 
 interface ProfileQuestionnaireProps {
@@ -41,17 +42,45 @@ export function ProfileQuestionnaire({ profile, onClose }: ProfileQuestionnaireP
   }, [profile]);
 
   useEffect(() => {
-    // Calculate diagnostic results when responses change
+    // Calculate diagnostic results when responses change using AI analysis
     if (Object.keys(responses).length > 0) {
-      const results = calculateDiagnosticProbabilities(responses);
-      setDiagnosticResults(results);
+      // Use AI diagnostic analysis instead of rule-based algorithm
+      generateAIDiagnosticResults();
       
       // Generate AI analysis if enough questions are answered
       if (Object.keys(responses).length >= 15) {
-        generateAIInsights(results);
+        // Get the current diagnostic results before passing to AI insights
+        const currentResults = diagnosticResults.length > 0 ? diagnosticResults : [];
+        generateAIInsights(currentResults);
       }
     }
   }, [responses]);
+
+  const generateAIDiagnosticResults = async () => {
+    if (Object.keys(responses).length < 5) {
+      // Not enough data for meaningful analysis
+      setDiagnosticResults([]);
+      return;
+    }
+
+    try {
+      console.log('🤖 Generating AI diagnostic analysis for', profile.childName);
+      console.log('🤖 Total responses:', Object.keys(responses).length);
+      console.log('🤖 Yes responses:', Object.values(responses).filter(r => r === 'yes').length);
+
+      const aiResults = await getAIDiagnosticAnalysis(profile, responses);
+      const formattedResults = convertAIResultsToUIFormat(aiResults);
+      
+      console.log('🤖 AI Diagnostic Results:', formattedResults);
+      setDiagnosticResults(formattedResults);
+      
+    } catch (error) {
+      console.error('Failed to generate AI diagnostic results:', error);
+      // Fallback to rule-based calculation if AI fails
+      const fallbackResults = calculateDiagnosticProbabilities(responses);
+      setDiagnosticResults(fallbackResults);
+    }
+  };
 
   const generateAIInsights = async (results: DiagnosticResult[]) => {
     if (loadingAI) return;
