@@ -117,32 +117,34 @@ export default function SubscriptionPage({ user, onBack }: SubscriptionPageProps
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
       {/* Header */}
-      <div className="bg-black/40 backdrop-blur-sm border-b border-green-500/20 p-4">
-        <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <Button
-            onClick={onBack}
-            variant="outline"
-            size="sm"
-            className="bg-gray-800/50 border-gray-600/50 text-white hover:bg-gray-700/70"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Chat
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-black font-bold text-xl">∞</span>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-green-300 bg-clip-text text-transparent">
-                Subscription & Credits
-              </h1>
-              <p className="text-sm text-gray-300">Manage your Senali subscription</p>
+      <div className="bg-black/40 backdrop-blur-sm border-b border-green-500/20 p-3">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center gap-3 mb-2">
+            <Button
+              onClick={onBack}
+              variant="outline"
+              size="sm"
+              className="bg-gray-800/50 border-gray-600/50 text-white hover:bg-gray-700/70 px-2 py-1 h-7 text-xs"
+            >
+              <ArrowLeft className="w-3 h-3 mr-1" />
+              Back
+            </Button>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-black font-bold text-sm">∞</span>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold bg-gradient-to-r from-white to-green-300 bg-clip-text text-transparent">
+                  Subscription & Credits
+                </h1>
+                <p className="text-xs text-gray-300">Manage your Senali subscription</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="max-w-4xl mx-auto p-3 space-y-4">
         {/* Current Status */}
         <Card className="bg-gray-800/50 border-gray-700/50">
           <CardHeader>
@@ -233,7 +235,7 @@ export default function SubscriptionPage({ user, onBack }: SubscriptionPageProps
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {/* Credit packages */}
               <div className="bg-gray-700/30 rounded-lg p-4 border border-gray-600/30">
                 <h3 className="font-medium text-white mb-2">Starter Pack</h3>

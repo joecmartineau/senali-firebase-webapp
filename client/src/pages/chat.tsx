@@ -242,54 +242,59 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white flex flex-col">
       {/* Header */}
-      <div className="bg-black/40 backdrop-blur-sm border-b border-green-500/20 p-4 shadow-lg">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-black font-bold text-xl">∞</span>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-green-300 bg-clip-text text-transparent">
-                Senali
-              </h1>
-              <p className="text-sm text-gray-300">
-                Your AI parenting coach and friend
-              </p>
+      <div className="bg-black/40 backdrop-blur-sm border-b border-green-500/20 p-3 shadow-lg">
+        <div className="max-w-4xl mx-auto">
+          {/* Top row - Logo and credits */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-black font-bold text-sm">∞</span>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold bg-gradient-to-r from-white to-green-300 bg-clip-text text-transparent">
+                  Senali
+                </h1>
+                <p className="text-xs text-gray-300 leading-none">
+                  Your AI parenting coach and friend
+                </p>
+              </div>
             </div>
             {creditsRemaining !== null && (
-              <div className="ml-4 px-3 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
-                <span className="text-green-300 text-sm font-medium">
+              <div className="px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
+                <span className="text-green-300 text-xs font-medium">
                   {creditsRemaining} credits
                 </span>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          
+          {/* Bottom row - Action buttons */}
+          <div className="flex items-center gap-1.5 overflow-x-auto">
             <Button
               onClick={onManageProfiles}
               variant="outline"
               size="sm"
-              className="bg-gray-800/50 border-gray-600/50 text-white hover:bg-gray-700/70 hover:border-green-500/50 transition-all duration-200"
+              className="bg-gray-800/50 border-gray-600/50 text-white hover:bg-gray-700/70 text-xs whitespace-nowrap flex-shrink-0 px-2 py-1 h-7"
             >
-              <Users className="w-4 h-4 mr-2" />
-              Manage Profiles
+              <Users className="w-3 h-3 mr-1" />
+              Profiles
             </Button>
             <Button
               onClick={onManageSubscription}
               variant="outline"
               size="sm"
-              className="bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border-yellow-500/50 text-yellow-300 hover:from-yellow-500/30 hover:to-yellow-600/30 hover:border-yellow-500/70 transition-all duration-200"
+              className="bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border-yellow-500/50 text-yellow-300 hover:from-yellow-500/30 hover:to-yellow-600/30 text-xs whitespace-nowrap flex-shrink-0 px-2 py-1 h-7"
             >
-              <Crown className="w-4 h-4 mr-2" />
+              <Crown className="w-3 h-3 mr-1" />
               Subscription
             </Button>
             <Button
               onClick={onSignOut}
               variant="outline"
               size="sm"
-              className="bg-gray-800/50 border-gray-600/50 text-white hover:bg-red-500/20 hover:border-red-500/50 transition-all duration-200"
+              className="bg-gray-800/50 border-gray-600/50 text-white hover:bg-red-500/20 text-xs whitespace-nowrap flex-shrink-0 px-2 py-1 h-7"
             >
-              <LogOut className="w-4 h-4 mr-2" />
+              <LogOut className="w-3 h-3 mr-1" />
               Sign Out
             </Button>
           </div>
@@ -298,14 +303,14 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
 
       {/* Family Profiles Summary */}
       {familyProfiles.length > 0 && (
-        <div className="bg-black/30 backdrop-blur-sm border-b border-green-500/10 p-4">
+        <div className="bg-black/30 backdrop-blur-sm border-b border-green-500/10 p-2">
           <div className="max-w-4xl mx-auto">
-            <p className="text-sm text-green-300 font-medium mb-3">Family Members:</p>
-            <div className="flex flex-wrap gap-2">
+            <p className="text-xs text-green-300 font-medium mb-2">Family Members:</p>
+            <div className="flex flex-wrap gap-1.5">
               {familyProfiles.map((profile, index) => (
                 <div
                   key={index}
-                  className="bg-gradient-to-r from-green-500/20 to-green-600/20 border border-green-500/30 text-green-200 px-3 py-1.5 rounded-full text-sm font-medium shadow-sm"
+                  className="bg-gradient-to-r from-green-500/20 to-green-600/20 border border-green-500/30 text-green-200 px-2 py-1 rounded-full text-xs font-medium shadow-sm"
                 >
                   {profile.name} ({profile.relationship})
                 </div>
@@ -316,7 +321,7 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
       )}
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-1">
+      <div className="flex-1 overflow-y-auto p-3 space-y-1">
         <div className="max-w-4xl mx-auto">
           {messages.length === 0 && (
             <div className="text-center py-12">
@@ -385,24 +390,23 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
       </div>
 
       {/* Input Area */}
-      <div className="bg-black/40 backdrop-blur-sm border-t border-green-500/20 p-4">
+      <div className="bg-black/40 backdrop-blur-sm border-t border-green-500/20 p-3">
         <div className="max-w-4xl mx-auto">
-          <div className="flex gap-3 items-end">
+          <div className="flex gap-2 items-end">
             <div className="flex-1 relative">
               <Input
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Share what's on your mind..."
-                className="bg-gray-800/70 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 pr-12 focus:border-green-500/50 focus:ring-green-500/20 transition-all duration-200"
+                className="bg-gray-800/70 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 rounded-xl px-3 py-2 focus:border-green-500/50 focus:ring-green-500/20 transition-all duration-200"
                 disabled={isLoading}
-                rows={1}
               />
             </div>
             <Button
               onClick={sendMessage}
               disabled={!inputMessage.trim() || isLoading}
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-black font-medium px-6 py-3 rounded-xl shadow-lg transition-all duration-200 disabled:opacity-50"
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-black font-medium px-4 py-2 rounded-xl shadow-lg transition-all duration-200 disabled:opacity-50"
             >
               {isLoading ? (
                 <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
