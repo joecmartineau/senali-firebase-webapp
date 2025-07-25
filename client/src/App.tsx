@@ -9,7 +9,6 @@ import FamilySetup from "@/pages/family-setup";
 import FamilyProfiles from "@/pages/family-profiles";
 import AdminPanel from "@/components/admin/admin-panel";
 import ChatInterface from "@/pages/chat";
-import UserProfileSetup from "@/pages/user-profile-setup";
 import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, onAuthStateChanged, signOut, User } from 'firebase/auth';
 
@@ -19,7 +18,7 @@ function SenaliApp() {
   // Firebase authentication state
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<{hasCompletedProfile: boolean; fullName: string | null} | null>(null);
+  // Remove unused userProfile state since we eliminated the simple profile setup
   
   // Initialize Firebase auth listener
   useEffect(() => {
@@ -51,12 +50,8 @@ function SenaliApp() {
           if (response.ok) {
             const data = await response.json();
             console.log('User data synced on auth state change');
-            if (data.user) {
-              setUserProfile({
-                hasCompletedProfile: data.user.hasCompletedProfile,
-                fullName: data.user.fullName
-              });
-            }
+            // User data synced successfully
+            console.log('User profile synced:', data.user);
           }
         } catch (syncError) {
           console.warn('Error syncing user data on auth state change:', syncError);
@@ -101,12 +96,8 @@ function SenaliApp() {
         if (response.ok) {
           const data = await response.json();
           console.log('User data synced with server');
-          if (data.user) {
-            setUserProfile({
-              hasCompletedProfile: data.user.hasCompletedProfile,
-              fullName: data.user.fullName
-            });
-          }
+          // User data synced successfully
+          console.log('User profile synced:', data.user);
         } else {
           console.warn('Failed to sync user data with server');
         }
@@ -158,7 +149,7 @@ function SenaliApp() {
     try {
       // Check if user has saved family profiles in browser localStorage
       const saved = window.localStorage.getItem('senali_family_profiles');
-      setHasProfiles(saved && JSON.parse(saved).length > 0);
+      setHasProfiles(saved ? JSON.parse(saved).length > 0 : false);
     } catch (error) {
       console.error('Error checking profiles:', error);
       setHasProfiles(false);
@@ -243,20 +234,8 @@ function SenaliApp() {
     return <AdminPanel />;
   }
 
-  // Check if user needs to complete their profile first
-  if (userProfile && !userProfile.hasCompletedProfile) {
-    return (
-      <UserProfileSetup 
-        user={user} 
-        onProfileComplete={() => {
-          setUserProfile(prev => prev ? { ...prev, hasCompletedProfile: true } : null);
-          checkForExistingProfiles(); // Refresh family profiles check
-        }} 
-      />
-    );
-  }
-
-  // Regular user flow - family setup, then profiles menu, then chat
+  // Skip the simple profile setup and go directly to family profiles
+  // This eliminates the duplicate profile entry experience
   if (!hasProfiles) {
     return <FamilySetup onComplete={() => { setHasProfiles(true); setShowProfilesMenu(true); }} />;
   }
