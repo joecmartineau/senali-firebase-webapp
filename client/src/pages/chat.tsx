@@ -181,19 +181,17 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
         throw new Error('User not authenticated. Please sign in again.');
       }
 
-      // Simplify family context to prevent JSON serialization issues
-      const simplifiedFamilyContext = familyProfiles.map(profile => ({
-        name: profile.name || 'Unknown',
-        age: profile.age || 0,
-        relationship: profile.relationship || 'other'
-      }));
+      // Build comprehensive family context with diagnostic results
+      const { FamilyContextBuilder } = await import('../lib/family-context-builder');
+      const familyContextBuilder = new FamilyContextBuilder();
+      const comprehensiveFamilyContext = await familyContextBuilder.buildFamilyContext(user.uid);
 
       console.log('🔴 Original family profiles:', familyProfiles);
-      console.log('🔴 Simplified family context:', simplifiedFamilyContext);
+      console.log('🤖 Comprehensive family context with diagnostics:', comprehensiveFamilyContext);
 
       const requestPayload = {
         message: inputMessage,
-        familyContext: simplifiedFamilyContext,
+        familyContext: comprehensiveFamilyContext, // Send full context string with diagnostics
         userUid: user.email === 'joecmartineau@gmail.com' ? 'admin-user' : user.uid,
         conversationSummary: conversationSummary,
         recentMessages: recentMessages.map(msg => ({
