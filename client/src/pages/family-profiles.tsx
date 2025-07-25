@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Edit, MessageCircle, Brain, Plus, ArrowLeft } from 'lucide-react';
+import { User, Edit, MessageCircle, Brain, Plus, ArrowLeft, AlertCircle, CheckCircle, Info } from 'lucide-react';
 import { InfinityIcon } from '@/components/ui/infinity-icon';
+import { calculateDiagnosticProbabilities, type DiagnosticResult } from '@/lib/diagnostic-questions';
+import { Badge } from '@/components/ui/badge';
 
 interface FamilyProfile {
   name: string;
@@ -216,6 +218,38 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
     return { completed: completedSymptoms, total: totalSymptoms };
   };
 
+  // Calculate diagnostic results for profile
+  const getDiagnosticResults = (profile: FamilyProfile): DiagnosticResult[] => {
+    // Convert profile symptoms to questionnaire format
+    const responses: Record<string, 'yes' | 'no' | 'unsure'> = {};
+    
+    Object.entries(profile.symptoms).forEach(([key, value]) => {
+      if (value === 'yes') responses[key] = 'yes';
+      else if (value === 'no') responses[key] = 'no';
+      else responses[key] = 'unsure';
+    });
+
+    return calculateDiagnosticProbabilities(responses);
+  };
+
+  const getDiagnosticIcon = (probability: string) => {
+    switch (probability) {
+      case 'high': return <AlertCircle className="w-4 h-4" />;
+      case 'moderate': return <Info className="w-4 h-4" />;
+      case 'low': return <CheckCircle className="w-4 h-4" />;
+      default: return <Info className="w-4 h-4" />;
+    }
+  };
+
+  const getDiagnosticColor = (probability: string) => {
+    switch (probability) {
+      case 'high': return 'bg-red-500/10 text-red-400 border-red-500/20';
+      case 'moderate': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+      case 'low': return 'bg-green-500/10 text-green-400 border-green-500/20';
+      default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
+    }
+  };
+
   // Main family profiles view
   if (!selectedProfile) {
     return (
@@ -389,6 +423,7 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
               {profiles.map((profile, index) => {
                 const stats = getCompletionStats(profile);
                 const completionPercentage = Math.round((stats.completed / stats.total) * 100);
+                const diagnosticResults = getDiagnosticResults(profile);
                 
                 return (
                   <Card
@@ -418,6 +453,28 @@ export default function FamilyProfiles({ onStartChat, onBack }: FamilyProfilesPr
                           <div className="text-sm">
                             <span className="text-gray-400">Diagnoses:</span>
                             <p className="text-white text-xs mt-1 line-clamp-2">{profile.medicalDiagnoses}</p>
+                          </div>
+                        )}
+
+                        {/* Diagnostic Results Section */}
+                        {diagnosticResults.length > 0 && completionPercentage >= 25 && (
+                          <div className="text-sm">
+                            <span className="text-gray-400">Probable Conditions:</span>
+                            <div className="mt-2 space-y-1">
+                              {diagnosticResults.slice(0, 2).map((result, idx) => (
+                                <Badge 
+                                  key={idx}
+                                  className={`text-xs flex items-center gap-1 ${getDiagnosticColor(result.probability)}`}
+                                >
+                                  {getDiagnosticIcon(result.probability)}
+                                  <span className="truncate">{result.condition}</span>
+                                  <span className="text-xs opacity-75">({result.probability})</span>
+                                </Badge>
+                              ))}
+                              {diagnosticResults.length > 2 && (
+                                <p className="text-xs text-gray-500">+{diagnosticResults.length - 2} more</p>
+                              )}
+                            </div>
                           </div>
                         )}
                         

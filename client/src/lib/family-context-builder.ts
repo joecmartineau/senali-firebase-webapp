@@ -4,6 +4,7 @@
  */
 
 import { localStorage, type ChildProfile } from './local-storage';
+import { calculateDiagnosticProbabilities, type DiagnosticResult } from './diagnostic-questions';
 
 export interface FamilyMemberInfo {
   name: string;
@@ -16,6 +17,9 @@ export interface FamilyMemberInfo {
   schoolInfo?: string;
   strengths?: string;
   challenges?: string;
+  diagnosticResults?: DiagnosticResult[];
+  symptomSummary?: string;
+  questionnaireProgress?: number;
 }
 
 export class FamilyContextBuilder {
@@ -81,11 +85,66 @@ export class FamilyContextBuilder {
       if ((profile as any).strengths) memberInfo.strengths = (profile as any).strengths;
       if ((profile as any).challenges) memberInfo.challenges = (profile as any).challenges;
 
-      // Check for completed symptom questionnaires
+      // Enhanced symptom and diagnostic information
+      try {
+        // Get comprehensive symptom data from profile
+        const profileSymptoms = (profile as any).symptoms || {};
+        const symptomEntries = Object.entries(profileSymptoms);
+        
+        if (symptomEntries.length > 0) {
+          // Calculate questionnaire progress
+          const answeredQuestions = symptomEntries.filter(([_, value]) => value !== 'unknown').length;
+          const totalQuestions = Object.keys(profileSymptoms).length;
+          memberInfo.questionnaireProgress = totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
+          
+          // Convert symptoms to diagnostic format and calculate results
+          const responses: Record<string, 'yes' | 'no' | 'unsure'> = {};
+          symptomEntries.forEach(([key, value]) => {
+            if (value === 'yes') responses[key] = 'yes';
+            else if (value === 'no') responses[key] = 'no';
+            else responses[key] = 'unsure';
+          });
+          
+          // Calculate diagnostic probabilities
+          const diagnosticResults = calculateDiagnosticProbabilities(responses);
+          if (diagnosticResults.length > 0) {
+            memberInfo.diagnosticResults = diagnosticResults;
+            memberInfo.questionnairesCompleted = ['Comprehensive Neurodevelopmental Assessment'];
+          }
+          
+          // Create symptom summary for AI context
+          const presentSymptoms: string[] = [];
+          const absentSymptoms: string[] = [];
+          
+          symptomEntries.forEach(([key, value]) => {
+            const symptomName = key.replace(/^(adhd_|autism_|anxiety_|sensory_|exec_)/, '').replace(/_/g, ' ');
+            if (value === 'yes') presentSymptoms.push(symptomName);
+            else if (value === 'no') absentSymptoms.push(symptomName);
+          });
+          
+          if (presentSymptoms.length > 0 || absentSymptoms.length > 0) {
+            let summary = '';
+            if (presentSymptoms.length > 0) {
+              summary += `Present symptoms: ${presentSymptoms.slice(0, 10).join(', ')}`;
+              if (presentSymptoms.length > 10) summary += ` and ${presentSymptoms.length - 10} more`;
+            }
+            if (absentSymptoms.length > 0) {
+              if (summary) summary += '. ';
+              summary += `Absent symptoms: ${absentSymptoms.slice(0, 5).join(', ')}`;
+              if (absentSymptoms.length > 5) summary += ` and ${absentSymptoms.length - 5} more`;
+            }
+            memberInfo.symptomSummary = summary;
+          }
+        }
+      } catch (error) {
+        console.error('Error processing symptoms for', profile.childName, error);
+      }
+
+      // Legacy symptom check fallback
       try {
         const symptoms = await localStorage.getSymptomChecklist(profile.id);
-        if (symptoms) {
-          memberInfo.questionnairesCompleted = ['Neurodivergent Symptom Assessment'];
+        if (symptoms && !memberInfo.questionnairesCompleted) {
+          memberInfo.questionnairesCompleted = ['Legacy Symptom Assessment'];
           
           // Add relevant symptom information
           const presentSymptoms: string[] = [];
@@ -152,6 +211,24 @@ export class FamilyContextBuilder {
       if (member.diagnoses && member.diagnoses.length > 0) {
         context += `- Medical diagnoses: ${member.diagnoses.join(', ')}\n`;
       }
+
+      // Add diagnostic results from questionnaires
+      if (member.diagnosticResults && member.diagnosticResults.length > 0) {
+        context += `- Assessment Results:\n`;
+        member.diagnosticResults.forEach(result => {
+          context += `  • ${result.condition} (${result.probability} probability)\n`;
+        });
+      }
+
+      // Add symptom summary
+      if (member.symptomSummary) {
+        context += `- Symptom Profile: ${member.symptomSummary}\n`;
+      }
+
+      // Add questionnaire progress
+      if (member.questionnaireProgress && member.questionnaireProgress > 0) {
+        context += `- Assessment Progress: ${member.questionnaireProgress}% completed\n`;
+      }
       
       if (member.questionnairesCompleted && member.questionnairesCompleted.length > 0) {
         context += `- Assessments completed: ${member.questionnairesCompleted.join(', ')}\n`;
@@ -179,8 +256,8 @@ export class FamilyContextBuilder {
       }
     });
 
-    console.log('✅ Family context built successfully');
-    console.log('👥 Context preview:', context.substring(0, 200) + '...');
+    console.log('✅ Enhanced family context built with diagnostic information');
+    console.log('👥 Context preview:', context.substring(0, 300) + '...');
     
     return context;
   }
