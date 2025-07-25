@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import SimpleApp from "./simple-app";
+import App from "./App";
 import "./index.css";
 
 console.log("Senali app starting...");
@@ -12,7 +12,7 @@ try {
 
   console.log("Root element found, creating React app...");
   const root = createRoot(rootElement);
-  root.render(<SimpleApp />);
+  root.render(<App />);
   console.log("React app rendered successfully");
 } catch (error) {
   console.error("Failed to start app:", error);

@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle, Lightbulb, Heart } from "lucide-react";
 import { ParentingQuote } from "@/components/ParentingQuote";
 import { InfinityIcon } from "@/components/ui/infinity-icon";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 // import FamilySetup from "@/pages/family-setup"; // Removed - causes React hook errors
 import FamilyProfiles from "@/pages/family-profiles";
@@ -17,13 +17,13 @@ import { createDemoUser, enableDemoMode, getDemoUser, signOutDemo } from "@/lib/
 
 
 function SenaliApp() {
-  // Firebase authentication state
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Firebase authentication state - explicit React import to fix hooks
+  const [user, setUser] = React.useState<User | null>(null);
+  const [loading, setLoading] = React.useState(true);
   // Remove unused userProfile state since we eliminated the simple profile setup
   
   // Initialize auth listener (Firebase with demo fallback)
-  useEffect(() => {
+  React.useEffect(() => {
     console.log('Setting up auth listener...');
     
     // Check for demo user first
@@ -140,16 +140,16 @@ function SenaliApp() {
       alert('Unable to sign in. Please try refreshing the page.');
     }
   };
-  const [hasProfiles, setHasProfiles] = useState(false);
-  const [showProfilesMenu, setShowProfilesMenu] = useState(false);
-  const [showSubscription, setShowSubscription] = useState(false);
-  const [showAdminChat, setShowAdminChat] = useState(false);
+  const [hasProfiles, setHasProfiles] = React.useState(false);
+  const [showProfilesMenu, setShowProfilesMenu] = React.useState(false);
+  const [showSubscription, setShowSubscription] = React.useState(false);
+  const [showAdminChat, setShowAdminChat] = React.useState(false);
   const [location] = useLocation();
 
 
 
   // Check for profiles when user changes
-  useEffect(() => {
+  React.useEffect(() => {
     if (user) {
       // Small delay to ensure user state is fully set
       setTimeout(() => {
@@ -159,7 +159,7 @@ function SenaliApp() {
   }, [user]);
 
   // Also check on initial app load
-  useEffect(() => {
+  React.useEffect(() => {
     checkForExistingProfiles();
   }, []);
 
