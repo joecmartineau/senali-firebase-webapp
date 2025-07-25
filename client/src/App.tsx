@@ -165,17 +165,41 @@ function SenaliApp() {
 
   const onSignOut = async () => {
     try {
+      console.log('🔴 SIGNOUT: Starting sign out process');
+      console.log('🔴 Current user:', user);
+      
+      // Clear all local data first
+      setUser(null);
+      setHasProfiles(false);
+      setShowProfilesMenu(false);
+      setShowSubscription(false);
+      setShowAdminChat(false);
+      
+      // Clear localStorage
+      window.localStorage.removeItem('senali_demo_user');
+      window.localStorage.removeItem('senali_family_profiles');
+      window.localStorage.removeItem('senali_messages');
+      window.localStorage.removeItem('senali_conversation_summary');
+      
       // Check if in demo mode
       const demoUser = getDemoUser();
       if (demoUser) {
+        console.log('🔴 SIGNOUT: Demo user, clearing demo data');
         signOutDemo();
-        setUser(null);
       } else {
+        console.log('🔴 SIGNOUT: Firebase user, signing out');
         await signOut(auth);
       }
-      console.log('User signed out successfully');
+      
+      console.log('🔴 SIGNOUT: User signed out successfully');
+      
+      // Force page reload to ensure clean state
+      window.location.reload();
+      
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('🔴 SIGNOUT: Error signing out:', error);
+      // Force page reload even on error to clear state
+      window.location.reload();
     }
   };
 
