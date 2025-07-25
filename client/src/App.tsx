@@ -125,13 +125,17 @@ function SenaliApp() {
       // Handle specific Firebase auth errors
       let errorMessage = 'Sign-in failed. ';
       if (error.code === 'auth/unauthorized-domain') {
-        errorMessage += 'This domain is not authorized. Please add your domain to Firebase Console under Authentication > Settings > Authorized domains.';
+        errorMessage = 'This domain is not authorized for sign-in. This usually happens when accessing the app from a new domain. The app administrator needs to add this domain to the Firebase Console under Authentication > Settings > Authorized domains.';
       } else if (error.code === 'auth/popup-blocked') {
-        errorMessage += 'Popup was blocked. Please allow popups for this site.';
+        errorMessage += 'Popup was blocked. Please allow popups for this site and try again.';
       } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage += 'Google sign-in is not enabled in Firebase Console.';
+        errorMessage += 'Google sign-in is not enabled. Contact the app administrator.';
       } else if (error.code === 'auth/popup-closed-by-user') {
         errorMessage += 'Sign-in popup was closed. Please try again.';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage += 'Network error. Please check your internet connection and try again.';
+      } else if (error.message.includes('missing initial state')) {
+        errorMessage = 'Authentication error occurred. This may be due to browser restrictions or storage issues. Please try: 1) Refreshing the page 2) Clearing browser storage for this site 3) Using a different browser or incognito mode.';
       } else {
         errorMessage += `Error: ${error.message}`;
       }
