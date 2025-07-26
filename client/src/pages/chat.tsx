@@ -181,24 +181,32 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
         throw new Error('User not authenticated. Please sign in again.');
       }
 
-      // Get family profiles from localStorage with diagnostic results
-      const getFamilyProfilesData = () => {
-        const userId = user?.uid || user?.email || 'demo-user';
-        const storageKey = `senali_family_members_${userId}`;
-        const saved = localStorage.getItem(storageKey);
-        
-        if (saved) {
-          try {
-            return JSON.parse(saved);
-          } catch (e) {
-            console.error('Error loading family profiles:', e);
-            return [];
+      // Get family profiles from Firebase with diagnostic results
+      const getFamilyProfilesData = async () => {
+        try {
+          const { familyProfilesAPI } = await import('../lib/firebase-api');
+          const profiles = await familyProfilesAPI.getAll();
+          console.log('🔴 Loaded family profiles from Firebase:', profiles);
+          return profiles;
+        } catch (error) {
+          console.error('Error loading family profiles from Firebase:', error);
+          // Fallback to localStorage
+          const userId = user?.uid || user?.email || 'demo-user';
+          const storageKey = `senali_family_members_${userId}`;
+          const saved = localStorage.getItem(storageKey);
+          
+          if (saved) {
+            try {
+              return JSON.parse(saved);
+            } catch (e) {
+              console.error('Error loading family profiles from localStorage:', e);
+            }
           }
+          return [];
         }
-        return [];
       };
 
-      const currentFamilyProfiles = getFamilyProfilesData();
+      const currentFamilyProfiles = await getFamilyProfilesData();
       console.log('🔴 Current family profiles being sent:', currentFamilyProfiles);
 
       const requestPayload = {

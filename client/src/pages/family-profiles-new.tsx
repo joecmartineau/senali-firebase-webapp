@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InfinityIcon } from '@/components/ui/infinity-icon';
 import { ArrowLeft, Plus, User, Brain, CheckSquare } from 'lucide-react';
+import { familyProfilesAPI, migrateLocalStorageToFirebase } from '@/lib/firebase-api';
 
 interface FamilyMember {
   id: string;
@@ -79,22 +80,42 @@ export default function FamilyProfilesNew({ onBack, user }: FamilyProfilesNewPro
     return `senali_family_members_${userId}`;
   };
 
-  // Load family members from localStorage for specific user
+  // Load family members from Firebase
   useEffect(() => {
-    const storageKey = getStorageKey();
-    const saved = localStorage.getItem(storageKey);
-    console.log('Loading profiles for user:', user?.email, 'Storage key:', storageKey);
-    if (saved) {
+    const loadProfiles = async () => {
+      if (!user) return;
+      
       try {
-        const profiles = JSON.parse(saved);
-        console.log('Loaded profiles:', profiles.length);
+        console.log('Loading profiles from Firebase for user:', user?.email);
+        
+        // First try to migrate any existing localStorage data
+        if (user?.uid) {
+          await migrateLocalStorageToFirebase(user.uid);
+        }
+        
+        // Load profiles from Firebase
+        const profiles = await familyProfilesAPI.getAll();
+        console.log('Loaded profiles from Firebase:', profiles.length);
         setFamilyMembers(profiles);
-      } catch (e) {
-        console.error('Error loading family members:', e);
+      } catch (error) {
+        console.error('Error loading family profiles from Firebase:', error);
+        
+        // Fallback to localStorage if Firebase fails
+        const storageKey = getStorageKey();
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          try {
+            const profiles = JSON.parse(saved);
+            console.log('Fallback to localStorage profiles:', profiles.length);
+            setFamilyMembers(profiles);
+          } catch (e) {
+            console.error('Error loading family members from localStorage:', e);
+          }
+        }
       }
-    } else {
-      console.log('No profiles found for this user');
-    }
+    };
+
+    loadProfiles();
   }, [user]);
 
   // Save family members to localStorage for specific user
@@ -105,47 +126,77 @@ export default function FamilyProfilesNew({ onBack, user }: FamilyProfilesNewPro
     localStorage.setItem(storageKey, JSON.stringify(members));
   };
 
-  const addFamilyMember = () => {
+  const addFamilyMember = async () => {
     if (!newMember.name || !newMember.age || !newMember.gender || !newMember.relation) {
       alert('Please fill in all fields');
       return;
     }
 
-    const member: FamilyMember = {
-      id: Date.now().toString(),
-      name: newMember.name,
-      age: newMember.age,
-      gender: newMember.gender as any,
-      relation: newMember.relation as any,
-      questionnaire: []
-    };
+    try {
+      const profileData = {
+        name: newMember.name,
+        age: newMember.age,
+        gender: newMember.gender,
+        relation: newMember.relation,
+        questionnaire: []
+      };
 
-    saveFamilyMembers([...familyMembers, member]);
-    setNewMember({ name: '', age: '', gender: '', relation: '' });
+      console.log('Creating profile in Firebase:', profileData);
+      const createdProfile = await familyProfilesAPI.create(profileData);
+      console.log('Profile created successfully:', createdProfile);
+      
+      // Update local state with the new profile
+      setFamilyMembers([...familyMembers, createdProfile]);
+      setNewMember({ name: '', age: '', gender: '', relation: '' });
+    } catch (error) {
+      console.error('Error creating family member:', error);
+      alert('Failed to create family member. Please try again.');
+    }
   };
 
-  const deleteFamilyMember = (id: string) => {
-    saveFamilyMembers(familyMembers.filter(member => member.id !== id));
+  const deleteFamilyMember = async (id: string) => {
+    try {
+      console.log('Deleting profile from Firebase:', id);
+      await familyProfilesAPI.delete(id);
+      console.log('Profile deleted successfully');
+      
+      // Update local state
+      setFamilyMembers(familyMembers.filter(member => member.id !== id));
+    } catch (error) {
+      console.error('Error deleting family member:', error);
+      alert('Failed to delete family member. Please try again.');
+    }
   };
 
-  const updateQuestionnaireResponse = (memberId: string, questionId: string, answer: 'yes' | 'no' | 'unknown') => {
-    const updatedMembers = familyMembers.map(member => {
-      if (member.id === memberId) {
-        const questionnaire = member.questionnaire || [];
-        const existingIndex = questionnaire.findIndex(q => q.questionId === questionId);
-        
-        if (existingIndex >= 0) {
-          questionnaire[existingIndex].answer = answer;
-        } else {
-          questionnaire.push({ questionId, answer });
-        }
-        
-        return { ...member, questionnaire };
+  const updateQuestionnaireResponse = async (memberId: string, questionId: string, answer: 'yes' | 'no' | 'unknown') => {
+    try {
+      const member = familyMembers.find(m => m.id === memberId);
+      if (!member) return;
+
+      const questionnaire = member.questionnaire || [];
+      const existingIndex = questionnaire.findIndex(q => q.questionId === questionId);
+      
+      if (existingIndex >= 0) {
+        questionnaire[existingIndex].answer = answer;
+      } else {
+        questionnaire.push({ questionId, answer });
       }
-      return member;
-    });
-    
-    saveFamilyMembers(updatedMembers);
+
+      const updatedMemberData = { ...member, questionnaire };
+      
+      console.log('Updating questionnaire in Firebase for member:', memberId);
+      await familyProfilesAPI.update(memberId, { questionnaire });
+      console.log('Questionnaire updated successfully');
+      
+      // Update local state
+      const updatedMembers = familyMembers.map(m => 
+        m.id === memberId ? updatedMemberData : m
+      );
+      setFamilyMembers(updatedMembers);
+    } catch (error) {
+      console.error('Error updating questionnaire:', error);
+      alert('Failed to update questionnaire. Please try again.');
+    }
   };
 
   const getQuestionnaireProgress = (member: FamilyMember) => {

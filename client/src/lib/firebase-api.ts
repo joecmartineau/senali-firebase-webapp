@@ -1,151 +1,116 @@
-/**
- * Firebase API client for family profiles
- * Direct communication with Firebase Functions
- */
+import { getAuth } from 'firebase/auth';
 
-import { auth } from './firebase';
-
-export interface FamilyProfile {
-  id: string;
-  childName: string;
-  age?: string;
-  gender?: string;
-  relationshipToUser?: string;
-  height?: string;
-  medicalDiagnoses?: string;
-  workSchoolInfo?: string;
-  symptoms?: Record<string, any>;
-  userId: string;
-  createdAt?: any;
-  updatedAt?: any;
-}
+// Firebase Functions URLs - update when deployed
+const FUNCTIONS_BASE_URL = 'https://us-central1-senali-235fb.cloudfunctions.net';
 
 // Helper to get auth token
 async function getAuthToken(): Promise<string | null> {
+  const auth = getAuth();
   const user = auth.currentUser;
-  if (user) {
-    try {
-      return await user.getIdToken();
-    } catch (error) {
-      console.error('Error getting auth token:', error);
-    }
+  
+  if (!user) {
+    return null;
   }
-  return null;
-}
-
-// Get all family profiles
-export async function getFamilyProfiles(): Promise<FamilyProfile[]> {
+  
   try {
-    const token = await getAuthToken();
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch('/api/children', {
-      method: 'GET',
-      headers,
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    return await user.getIdToken();
   } catch (error) {
-    console.error('Error fetching family profiles:', error);
-    throw error;
+    console.error('Error getting auth token:', error);
+    return null;
   }
 }
 
-// Create family profile
-export async function createFamilyProfile(profileData: Partial<FamilyProfile>): Promise<FamilyProfile> {
-  try {
-    const token = await getAuthToken();
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+// Helper to make authenticated API calls
+async function makeAuthenticatedRequest(endpoint: string, options: RequestInit = {}) {
+  const token = await getAuthToken();
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options.headers
+  };
 
-    const response = await fetch('/api/children/create', {
+  const response = await fetch(`${FUNCTIONS_BASE_URL}/${endpoint}`, {
+    ...options,
+    headers
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`API Error: ${response.status} - ${error}`);
+  }
+
+  return response.json();
+}
+
+// Family Profile API functions
+export const familyProfilesAPI = {
+  // Get all family profiles for the current user
+  async getAll() {
+    return makeAuthenticatedRequest('getFamilyProfiles');
+  },
+
+  // Create a new family profile
+  async create(profileData: any) {
+    return makeAuthenticatedRequest('createFamilyProfile', {
       method: 'POST',
-      headers,
-      body: JSON.stringify(profileData),
-      credentials: 'include'
+      body: JSON.stringify(profileData)
     });
+  },
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error creating family profile:', error);
-    throw error;
-  }
-}
-
-// Update family profile
-export async function updateFamilyProfile(profileId: string, updateData: Partial<FamilyProfile>): Promise<FamilyProfile> {
-  try {
-    const token = await getAuthToken();
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`/api/children/${profileId}/update`, {
+  // Update an existing family profile
+  async update(profileId: string, profileData: any) {
+    return makeAuthenticatedRequest(`updateFamilyProfile?id=${profileId}`, {
       method: 'PUT',
-      headers,
-      body: JSON.stringify(updateData)
+      body: JSON.stringify(profileData)
     });
+  },
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error updating family profile:', error);
-    throw error;
+  // Delete a family profile
+  async delete(profileId: string) {
+    return makeAuthenticatedRequest(`deleteFamilyProfile?id=${profileId}`, {
+      method: 'DELETE'
+    });
   }
-}
+};
 
-// Delete family profile
-export async function deleteFamilyProfile(profileId: string): Promise<{ success: boolean }> {
+// Migration helper - move localStorage data to Firebase
+export async function migrateLocalStorageToFirebase(userId: string) {
   try {
-    const token = await getAuthToken();
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
+    console.log('🔄 Starting migration from localStorage to Firebase...');
     
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    const storageKey = `senali_family_members_${userId}`;
+    const localData = localStorage.getItem(storageKey);
+    
+    if (!localData) {
+      console.log('No local data to migrate');
+      return;
     }
 
-    const response = await fetch(`/api/children/${profileId}/delete`, {
-      method: 'DELETE',
-      headers,
-      credentials: 'include'
-    });
+    const localProfiles = JSON.parse(localData);
+    console.log(`Found ${localProfiles.length} profiles to migrate`);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // Create each profile in Firebase
+    for (const profile of localProfiles) {
+      try {
+        await familyProfilesAPI.create({
+          name: profile.name,
+          age: profile.age,
+          gender: profile.gender,
+          relation: profile.relation,
+          questionnaire: profile.questionnaire || []
+        });
+        console.log(`✓ Migrated profile: ${profile.name}`);
+      } catch (error) {
+        console.error(`✗ Failed to migrate profile ${profile.name}:`, error);
+      }
     }
 
-    return await response.json();
+    // Clear localStorage after successful migration
+    localStorage.removeItem(storageKey);
+    console.log('🎉 Migration completed - localStorage cleared');
+    
   } catch (error) {
-    console.error('Error deleting family profile:', error);
-    throw error;
+    console.error('Migration failed:', error);
   }
 }

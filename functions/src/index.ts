@@ -37,7 +37,7 @@ export const getFamilyProfiles = functions.https.onRequest((req, res) => {
 
       // Get profiles from Firestore
       const profilesSnapshot = await admin.firestore()
-        .collection('childProfiles')
+        .collection('familyProfiles')
         .where('userId', '==', userId)
         .get();
 
@@ -85,7 +85,7 @@ export const createFamilyProfile = functions.https.onRequest((req, res) => {
 
       // Add profile to Firestore
       const docRef = await admin.firestore()
-        .collection('childProfiles')
+        .collection('familyProfiles')
         .add(profileData);
 
       const createdProfile = await docRef.get();
@@ -131,7 +131,7 @@ export const deleteFamilyProfile = functions.https.onRequest((req, res) => {
 
       // Verify ownership
       const profileDoc = await admin.firestore()
-        .collection('childProfiles')
+        .collection('familyProfiles')
         .doc(profileId)
         .get();
 
