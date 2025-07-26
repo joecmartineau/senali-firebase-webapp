@@ -181,17 +181,29 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
         throw new Error('User not authenticated. Please sign in again.');
       }
 
-      // Build comprehensive family context with diagnostic results
-      const { FamilyContextBuilder } = await import('../lib/family-context-builder');
-      const familyContextBuilder = new FamilyContextBuilder();
-      const comprehensiveFamilyContext = await familyContextBuilder.buildFamilyContext(user.uid);
+      // Get family profiles from localStorage with diagnostic results
+      const getFamilyProfilesData = () => {
+        const userId = user?.uid || user?.email || 'demo-user';
+        const storageKey = `senali_family_members_${userId}`;
+        const saved = localStorage.getItem(storageKey);
+        
+        if (saved) {
+          try {
+            return JSON.parse(saved);
+          } catch (e) {
+            console.error('Error loading family profiles:', e);
+            return [];
+          }
+        }
+        return [];
+      };
 
-      console.log('🔴 Original family profiles:', familyProfiles);
-      console.log('🤖 Comprehensive family context with diagnostics:', comprehensiveFamilyContext);
+      const currentFamilyProfiles = getFamilyProfilesData();
+      console.log('🔴 Current family profiles being sent:', currentFamilyProfiles);
 
       const requestPayload = {
         message: inputMessage,
-        familyContext: comprehensiveFamilyContext, // Send full context string with diagnostics
+        familyProfiles: currentFamilyProfiles, // Send actual family profiles with questionnaire data
         userUid: user.email === 'joecmartineau@gmail.com' ? 'admin-user' : user.uid,
         conversationSummary: conversationSummary,
         recentMessages: recentMessages.map(msg => ({

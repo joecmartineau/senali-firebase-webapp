@@ -24,6 +24,57 @@ function sanitizeForPrompt(input: string | number | null | undefined): string {
     .slice(0, 2000); // Limit length to prevent prompt bloat
 }
 
+// Helper function to calculate probable diagnoses from questionnaire
+const calculateProbableDiagnoses = (questionnaire = []) => {
+  const diagnosticQuestions = {
+    adhd: ['adhd1', 'adhd2', 'adhd3', 'adhd4', 'adhd5', 'adhd6', 'adhd7', 'adhd8', 'adhd9'],
+    autism: ['autism1', 'autism2', 'autism3', 'autism4', 'autism5', 'autism6', 'autism7', 'autism8'],
+    anxiety: ['anxiety1', 'anxiety2', 'anxiety3', 'anxiety4']
+  };
+
+  const results = {};
+  
+  Object.entries(diagnosticQuestions).forEach(([condition, questionIds]) => {
+    const yesResponses = questionnaire.filter(r => 
+      questionIds.includes(r.questionId) && r.answer === 'yes'
+    ).length;
+    
+    const percentage = questionIds.length > 0 ? (yesResponses / questionIds.length) * 100 : 0;
+    
+    let probability = 'Low';
+    if (percentage >= 70) probability = 'High';
+    else if (percentage >= 40) probability = 'Moderate';
+    
+    results[condition] = { percentage: Math.round(percentage), probability };
+  });
+  
+  return results;
+};
+
+// Helper function to format family context for Senali
+const formatFamilyContext = (familyProfiles = []) => {
+  if (!familyProfiles || familyProfiles.length === 0) {
+    return 'No family profiles have been created yet.';
+  }
+
+  return familyProfiles.map(member => {
+    const diagnoses = calculateProbableDiagnoses(member.questionnaire || []);
+    const diagnosisText = Object.entries(diagnoses)
+      .filter(([_, data]) => data.probability !== 'Low')
+      .map(([condition, data]) => `${condition.toUpperCase()}: ${data.probability} probability (${data.percentage}%)`)
+      .join(', ') || 'No significant diagnostic indicators';
+
+    return `
+Family Member: ${member.name}
+- Age: ${member.age}
+- Gender: ${member.gender}
+- Relation: ${member.relation}
+- Assessment Results: ${diagnosisText}
+- Questionnaire Progress: ${member.questionnaire?.length || 0} questions answered
+`;
+  }).join('\n');
+};
+
 router.post('/chat', async (req, res) => {
   try {
     console.log('🚨 CHAT API: Received request');
@@ -44,7 +95,7 @@ router.post('/chat', async (req, res) => {
       console.log('🚨 Family context is not a valid array:', typeof req.body.familyContext);
     }
     
-    const { message, familyContext, userUid, conversationSummary, recentMessages, isQuestionnaire } = req.body;
+    const { message, familyProfiles, userUid, conversationSummary, recentMessages, isQuestionnaire } = req.body;
 
     if (!message) {
       console.log('🚨 ERROR: No message provided');
@@ -122,18 +173,13 @@ Guidelines:
 - Offer gentle guidance and perspectives
 - Never provide medical or psychiatric advice
 - Focus on emotional support and active listening
-- Remember previous conversations and build on them naturally`;
+- Remember previous conversations and build on them naturally
+
+CRITICAL INSTRUCTION: Only reference family information that is explicitly provided in the Family Context below. NEVER make up names, ages, or details about family members that are not provided. If no family context is provided or if asked about family members not listed, say "I don't have information about your family members yet" and suggest they can add family profiles for personalized support. Do not invent or assume any family details whatsoever.`;
     }
 
-    if (familyContext && familyContext.length > 0) {
-      systemPrompt += `\n\nFamily Context:\n`;
-      familyContext.forEach((member: any) => {
-        systemPrompt += `- ${sanitizeForPrompt(member.name)} (${sanitizeForPrompt(member.relationship)})`;
-        if (member.age) systemPrompt += `, age ${sanitizeForPrompt(member.age)}`;
-        if (member.medicalDiagnoses) systemPrompt += `, diagnoses: ${sanitizeForPrompt(member.medicalDiagnoses)}`;
-        systemPrompt += `\n`;
-      });
-    }
+    const familyContext = formatFamilyContext(familyProfiles);
+    systemPrompt += `\n\nFamily Context:\n${familyContext}`;
 
     // Add conversation summary if available
     if (conversationSummary) {
