@@ -1,184 +1,164 @@
-const CACHE_NAME = 'senali-v7.0-gpt35-fresh';
-const API_CACHE_NAME = 'senali-api-v4-updated';
-
-// Core files to cache for offline functionality
+// Senali PWA Service Worker v3.0
+const CACHE_NAME = 'senali-v3.0';
 const urlsToCache = [
   '/',
+  '/static/js/bundle.js',
+  '/static/css/main.css',
   '/manifest.json',
-  // Will be populated with build assets automatically
+  '/icon-192x192.png',
+  '/icon-512x512.png'
 ];
 
-// API endpoints to cache with different strategies
-const apiEndpoints = [
-  '/api/auth/user',
-  '/api/tips',
-  '/api/chat/messages'
-];
-
-// Install event - cache core files
+// Install event - cache resources
 self.addEventListener('install', event => {
-  console.log('Service Worker installing...');
+  console.log('SW: Installing service worker v3.0');
   event.waitUntil(
-    Promise.all([
-      caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)),
-      caches.open(API_CACHE_NAME)
-    ]).then(() => {
-      // Skip waiting to activate immediately
-      return self.skipWaiting();
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('SW: Caching app shell');
+        return cache.addAll(urlsToCache);
+      })
+      .then(() => {
+        console.log('SW: Skip waiting');
+        return self.skipWaiting();
+      })
+  );
+});
+
+// Activate event - clean old caches
+self.addEventListener('activate', event => {
+  console.log('SW: Activating service worker v3.0');
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('SW: Deleting old cache', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      console.log('SW: Claiming clients');
+      return self.clients.claim();
     })
   );
 });
 
-// Activate event - clean up old caches
-self.addEventListener('activate', event => {
-  console.log('Service Worker activating...');
-  event.waitUntil(
-    Promise.all([
-      // Clean up old caches
-      caches.keys().then(cacheNames => {
-        return Promise.all(
-          cacheNames.map(cacheName => {
-            if (cacheName !== CACHE_NAME && cacheName !== API_CACHE_NAME) {
-              console.log('Deleting old cache:', cacheName);
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      }),
-      // Take control of all clients immediately
-      self.clients.claim()
-    ])
-  );
-});
-
-// Fetch event - implement caching strategies
+// Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', event => {
-  const { request } = event;
-  const url = new URL(request.url);
-  
-  // Handle API requests with network-first strategy
-  if (url.pathname.startsWith('/api/')) {
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // API requests - network first with cache fallback
+  if (event.request.url.includes('/api/') || event.request.url.includes('cloudfunctions.net')) {
     event.respondWith(
-      fetch(request)
+      fetch(event.request)
         .then(response => {
-          // Cache successful API responses (except auth endpoints)
-          if (response.ok && !url.pathname.includes('/auth/')) {
+          // Cache successful API responses
+          if (response.status === 200) {
             const responseClone = response.clone();
-            caches.open(API_CACHE_NAME).then(cache => {
-              cache.put(request, responseClone);
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseClone);
             });
           }
           return response;
         })
         .catch(() => {
-          // Return cached API response if network fails
-          return caches.match(request);
+          // Fallback to cache for API requests
+          return caches.match(event.request);
         })
     );
     return;
   }
-  
-  // Handle static assets with cache-first strategy
+
+  // Static resources - cache first
   event.respondWith(
-    caches.match(request)
+    caches.match(event.request)
       .then(response => {
-        if (response) {
-          return response;
-        }
-        
-        // Fetch from network and cache the response
-        return fetch(request).then(response => {
-          // Don't cache non-successful responses
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
+        // Return cached version or fetch from network
+        return response || fetch(event.request).then(fetchResponse => {
+          // Cache the new resource
+          if (fetchResponse.status === 200) {
+            const responseClone = fetchResponse.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseClone);
+            });
           }
-          
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(request, responseToCache);
-          });
-          
-          return response;
+          return fetchResponse;
         });
+      })
+      .catch(() => {
+        // Offline fallback for HTML pages
+        if (event.request.headers.get('accept').includes('text/html')) {
+          return caches.match('/');
+        }
       })
   );
 });
 
-// Handle background sync for offline functionality
+// Background sync for offline actions
 self.addEventListener('sync', event => {
-  if (event.tag === 'background-sync') {
-    console.log('Background sync triggered');
-    event.waitUntil(
-      // Implement background sync logic here if needed
-      Promise.resolve()
-    );
+  console.log('SW: Background sync', event.tag);
+  
+  if (event.tag === 'chat-message') {
+    event.waitUntil(syncChatMessages());
   }
 });
 
-// Handle push notifications
+// Push notifications
 self.addEventListener('push', event => {
-  if (event.data) {
-    const data = event.data.json();
-    const options = {
-      body: data.body,
-      icon: '/manifest-icon-192.png',
-      badge: '/manifest-icon-96.png',
-      vibrate: [100, 50, 100],
-      data: {
-        dateOfArrival: Date.now(),
-        primaryKey: data.primaryKey || 1
+  console.log('SW: Push notification received');
+  
+  const options = {
+    body: event.data ? event.data.text() : 'New message from Senali',
+    icon: '/icon-192x192.png',
+    badge: '/icon-192x192.png',
+    vibrate: [100, 50, 100],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: 1
+    },
+    actions: [
+      {
+        action: 'open',
+        title: 'Open App',
+        icon: '/icon-192x192.png'
       },
-      actions: [
-        {
-          action: 'explore',
-          title: 'View Tip',
-          icon: '/manifest-icon-192.png'
-        },
-        {
-          action: 'close',
-          title: 'Close',
-          icon: '/manifest-icon-192.png'
-        }
-      ]
-    };
-    
-    event.waitUntil(
-      self.registration.showNotification(data.title || 'Senali', options)
-    );
-  }
+      {
+        action: 'close',
+        title: 'Close',
+        icon: '/icon-192x192.png'
+      }
+    ]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification('Senali', options)
+  );
 });
 
-// Handle notification clicks
+// Notification click handler
 self.addEventListener('notificationclick', event => {
+  console.log('SW: Notification click received');
+  
   event.notification.close();
   
-  if (event.action === 'explore') {
+  if (event.action === 'open') {
     event.waitUntil(
       clients.openWindow('/')
     );
   }
 });
 
-// PWA install prompt handling
-let deferredPrompt;
-
-self.addEventListener('beforeinstallprompt', (e) => {
-  console.log('Before install prompt fired');
-  e.preventDefault();
-  deferredPrompt = e;
-});
-
-// Show custom install prompt
-function showInstallPrompt() {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-      } else {
-        console.log('User dismissed the install prompt');
-      }
-      deferredPrompt = null;
-    });
+// Helper functions
+async function syncChatMessages() {
+  try {
+    // Implement chat message sync logic here
+    console.log('SW: Syncing chat messages');
+  } catch (error) {
+    console.error('SW: Error syncing chat messages', error);
   }
 }
