@@ -32,6 +32,9 @@ async function makeAuthenticatedRequest(endpoint: string, options: RequestInit =
     ...options.headers
   };
 
+  console.log('Making request to:', `${FUNCTIONS_BASE_URL}/${endpoint}`);
+  console.log('With headers:', headers);
+
   const response = await fetch(`${FUNCTIONS_BASE_URL}/${endpoint}`, {
     ...options,
     headers

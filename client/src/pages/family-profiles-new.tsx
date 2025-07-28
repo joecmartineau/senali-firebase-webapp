@@ -80,27 +80,42 @@ export default function FamilyProfilesNew({ onBack, user }: FamilyProfilesNewPro
     return `senali_family_members_${userId}`;
   };
 
-  // Load family members from Firebase
+  // Load family members from Firebase or localStorage
   useEffect(() => {
     const loadProfiles = async () => {
-      if (!user) return;
-      
       try {
-        console.log('Loading profiles from Firebase for user:', user?.email);
+        console.log('Loading profiles for user:', user?.email || 'demo-user');
         
-        // First try to migrate any existing localStorage data
-        if (user?.uid) {
-          await migrateLocalStorageToFirebase(user.uid);
+        // If user exists, try Firebase first
+        if (user) {
+          // First try to migrate any existing localStorage data
+          if (user?.uid) {
+            await migrateLocalStorageToFirebase(user.uid);
+          }
+          
+          // Load profiles from Firebase
+          const profiles = await familyProfilesAPI.getAll();
+          console.log('Loaded profiles from Firebase:', profiles.length);
+          setFamilyMembers(profiles);
+        } else {
+          // No user - work in demo mode with localStorage only
+          console.log('No user - working in demo mode');
+          const storageKey = getStorageKey();
+          const saved = localStorage.getItem(storageKey);
+          if (saved) {
+            try {
+              const profiles = JSON.parse(saved);
+              console.log('Loaded demo profiles from localStorage:', profiles.length);
+              setFamilyMembers(profiles);
+            } catch (e) {
+              console.error('Error loading demo family members from localStorage:', e);
+            }
+          }
         }
-        
-        // Load profiles from Firebase
-        const profiles = await familyProfilesAPI.getAll();
-        console.log('Loaded profiles from Firebase:', profiles.length);
-        setFamilyMembers(profiles);
       } catch (error) {
-        console.error('Error loading family profiles from Firebase:', error);
+        console.error('Error loading family profiles:', error);
         
-        // Fallback to localStorage if Firebase fails
+        // Always fallback to localStorage
         const storageKey = getStorageKey();
         const saved = localStorage.getItem(storageKey);
         if (saved) {
@@ -134,6 +149,7 @@ export default function FamilyProfilesNew({ onBack, user }: FamilyProfilesNewPro
 
     try {
       const profileData = {
+        id: Date.now().toString(), // Generate simple ID
         name: newMember.name,
         age: newMember.age,
         gender: newMember.gender,
@@ -141,12 +157,25 @@ export default function FamilyProfilesNew({ onBack, user }: FamilyProfilesNewPro
         questionnaire: []
       };
 
-      console.log('Creating profile in Firebase:', profileData);
-      const createdProfile = await familyProfilesAPI.create(profileData);
-      console.log('Profile created successfully:', createdProfile);
+      if (user) {
+        // User is authenticated - try Firebase
+        console.log('Creating profile in Firebase:', profileData);
+        const createdProfile = await familyProfilesAPI.create(profileData);
+        console.log('Profile created successfully in Firebase:', createdProfile);
+        
+        // Update local state with the Firebase response
+        setFamilyMembers([...familyMembers, createdProfile]);
+      } else {
+        // No user - work in demo mode with localStorage only
+        console.log('Creating profile in demo mode:', profileData);
+        
+        // Update local state and localStorage
+        const updatedMembers = [...familyMembers, profileData];
+        setFamilyMembers(updatedMembers);
+        localStorage.setItem(getStorageKey(), JSON.stringify(updatedMembers));
+        console.log('Profile created successfully in demo mode');
+      }
       
-      // Update local state with the new profile
-      setFamilyMembers([...familyMembers, createdProfile]);
       setNewMember({ name: '', age: '', gender: '', relation: '' });
     } catch (error) {
       console.error('Error creating family member:', error);
