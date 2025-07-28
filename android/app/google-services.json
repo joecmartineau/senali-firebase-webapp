@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "67286745357",
+    "project_id": "senali-235fb",
+    "storage_bucket": "senali-235fb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:67286745357:android:1cde35dc4578533a83b044",
+        "android_client_info": {
+          "package_name": "com.senali.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "67286745357-8iunlsokrbea3c23slam05jhjk7igpkc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCliNntL_XCqwNDpiK4QDYizCHadlxxFKA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "67286745357-8iunlsokrbea3c23slam05jhjk7igpkc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
