@@ -1,35 +1,25 @@
 #!/bin/bash
 
-echo "🚀 Building Senali APK..."
+echo "📱 Building Senali APK for Google Play Store..."
 
-# Step 1: Build the web application
-echo "📦 Building web application..."
+# First build for Firebase
+./build-for-firebase.sh
+
+# Build for Capacitor/Android
+echo "🔧 Building for Capacitor..."
 npm run build
 
-# Step 2: Initialize Capacitor (if not already done)
-if [ ! -d "android" ]; then
-    echo "🔧 Initializing Capacitor..."
-    npx cap init "Senali" "com.senali.app" --web-dir="dist/public"
-fi
-
-# Step 3: Add Android platform (if not already added)
-if [ ! -d "android" ]; then
-    echo "📱 Adding Android platform..."
-    npx cap add android
-fi
-
-# Step 4: Sync the web files to native projects
-echo "🔄 Syncing files to Android project..."
+# Sync with Capacitor
+echo "🔄 Syncing with Capacitor..."
 npx cap sync android
 
-# Step 5: Open Android Studio for APK build
-echo "🏗️ Opening Android Studio..."
-echo ""
-echo "NEXT STEPS:"
-echo "1. Android Studio will open"
-echo "2. In Android Studio, go to Build → Build Bundle(s) / APK(s) → Build APK(s)"
-echo "3. The APK will be generated in android/app/build/outputs/apk/debug/"
-echo "4. Transfer the APK to your phone and install"
-echo ""
+# Open Android Studio for final build and signing
+echo "🎯 Opening Android Studio..."
+echo "In Android Studio:"
+echo "1. Build > Generate Signed Bundle/APK"
+echo "2. Choose APK"
+echo "3. Create/select your keystore"
+echo "4. Build release APK"
+echo "5. Upload APK to Google Play Console"
 
 npx cap open android

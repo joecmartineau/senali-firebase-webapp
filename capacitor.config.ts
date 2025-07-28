@@ -2,7 +2,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.senali.app',
-  appName: 'Senali',
+  appName: 'Senali - AI Parenting Coach',
   webDir: 'dist/public',
   server: {
     androidScheme: 'https'
