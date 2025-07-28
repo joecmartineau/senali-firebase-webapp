@@ -200,12 +200,13 @@ CRITICAL INSTRUCTION: Only reference family information that is explicitly provi
     // Add the current user message
     messages.push({ role: 'user', content: message });
 
-    // Use GPT-4o for all users - app is now completely free
-    const modelToUse = 'gpt-4o';
+    // Determine model based on admin status - admin gets GPT-4o, others get GPT-3.5-turbo  
+    const modelToUse = isAdmin ? 'gpt-4o' : 'gpt-3.5-turbo';
     const maxTokens = isQuestionnaire ? 1000 : 800;
     const temperature = isQuestionnaire ? 0.3 : 0.7;
     
-    // Use GPT-4o for all users
+    console.log(`🔴 Using ${modelToUse} model for user ${user?.email || userUid}${isAdmin ? ' (ADMIN)' : ''}`);
+    
     const completion = await openai.chat.completions.create({
       model: modelToUse,
       messages: messages,

@@ -42,13 +42,15 @@ export default function PurchaseCredits({ onClose, currentCredits, onPurchaseCom
       ...IAP_PRODUCTS.CREDITS_100,
       icon: <Star className="w-8 h-8 text-yellow-400" />,
       popular: false,
-      color: 'from-gray-500 to-gray-600'
+      color: 'from-gray-500 to-gray-600',
+      savings: undefined
     },
     {
       ...IAP_PRODUCTS.CREDITS_500,
       icon: <Zap className="w-8 h-8 text-blue-400" />,
       popular: true,
-      color: 'from-blue-500 to-blue-600'
+      color: 'from-blue-500 to-blue-600',
+      savings: undefined
     },
     {
       ...IAP_PRODUCTS.CREDITS_1000,
@@ -169,7 +171,7 @@ export default function PurchaseCredits({ onClose, currentCredits, onPurchaseCom
               <li>• Credits are added instantly after purchase</li>
               <li>• No subscription fees or recurring charges</li>
               <li>• Credits never expire - use them whenever you want</li>
-              <li>• Full access to GPT-4o AI with all premium features</li>
+              <li>• Full access to AI coaching with all premium features</li>
             </ul>
           </div>
         </div>
