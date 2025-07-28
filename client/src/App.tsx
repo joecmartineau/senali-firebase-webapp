@@ -6,7 +6,7 @@ import { InfinityIcon } from "@/components/ui/infinity-icon";
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 // import FamilySetup from "@/pages/family-setup"; // Removed - causes React hook errors
-import FamilyProfilesNew from "@/pages/family-profiles-new";
+// import FamilyProfilesNew from "@/pages/family-profiles-new"; // Removed for MVP
 import AdminPanel from "@/components/admin/admin-panel";
 import ChatInterface from "@/pages/chat";
 import SubscriptionPage from "@/pages/subscription";
@@ -289,14 +289,11 @@ function SenaliApp() {
     );
   }
 
-  // Show family profiles management
+  // Family profiles removed for MVP
   if (showProfilesMenu) {
-    return (
-      <FamilyProfilesNew 
-        onBack={() => setShowProfilesMenu(false)}
-        user={user}
-      />
-    );
+    alert('Family profiles feature coming soon!');
+    setShowProfilesMenu(false);
+    return null;
   }
 
   // Show subscription page
@@ -314,7 +311,7 @@ function SenaliApp() {
     <ChatInterface 
       user={user} 
       onSignOut={onSignOut}
-      onManageProfiles={() => setShowProfilesMenu(true)} // Restore profiles functionality
+      onManageProfiles={() => setShowProfilesMenu(true)} // Family profiles coming soon
       onManageSubscription={() => setShowSubscription(true)}
     />
   );
