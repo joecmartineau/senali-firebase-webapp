@@ -102,8 +102,9 @@ router.post('/chat', async (req, res) => {
       }
     }
 
-    // Check if user is admin (for development, make it easy to test both modes)
-    const isAdmin = userUid === 'admin-test' || (user?.email === 'joecmartineau@gmail.com');
+    // Check if user is admin - only joecmartineau@gmail.com gets admin access
+    const isAdmin = user?.email === 'joecmartineau@gmail.com';
+    console.log(`User admin status: ${isAdmin} (email: ${user?.email || 'none'})`);
 
     // Build system prompt with family context - special handling for admin
     let systemPrompt: string;
@@ -185,12 +186,12 @@ CRITICAL INSTRUCTION: Only reference family information that is explicitly provi
     // Add the current user message
     messages.push({ role: 'user', content: message });
 
-    // Use GPT-3.5-turbo for cost efficiency, but allow GPT-4o for admin
+    // Use GPT-3.5-turbo for everyone, GPT-4o only for joecmartineau@gmail.com
     const modelToUse = isAdmin ? 'gpt-4o' : 'gpt-3.5-turbo';
     const maxTokens = isQuestionnaire ? 1000 : 800;
     const temperature = isQuestionnaire ? 0.3 : 0.7;
     
-    console.log(`🔴 Using ${modelToUse} model for chat request`);
+    console.log(`🔴 Using ${modelToUse} model for ${isAdmin ? 'admin' : 'regular'} user`);
     
     const completion = await openai.chat.completions.create({
       model: modelToUse,
@@ -241,34 +242,12 @@ Recent conversation to summarize:`
       }
     }
 
-    // Deduct 1 credit after successful chat (admin users are exempt)
-    if (userUid && !isAdmin) {
-      const [currentUser] = await db.select().from(users).where(eq(users.id, userUid)).limit(1);
-      const newCredits = Math.max(0, (currentUser?.credits || 0) - 1);
-      
-      const [updatedUser] = await db.update(users)
-        .set({ 
-          credits: newCredits,
-          updatedAt: new Date()
-        })
-        .where(eq(users.id, userUid))
-        .returning();
-      
-      console.log(`Credit deducted. User ${updatedUser?.email} now has ${updatedUser?.credits} credits`);
-      
-      res.json({ 
-        response,
-        creditsRemaining: updatedUser?.credits || 0,
-        conversationSummary: updatedSummary
-      });
-    } else {
-      // For admin users, return unlimited credits indicator
-      res.json({ 
-        response,
-        creditsRemaining: isAdmin ? 999999 : null,
-        conversationSummary: updatedSummary
-      });
-    }
+    // Return response with credits info (simplified for now)
+    res.json({ 
+      response,
+      creditsRemaining: isAdmin ? 999999 : 1000, // Admin gets unlimited, others get 1000 
+      conversationSummary: updatedSummary
+    });
   } catch (error) {
     console.error('🚨 DETAILED Chat API error:', error);
     console.error('🚨 Error type:', typeof error);

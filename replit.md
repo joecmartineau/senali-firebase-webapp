@@ -310,7 +310,7 @@ This is a full-stack TypeScript application built with a privacy-first, local st
   - Out-of-credits messaging guides users to purchase more
   - Admin users (joecmartineau@gmail.com) get unlimited access
 - **Monetization Strategy**: Balanced approach with AdMob banner ads + credit purchases for maximum revenue
-- **AI Model Usage**: GPT-3.5-turbo for all users (cost-efficient), GPT-4o reserved for admin account only
+- **AI Model Usage**: GPT-3.5-turbo for all users (cost-efficient), GPT-4o only for joecmartineau@gmail.com admin account
 
 ### Latest Updates (2025-01-25)
 
