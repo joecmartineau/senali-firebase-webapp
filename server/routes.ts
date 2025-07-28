@@ -549,6 +549,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Family profiles management routes (local server for development)
+  app.get('/api/family-profiles', async (req, res) => {
+    try {
+      console.log('Local server: Getting family profiles');
+      res.json([]);
+    } catch (error) {
+      console.error('Error getting family profiles:', error);
+      res.status(500).json({ error: 'Failed to get profiles' });
+    }
+  });
+
+  app.post('/api/family-profiles', async (req, res) => {
+    try {
+      const profileData = {
+        ...req.body,
+        id: Date.now().toString(),
+        userId: 'demo-user',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      console.log('Local server: Creating family profile for:', profileData.name);
+      res.status(201).json(profileData);
+    } catch (error) {
+      console.error('Error creating family profile:', error);
+      res.status(500).json({ error: 'Failed to create profile' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

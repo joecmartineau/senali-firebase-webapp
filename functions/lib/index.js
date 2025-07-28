@@ -62,7 +62,7 @@ exports.getFamilyProfiles = functions.https.onRequest((req, res) => {
             }
             // Get profiles from Firestore
             const profilesSnapshot = await admin.firestore()
-                .collection('childProfiles')
+                .collection('familyProfiles')
                 .where('userId', '==', userId)
                 .get();
             const profiles = profilesSnapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
@@ -98,11 +98,11 @@ exports.createFamilyProfile = functions.https.onRequest((req, res) => {
             const profileData = Object.assign(Object.assign({}, req.body), { userId, createdAt: admin.firestore.FieldValue.serverTimestamp(), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
             // Add profile to Firestore
             const docRef = await admin.firestore()
-                .collection('childProfiles')
+                .collection('familyProfiles')
                 .add(profileData);
             const createdProfile = await docRef.get();
             const profile = Object.assign({ id: createdProfile.id }, createdProfile.data());
-            console.log(`Created profile for ${profileData.childName}`);
+            console.log(`Created profile for ${profileData.name}`);
             return res.status(201).json(profile);
         }
         catch (error) {
@@ -119,7 +119,7 @@ exports.deleteFamilyProfile = functions.https.onRequest((req, res) => {
             return res.status(405).json({ error: 'Method not allowed' });
         }
         try {
-            const profileId = req.path.split('/').pop();
+            const profileId = req.query.id;
             if (!profileId) {
                 return res.status(400).json({ error: 'Profile ID required' });
             }
@@ -137,7 +137,7 @@ exports.deleteFamilyProfile = functions.https.onRequest((req, res) => {
             }
             // Verify ownership
             const profileDoc = await admin.firestore()
-                .collection('childProfiles')
+                .collection('familyProfiles')
                 .doc(profileId)
                 .get();
             if (!profileDoc.exists || ((_b = profileDoc.data()) === null || _b === void 0 ? void 0 : _b.userId) !== userId) {
@@ -145,7 +145,7 @@ exports.deleteFamilyProfile = functions.https.onRequest((req, res) => {
             }
             // Delete profile
             await admin.firestore()
-                .collection('childProfiles')
+                .collection('familyProfiles')
                 .doc(profileId)
                 .delete();
             console.log(`Deleted profile ${profileId}`);

@@ -1,56 +1,48 @@
-// Simple test to check if family profiles exist
-console.log('Testing family profiles...');
+// Test script for family profile creation
+const fetch = require('node-fetch');
 
-// Check if we can access the profiles directly
-const DB_NAME = 'SenaliDB';
-const VERSION = 2;
+const LOCAL_SERVER_URL = 'http://localhost:5000';
 
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, VERSION);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
+async function testFamilyProfileCreation() {
+  console.log('🧪 Testing family profile creation...');
+  
+  const testProfile = {
+    name: 'Joe',
+    age: 35,
+    gender: 'male',
+    relation: 'parent'
+  };
 
-async function checkProfiles() {
   try {
-    const db = await openDB();
-    const transaction = db.transaction(['childProfiles'], 'readonly');
-    const store = transaction.objectStore('childProfiles');
-    const request = store.getAll();
-    
-    request.onsuccess = () => {
-      const profiles = request.result;
-      console.log('📊 Total profiles in database:', profiles.length);
-      
-      if (profiles.length > 0) {
-        console.log('👥 All profiles:');
-        profiles.forEach(profile => {
-          console.log(`  - ${profile.childName} (userId: ${profile.userId}, relationship: ${profile.relationshipToUser})`);
-        });
-        
-        const user1Profiles = profiles.filter(p => p.userId === 'user-1');
-        console.log('👤 Profiles for user-1:', user1Profiles.length);
-        
-        if (user1Profiles.length > 0) {
-          console.log('✅ Found profiles for user-1:', user1Profiles.map(p => p.childName).join(', '));
-        } else {
-          console.log('❌ No profiles found for user-1, but found for:', 
-            [...new Set(profiles.map(p => p.userId))].join(', '));
-        }
-      } else {
-        console.log('❌ No profiles found in database at all');
-      }
-    };
-    
-    request.onerror = () => {
-      console.error('❌ Error reading profiles:', request.error);
-    };
+    // Test local server endpoint
+    const response = await fetch(`${LOCAL_SERVER_URL}/api/family-profiles`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(testProfile)
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('✅ Profile creation successful:', result);
+    } else {
+      const error = await response.text();
+      console.log('❌ Profile creation failed:', response.status, error);
+    }
+
+    // Test get all profiles
+    const getResponse = await fetch(`${LOCAL_SERVER_URL}/api/family-profiles`);
+    if (getResponse.ok) {
+      const profiles = await getResponse.json();
+      console.log('✅ Get profiles successful:', profiles);
+    } else {
+      console.log('❌ Get profiles failed:', getResponse.status);
+    }
+
   } catch (error) {
-    console.error('❌ Error accessing database:', error);
+    console.error('❌ Test failed with error:', error.message);
   }
 }
 
-// Run the test
-checkProfiles();
+testFamilyProfileCreation();

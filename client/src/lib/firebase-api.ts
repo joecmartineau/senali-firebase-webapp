@@ -1,7 +1,9 @@
 import { getAuth } from 'firebase/auth';
 
-// Firebase Functions URLs - update when deployed
-const FUNCTIONS_BASE_URL = 'https://us-central1-senali-235fb.cloudfunctions.net';
+// Firebase Functions URLs - use local server in development
+const FUNCTIONS_BASE_URL = import.meta.env.DEV 
+  ? 'http://localhost:5000/api'
+  : 'https://us-central1-senali-235fb.cloudfunctions.net';
 
 // Helper to get auth token
 async function getAuthToken(): Promise<string | null> {
@@ -47,12 +49,18 @@ async function makeAuthenticatedRequest(endpoint: string, options: RequestInit =
 export const familyProfilesAPI = {
   // Get all family profiles for the current user
   async getAll() {
-    return makeAuthenticatedRequest('getFamilyProfiles');
+    const endpoint = import.meta.env.DEV 
+      ? 'family-profiles'
+      : 'getFamilyProfiles';
+    return makeAuthenticatedRequest(endpoint);
   },
 
   // Create a new family profile
   async create(profileData: any) {
-    return makeAuthenticatedRequest('createFamilyProfile', {
+    const endpoint = import.meta.env.DEV 
+      ? 'family-profiles'
+      : 'createFamilyProfile';
+    return makeAuthenticatedRequest(endpoint, {
       method: 'POST',
       body: JSON.stringify(profileData)
     });

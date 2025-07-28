@@ -94,7 +94,7 @@ export const createFamilyProfile = functions.https.onRequest((req, res) => {
         ...createdProfile.data()
       };
 
-      console.log(`Created profile for ${profileData.childName}`);
+      console.log(`Created profile for ${profileData.name}`);
       return res.status(201).json(profile);
     } catch (error) {
       console.error('Error creating family profile:', error);
@@ -111,7 +111,7 @@ export const deleteFamilyProfile = functions.https.onRequest((req, res) => {
     }
 
     try {
-      const profileId = req.path.split('/').pop();
+      const profileId = req.query.id as string;
       if (!profileId) {
         return res.status(400).json({ error: 'Profile ID required' });
       }
@@ -141,7 +141,7 @@ export const deleteFamilyProfile = functions.https.onRequest((req, res) => {
 
       // Delete profile
       await admin.firestore()
-        .collection('childProfiles')
+        .collection('familyProfiles')
         .doc(profileId)
         .delete();
 
