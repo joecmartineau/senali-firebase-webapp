@@ -13,6 +13,7 @@ import SubscriptionPage from "@/pages/subscription";
 import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { createDemoUser, enableDemoMode, getDemoUser, signOutDemo } from "@/lib/demo-auth";
+import AdMobBanner from "@/components/ads/AdMobBanner";
 
 
 

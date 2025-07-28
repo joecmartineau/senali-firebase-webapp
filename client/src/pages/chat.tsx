@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User } from 'firebase/auth';
 import { MessageCircle, Send, LogOut, Users, Crown, Settings } from 'lucide-react';
 import { InfinityIcon } from '@/components/ui/infinity-icon';
+import AdMobBanner from '@/components/ads/AdMobBanner';
 
 interface Message {
   id: string;
@@ -303,6 +304,9 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white flex flex-col">
+      {/* Top Ad Banner */}
+      <AdMobBanner position="top" />
+      
       {/* Header */}
       <div className="bg-black/40 backdrop-blur-sm border-b border-green-500/20 p-3 shadow-lg">
         <div className="max-w-4xl mx-auto">
@@ -496,10 +500,11 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
               )}
             </Button>
           </div>
-          
-
         </div>
       </div>
+      
+      {/* Bottom Ad Banner */}
+      <AdMobBanner position="bottom" />
     </div>
   );
 }

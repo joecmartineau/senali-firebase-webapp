@@ -30,6 +30,10 @@ const config: CapacitorConfig = {
       resize: "body",
       style: "dark",
       resizeOnFullScreen: true
+    },
+    AdMob: {
+      appId: "ca-app-pub-3940256099942544~3347511713", // Test app ID - replace with your real app ID
+      initializeForTesting: true, // Remove this in production
     }
   },
   android: {
