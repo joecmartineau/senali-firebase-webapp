@@ -24,25 +24,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const { productId, credits, price, platform } = req.body;
       
-      console.log(`Credit purchase: ${credits} credits for user ${userId}`);
+      console.log(`🛒 Credit purchase request: ${credits} credits for user ${userId}`);
       
-      // In production, verify the purchase with the app store here
-      // For now, we'll grant credits directly
+      // Validate input
+      if (!credits || credits <= 0) {
+        return res.status(400).json({ error: 'Invalid credits amount' });
+      }
       
       // Get current user data first
       const [currentUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
       if (!currentUser) {
+        console.error(`User not found: ${userId}`);
         return res.status(404).json({ error: 'User not found' });
       }
       
+      console.log(`Current user credits: ${currentUser.credits}`);
+      
+      const newCredits = (currentUser.credits || 0) + credits;
+      const newTotalPurchased = (currentUser.totalPurchasedCredits || 0) + credits;
+      
+      console.log(`Updating user ${userId} credits from ${currentUser.credits} to ${newCredits}`);
+      
       const [updatedUser] = await db.update(users)
         .set({ 
-          credits: (currentUser.credits || 0) + credits,
-          totalPurchasedCredits: (currentUser.totalPurchasedCredits || 0) + credits,
+          credits: newCredits,
+          totalPurchasedCredits: newTotalPurchased,
           updatedAt: new Date()
         })
         .where(eq(users.id, userId))
         .returning();
+      
+      console.log(`✅ Credit purchase successful: User now has ${updatedUser?.credits} credits`);
       
       res.json({ 
         success: true, 
@@ -50,8 +62,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         purchasedCredits: credits
       });
     } catch (error) {
-      console.error('Credit purchase error:', error);
-      res.status(500).json({ error: 'Purchase failed' });
+      console.error('❌ Credit purchase error:', error);
+      res.status(500).json({ error: 'Purchase failed on server', details: error.message });
     }
   });
 
