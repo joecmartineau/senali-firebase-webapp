@@ -129,7 +129,16 @@ router.post('/chat', async (req, res) => {
         isAdmin = user.email === 'joecmartineau@gmail.com';
       }
       
-      console.log(`User ${user?.email || userUid} authenticated${isAdmin ? ' (ADMIN access)' : ''}`);
+      // Check credits for non-admin users
+      if (!isAdmin && (user?.credits || 0) <= 0) {
+        return res.status(403).json({ 
+          error: 'No credits remaining',
+          message: 'You have no credits left. Please purchase more credits to continue chatting.',
+          creditsRemaining: 0
+        });
+      }
+      
+      console.log(`User ${user?.email || userUid} has ${user?.credits || 'unlimited'} credits${isAdmin ? ' (ADMIN access)' : ''}`);
     }
 
     // Build system prompt with family context - special handling for admin
@@ -246,11 +255,34 @@ Recent conversation to summarize:`
       }
     }
 
-    // Return chat response - app is now completely free
-    res.json({ 
-      response,
-      conversationSummary: updatedSummary
-    });
+    // Deduct 1 credit after successful chat (admin users are exempt)
+    if (userUid && !isAdmin) {
+      const [currentUser] = await db.select().from(users).where(eq(users.id, userUid)).limit(1);
+      const newCredits = Math.max(0, (currentUser?.credits || 0) - 1);
+      
+      const [updatedUser] = await db.update(users)
+        .set({ 
+          credits: newCredits,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userUid))
+        .returning();
+      
+      console.log(`Credit deducted. User ${updatedUser?.email} now has ${updatedUser?.credits} credits`);
+      
+      res.json({ 
+        response,
+        creditsRemaining: updatedUser?.credits || 0,
+        conversationSummary: updatedSummary
+      });
+    } else {
+      // For admin users, return unlimited credits indicator
+      res.json({ 
+        response,
+        creditsRemaining: isAdmin ? 999999 : null,
+        conversationSummary: updatedSummary
+      });
+    }
   } catch (error) {
     console.error('🚨 DETAILED Chat API error:', error);
     console.error('🚨 Error type:', typeof error);

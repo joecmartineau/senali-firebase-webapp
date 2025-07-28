@@ -18,7 +18,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { default: adminRoutes } = await import('./routes/admin');
   app.use('/api/admin', adminRoutes);
   
-  // Subscription routes removed - app is now free
+  // Credit purchase routes
+  app.post('/api/purchase/credits', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { productId, credits, price, platform } = req.body;
+      
+      console.log(`Credit purchase: ${credits} credits for user ${userId}`);
+      
+      // In production, verify the purchase with the app store here
+      // For now, we'll grant credits directly
+      
+      // Get current user data first
+      const [currentUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!currentUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      const [updatedUser] = await db.update(users)
+        .set({ 
+          credits: (currentUser.credits || 0) + credits,
+          totalPurchasedCredits: (currentUser.totalPurchasedCredits || 0) + credits,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      res.json({ 
+        success: true, 
+        newCreditsTotal: updatedUser?.credits || 0,
+        purchasedCredits: credits
+      });
+    } catch (error) {
+      console.error('Credit purchase error:', error);
+      res.status(500).json({ error: 'Purchase failed' });
+    }
+  });
+
+  // Get user credits
+  app.get('/api/user/credits', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      
+      res.json({ 
+        credits: user?.credits || 0,
+        totalPurchased: user?.totalPurchasedCredits || 0
+      });
+    } catch (error) {
+      console.error('Error fetching credits:', error);
+      res.status(500).json({ error: 'Failed to fetch credits' });
+    }
+  });
 
   // Auth middleware
   await setupAuth(app);
@@ -50,12 +101,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingUser = await db.select().from(users).where(eq(users.id, uid)).limit(1);
       
       if (existingUser.length === 0) {
-        // Create new user record
+        // Create new user record with starting credits
         await db.insert(users).values({
           id: uid,
           email,
           displayName: displayName || email.split('@')[0],
           profileImageUrl: photoURL || null,
+          credits: 25, // Starting credits for new users
+          totalPurchasedCredits: 0,
           createdAt: new Date(),
           updatedAt: new Date()
         });

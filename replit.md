@@ -282,18 +282,24 @@ This is a full-stack TypeScript application built with a privacy-first, local st
   - Testing procedures and troubleshooting guide for AdMob implementation
 - **Benefits**: Sustainable revenue model for completely free app with unlimited GPT-4o access for all users
 
-#### Complete Payment System Removal (2025-01-28)
-- **Payment-Free Architecture**: Eliminated all subscription, credit, and payment systems completely
-  - **Database Schema**: Removed credits, subscription, and payment-related fields from user table
-  - **Backend APIs**: Removed all credit checking, subscription validation, and payment processing
-  - **Frontend UI**: Updated chat interface to show "Free & Unlimited" messaging throughout
-  - **GPT-4o Access**: All users now get unlimited access to GPT-4o model without restrictions
-  - **Clean Codebase**: Removed all Stripe, payment, and subscription-related code and components
-- **User Experience**: App now provides unlimited AI coaching without any payment barriers or limitations
-  - No credit warnings, payment prompts, or subscription requirements
-  - Green "Free" button replaces subscription management
-  - Seamless unlimited chat experience for all users
-- **Monetization Strategy**: Switched to AdMob banner advertisements for sustainable revenue without user payments
+#### Credit-Based Monetization System (2025-01-28)
+- **Credit Purchase System**: Implemented in-app purchase credit system for sustainable monetization
+  - **Pricing Model**: $7.99 for 1000 credits, 1 credit per message consumption
+  - **Database Schema**: Added credits and totalPurchasedCredits fields to user table
+  - **Starting Credits**: New users get 25 free credits to try the service
+  - **Purchase Integration**: In-app purchase system ready for Google Play Store and App Store
+  - **Credit Tracking**: Real-time credit display and consumption tracking in chat interface
+- **Purchase Experience**: Comprehensive credit purchase flow with multiple pricing tiers
+  - **Credit Packages**: 100 credits ($0.99), 500 credits ($4.99), 1000 credits ($7.99)
+  - **Purchase Modal**: Beautiful purchase interface with product comparisons and savings indicators
+  - **Instant Fulfillment**: Credits added immediately after purchase verification
+  - **No Subscription**: One-time purchases with credits that never expire
+- **User Experience**: Clear credit management with purchase prompts when credits run low
+  - Credit counter displayed in chat header
+  - "Buy Credits" button for easy access to purchase flow
+  - Out-of-credits messaging guides users to purchase more
+  - Admin users (joecmartineau@gmail.com) get unlimited access
+- **Monetization Strategy**: Balanced approach with AdMob banner ads + credit purchases for maximum revenue
 
 ### Latest Updates (2025-01-25)
 

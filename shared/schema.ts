@@ -34,7 +34,9 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  // Subscription system removed - app is now completely free
+  credits: serial("credits").default(25), // Credits for messages - 1 credit per message
+  // In-app purchase system for mobile stores
+  totalPurchasedCredits: serial("total_purchased_credits").default(0), // Track lifetime purchases
   // User profile completion tracking
   fullName: varchar("full_name"), // User's preferred full name
   hasCompletedProfile: boolean("has_completed_profile").default(false),

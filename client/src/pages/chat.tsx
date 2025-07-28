@@ -6,6 +6,7 @@ import { User } from 'firebase/auth';
 import { MessageCircle, Send, LogOut, Users, Crown, Settings } from 'lucide-react';
 import { InfinityIcon } from '@/components/ui/infinity-icon';
 import AdMobBanner from '@/components/ads/AdMobBanner';
+import PurchaseCredits from './purchase-credits';
 
 interface Message {
   id: string;
@@ -18,10 +19,9 @@ interface ChatInterfaceProps {
   user: User;
   onSignOut: () => void;
   onManageProfiles: () => void;
-  onManageSubscription: () => void;
 }
 
-export default function ChatInterface({ user, onSignOut, onManageProfiles, onManageSubscription }: ChatInterfaceProps) {
+export default function ChatInterface({ user, onSignOut, onManageProfiles }: ChatInterfaceProps) {
   console.log('🔴 ChatInterface rendered with user:', user);
   
   // Simplified authentication check with better error handling
@@ -45,12 +45,55 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
   const [isLoading, setIsLoading] = useState(false);
   const [familyProfiles, setFamilyProfiles] = useState<any[]>([]);
   const [conversationSummary, setConversationSummary] = useState<string>('');
+  const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Local storage keys
   const MESSAGES_KEY = `senali_messages_${user.uid}`;
   const SUMMARY_KEY = `senali_summary_${user.uid}`;
   const MAX_MESSAGES = 1000;
+
+  // Load credits on component mount
+  useEffect(() => {
+    const loadCredits = async () => {
+      try {
+        const response = await fetch('/api/user/credits');
+        if (response.ok) {
+          const data = await response.json();
+          setCreditsRemaining(data.credits);
+          
+          // Update credits display
+          const creditsDisplay = document.getElementById('credits-display');
+          if (creditsDisplay) {
+            creditsDisplay.textContent = `${data.credits} credits`;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading credits:', error);
+      }
+    };
+    
+    loadCredits();
+  }, [user.uid]);
+
+  const onManageSubscription = () => {
+    if (user.email === 'joecmartineau@gmail.com') {
+      window.location.href = '/admin';
+    } else {
+      setShowPurchaseModal(true);
+    }
+  };
+
+  const handlePurchaseComplete = (newCredits: number) => {
+    setCreditsRemaining(newCredits);
+    
+    // Update credits display
+    const creditsDisplay = document.getElementById('credits-display');
+    if (creditsDisplay) {
+      creditsDisplay.textContent = `${newCredits} credits`;
+    }
+  };
 
   // Load messages from local storage
   const loadMessages = () => {
@@ -242,7 +285,18 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
         // Save messages to local storage
         saveMessagesToStorage(finalMessages);
         
-        // Update conversation summary if provided
+        // Update credits if provided
+        if (typeof data.creditsRemaining === 'number') {
+          setCreditsRemaining(data.creditsRemaining);
+          
+          // Update credits display
+          const creditsDisplay = document.getElementById('credits-display');
+          if (creditsDisplay) {
+            creditsDisplay.textContent = `${data.creditsRemaining} credits`;
+          }
+        }
+        
+        // Update conversation summary if provided  
         if (data.updatedSummary) {
           setConversationSummary(data.updatedSummary);
           saveSummaryToStorage(data.updatedSummary);
@@ -250,19 +304,39 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
         
         // Chat response received successfully
       } else if (response.status === 403) {
-        // Handle API rate limiting or other errors
+        // Handle credit shortage or other errors
         const errorData = await response.json();
         console.log('🔴 403 Error data:', errorData);
         
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: "I'm temporarily unable to respond. Please try again in a moment.",
-          role: 'assistant',
-          timestamp: new Date()
-        };
-        const finalMessages = [...updatedMessages, errorMessage];
-        setMessages(finalMessages);
-        saveMessagesToStorage(finalMessages);
+        if (errorData.error === 'No credits remaining') {
+          // Show purchase credits prompt
+          const errorMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: "You're out of credits! Purchase more credits to continue chatting with me. Click the 'Buy Credits' button above to get started.",
+            role: 'assistant',
+            timestamp: new Date()
+          };
+          const finalMessages = [...updatedMessages, errorMessage];
+          setMessages(finalMessages);
+          saveMessagesToStorage(finalMessages);
+          
+          // Update credits display
+          setCreditsRemaining(0);
+          const creditsDisplay = document.getElementById('credits-display');
+          if (creditsDisplay) {
+            creditsDisplay.textContent = '0 credits';
+          }
+        } else {
+          const errorMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: "I'm temporarily unable to respond. Please try again in a moment.",
+            role: 'assistant',
+            timestamp: new Date()
+          };
+          const finalMessages = [...updatedMessages, errorMessage];
+          setMessages(finalMessages);
+          saveMessagesToStorage(finalMessages);
+        }
       } else {
         const errorText = await response.text();
         console.log('🔴 HTTP Error Response:', errorText);
@@ -304,9 +378,6 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white flex flex-col">
-      {/* Top Ad Banner */}
-      <AdMobBanner position="top" />
-      
       {/* Header */}
       <div className="bg-black/40 backdrop-blur-sm border-b border-green-500/20 p-3 shadow-lg">
         <div className="max-w-4xl mx-auto">
@@ -323,9 +394,9 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
                 </p>
               </div>
             </div>
-            <div className="px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
-              <span className="text-green-300 text-xs font-medium">
-                Free & Unlimited
+            <div className="px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full">
+              <span className="text-blue-300 text-xs font-medium" id="credits-display">
+                Loading credits...
               </span>
             </div>
           </div>
@@ -357,10 +428,10 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
               onClick={onManageSubscription}
               variant="outline"
               size="sm"
-              className="bg-gradient-to-r from-green-500/20 to-green-600/20 border-green-500/50 text-green-300 hover:from-green-500/30 hover:to-green-600/30 text-xs whitespace-nowrap flex-shrink-0 px-2 py-1 h-7"
+              className="bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border-yellow-500/50 text-yellow-300 hover:from-yellow-500/30 hover:to-yellow-600/30 text-xs whitespace-nowrap flex-shrink-0 px-2 py-1 h-7"
             >
               <MessageCircle className="w-3 h-3 mr-1" />
-              Free
+              Buy Credits
             </Button>
             <Button
               onClick={onSignOut}
@@ -505,6 +576,15 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
       
       {/* Bottom Ad Banner */}
       <AdMobBanner position="bottom" />
+      
+      {/* Purchase Credits Modal */}
+      {showPurchaseModal && (
+        <PurchaseCredits
+          onClose={() => setShowPurchaseModal(false)}
+          currentCredits={creditsRemaining || 0}
+          onPurchaseComplete={handlePurchaseComplete}
+        />
+      )}
     </div>
   );
 }
