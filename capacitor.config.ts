@@ -34,6 +34,10 @@ const config: CapacitorConfig = {
     AdMob: {
       appId: "ca-app-pub-3940256099942544~3347511713", // Test app ID - replace with your real app ID
       initializeForTesting: true, // Remove this in production
+    },
+    // Google Play Billing configuration
+    GooglePlayBilling: {
+      enableDebugging: true // Remove in production
     }
   },
   android: {
