@@ -267,6 +267,16 @@ This is a full-stack TypeScript application built with a privacy-first, local st
 
 ### Latest Updates (2025-01-28)
 
+#### Enhanced Conversational Guidelines (2025-01-28)
+- **Gentle Topic Management**: Implemented sophisticated system to keep Senali focused on parenting while staying flexible
+  - **Natural Reminders**: Can discuss any topic but subtly reminds users of parenting coach role when conversations stray
+  - **Smart Frequency**: Only reminds every 5th message if users continue off-topic, never forceful or dismissive
+  - **Example Approach**: "That sounds interesting! As a parenting coach, I'm curious how that affects your family time..."
+  - **Warm Tone**: Always maintains supportive, empathetic conversation regardless of topic
+  - **User Request**: Specifically implemented per user feedback for polite, non-forceful topic guidance
+
+### Latest Updates (2025-01-28)
+
 #### AdMob Banner Advertisement Implementation (2025-01-28)
 - **Complete AdMob Integration**: Successfully implemented banner advertisements at top and bottom of screen for monetization
   - **AdMob Component**: Created `client/src/components/ads/AdMobBanner.tsx` with mobile-native and web fallback support
