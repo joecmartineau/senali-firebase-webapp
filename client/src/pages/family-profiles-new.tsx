@@ -142,7 +142,13 @@ export default function FamilyProfilesNew({ onBack, user }: FamilyProfilesNewPro
   };
 
   const addFamilyMember = async () => {
+    console.log('=== ADD FAMILY MEMBER DEBUG ===');
+    console.log('Form data:', newMember);
+    console.log('User state:', user ? 'User exists' : 'No user (demo mode)');
+    console.log('Current members count:', familyMembers.length);
+    
     if (!newMember.name || !newMember.age || !newMember.gender || !newMember.relation) {
+      console.log('Form validation failed - missing fields');
       alert('Please fill in all fields');
       return;
     }
@@ -157,26 +163,23 @@ export default function FamilyProfilesNew({ onBack, user }: FamilyProfilesNewPro
         questionnaire: []
       };
 
-      if (user) {
-        // User is authenticated - try Firebase
-        console.log('Creating profile in Firebase:', profileData);
-        const createdProfile = await familyProfilesAPI.create(profileData);
-        console.log('Profile created successfully in Firebase:', createdProfile);
-        
-        // Update local state with the Firebase response
-        setFamilyMembers([...familyMembers, createdProfile]);
-      } else {
-        // No user - work in demo mode with localStorage only
-        console.log('Creating profile in demo mode:', profileData);
-        
-        // Update local state and localStorage
-        const updatedMembers = [...familyMembers, profileData];
-        setFamilyMembers(updatedMembers);
-        localStorage.setItem(getStorageKey(), JSON.stringify(updatedMembers));
-        console.log('Profile created successfully in demo mode');
-      }
+      console.log('Profile data prepared:', profileData);
+
+      // SIMPLIFIED: Always use localStorage for now to eliminate Firebase issues
+      console.log('SIMPLIFIED MODE: Using localStorage only');
+      
+      // Update local state and localStorage
+      const updatedMembers = [...familyMembers, profileData];
+      console.log('Updated members array:', updatedMembers);
+      
+      setFamilyMembers(updatedMembers);
+      localStorage.setItem(getStorageKey(), JSON.stringify(updatedMembers));
+      console.log('Profile saved to localStorage successfully');
+      console.log('Storage key used:', getStorageKey());
       
       setNewMember({ name: '', age: '', gender: '', relation: '' });
+      console.log('Form reset completed');
+      alert('Family member added successfully!');
     } catch (error) {
       console.error('Error creating family member:', error);
       console.error('Error details:', error.message);
