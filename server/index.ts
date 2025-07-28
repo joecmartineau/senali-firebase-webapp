@@ -30,11 +30,12 @@ app.post('/api/purchase/credits', (req, res) => {
     const { productId, purchaseToken, credits, platform } = req.body;
     
     // Get credits amount from product ID
-    const productCredits = {
+    const productCreditsMap: { [key: string]: number } = {
       'com.senali.credits.100': 100,
       'com.senali.credits.500': 500, 
       'com.senali.credits.1000': 1000
-    }[productId] || credits;
+    };
+    const productCredits = productCreditsMap[productId] || credits;
     
     console.log(`🛒 ${platform} purchase: ${productId} for ${productCredits} credits`);
     
