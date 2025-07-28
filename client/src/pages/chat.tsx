@@ -19,9 +19,10 @@ interface ChatInterfaceProps {
   user: User;
   onSignOut: () => void;
   onManageProfiles: () => void;
+  onManageSubscription?: () => void;
 }
 
-export default function ChatInterface({ user, onSignOut, onManageProfiles }: ChatInterfaceProps) {
+export default function ChatInterface({ user, onSignOut, onManageProfiles, onManageSubscription }: ChatInterfaceProps) {
   console.log('🔴 ChatInterface rendered with user:', user);
   
   // Simplified authentication check with better error handling
@@ -77,13 +78,7 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
     loadCredits();
   }, [user.uid]);
 
-  const onManageSubscription = () => {
-    if (user.email === 'joecmartineau@gmail.com') {
-      window.location.href = '/admin';
-    } else {
-      setShowPurchaseModal(true);
-    }
-  };
+
 
   const handlePurchaseComplete = (newCredits: number) => {
     setCreditsRemaining(newCredits);
@@ -425,7 +420,7 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles }: Cha
               )}
             </Button>
             <Button
-              onClick={onManageSubscription}
+              onClick={() => onManageSubscription?.() || setShowPurchaseModal(true)}
               variant="outline"
               size="sm"
               className="bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border-yellow-500/50 text-yellow-300 hover:from-yellow-500/30 hover:to-yellow-600/30 text-xs whitespace-nowrap flex-shrink-0 px-2 py-1 h-7"

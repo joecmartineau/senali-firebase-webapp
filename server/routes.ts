@@ -63,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('❌ Credit purchase error:', error);
-      res.status(500).json({ error: 'Purchase failed on server', details: error.message });
+      res.status(500).json({ error: 'Purchase failed on server', details: (error as Error).message });
     }
   });
 
@@ -596,7 +596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         uid: user.id,
         email: user.email,
         displayName: user.displayName || user.email?.split('@')[0] || 'Unknown',
-        subscription: user.subscription || 'free', 
+        subscription: 'free', 
         credits: user.credits || 25,
         lastActive: user.updatedAt,
       }));
@@ -605,7 +605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(mappedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
-      res.status(500).json({ error: 'Failed to fetch users', details: error.message });
+      res.status(500).json({ error: 'Failed to fetch users', details: (error as Error).message });
     }
   });
 
