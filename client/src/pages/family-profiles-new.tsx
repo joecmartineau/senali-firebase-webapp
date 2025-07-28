@@ -150,7 +150,9 @@ export default function FamilyProfilesNew({ onBack, user }: FamilyProfilesNewPro
       setNewMember({ name: '', age: '', gender: '', relation: '' });
     } catch (error) {
       console.error('Error creating family member:', error);
-      alert('Failed to create family member. Please try again.');
+      console.error('Error details:', error.message);
+      console.error('Error stack:', error.stack);
+      alert(`Failed to create family member: ${error.message}`);
     }
   };
 

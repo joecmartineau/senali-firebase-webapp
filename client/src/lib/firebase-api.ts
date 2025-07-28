@@ -39,6 +39,12 @@ async function makeAuthenticatedRequest(endpoint: string, options: RequestInit =
 
   if (!response.ok) {
     const error = await response.text();
+    console.error('API Request failed:', {
+      url: `${FUNCTIONS_BASE_URL}/${endpoint}`,
+      status: response.status,
+      statusText: response.statusText,
+      error
+    });
     throw new Error(`API Error: ${response.status} - ${error}`);
   }
 
@@ -60,6 +66,9 @@ export const familyProfilesAPI = {
     const endpoint = import.meta.env.DEV 
       ? 'family-profiles'
       : 'createFamilyProfile';
+    console.log('Creating family profile:', profileData);
+    console.log('Using endpoint:', endpoint);
+    console.log('Base URL:', FUNCTIONS_BASE_URL);
     return makeAuthenticatedRequest(endpoint, {
       method: 'POST',
       body: JSON.stringify(profileData)
