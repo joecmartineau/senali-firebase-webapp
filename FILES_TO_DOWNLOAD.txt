@@ -1,0 +1,51 @@
+SENALI APP - ESSENTIAL FILES TO DOWNLOAD FOR DEPLOYMENT
+
+=== ROOT CONFIGURATION FILES ===
+package.json
+package-lock.json
+tsconfig.json
+vite.config.ts
+tailwind.config.ts
+postcss.config.js
+components.json
+capacitor.config.ts
+drizzle.config.ts
+replit.md
+
+=== COMPLETE FOLDERS TO DOWNLOAD ===
+client/                  (entire folder - React frontend)
+server/                  (entire folder - Express backend)
+shared/                  (entire folder - shared types)
+functions/               (entire folder - Firebase functions)
+android/                 (entire folder - mobile app config)
+
+=== IMPORTANT: DO NOT DOWNLOAD ===
+dist/                    (build output - will be regenerated)
+node_modules/           (dependencies - will be reinstalled)
+.cache/                 (build cache)
+.env                    (contains secrets)
+attached_assets/        (screenshots and temp files)
+*.pid files             (process IDs)
+
+=== TOTAL SIZE ESTIMATE ===
+Source code: ~50-100 MB
+Without node_modules: Much smaller download
+With build artifacts: Would be 500+ MB (unnecessary)
+
+=== QUICK DOWNLOAD METHOD ===
+1. In Replit: Click three dots (⋯) → "Download as ZIP"
+2. Extract ZIP file on your computer
+3. Delete these folders from extracted files:
+   - dist/
+   - node_modules/
+   - .cache/
+   - attached_assets/
+4. Ready for deployment!
+
+=== VERIFICATION ===
+After download, you should have:
+✓ package.json (with all dependencies listed)
+✓ client/src/ folder (React components)
+✓ server/ folder (Express API)
+✓ Configuration files (vite.config.ts, etc.)
+✓ android/ folder (for Play Store)
