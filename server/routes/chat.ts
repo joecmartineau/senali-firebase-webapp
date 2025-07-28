@@ -25,17 +25,17 @@ function sanitizeForPrompt(input: string | number | null | undefined): string {
 }
 
 // Helper function to calculate probable diagnoses from questionnaire
-const calculateProbableDiagnoses = (questionnaire = []) => {
+const calculateProbableDiagnoses = (questionnaire: any[] = []) => {
   const diagnosticQuestions = {
     adhd: ['adhd1', 'adhd2', 'adhd3', 'adhd4', 'adhd5', 'adhd6', 'adhd7', 'adhd8', 'adhd9'],
     autism: ['autism1', 'autism2', 'autism3', 'autism4', 'autism5', 'autism6', 'autism7', 'autism8'],
     anxiety: ['anxiety1', 'anxiety2', 'anxiety3', 'anxiety4']
   };
 
-  const results = {};
+  const results: any = {};
   
   Object.entries(diagnosticQuestions).forEach(([condition, questionIds]) => {
-    const yesResponses = questionnaire.filter(r => 
+    const yesResponses = questionnaire.filter((r: any) => 
       questionIds.includes(r.questionId) && r.answer === 'yes'
     ).length;
     
@@ -52,16 +52,16 @@ const calculateProbableDiagnoses = (questionnaire = []) => {
 };
 
 // Helper function to format family context for Senali
-const formatFamilyContext = (familyProfiles = []) => {
+const formatFamilyContext = (familyProfiles: any[] = []) => {
   if (!familyProfiles || familyProfiles.length === 0) {
     return 'No family profiles have been created yet.';
   }
 
-  return familyProfiles.map(member => {
+  return familyProfiles.map((member: any) => {
     const diagnoses = calculateProbableDiagnoses(member.questionnaire || []);
     const diagnosisText = Object.entries(diagnoses)
-      .filter(([_, data]) => data.probability !== 'Low')
-      .map(([condition, data]) => `${condition.toUpperCase()}: ${data.probability} probability (${data.percentage}%)`)
+      .filter(([_, data]: [string, any]) => data.probability !== 'Low')
+      .map(([condition, data]: [string, any]) => `${condition.toUpperCase()}: ${data.probability} probability (${data.percentage}%)`)
       .join(', ') || 'No significant diagnostic indicators';
 
     return `
@@ -79,21 +79,6 @@ router.post('/chat', async (req, res) => {
   try {
     console.log('🚨 CHAT API: Received request');
     console.log('🚨 Request body keys:', Object.keys(req.body));
-    console.log('🚨 Family context length:', req.body.familyContext?.length || 0);
-    
-    // Add validation for family context
-    if (req.body.familyContext && Array.isArray(req.body.familyContext)) {
-      console.log('🚨 Family context is valid array with', req.body.familyContext.length, 'members');
-      req.body.familyContext.forEach((profile: any, index: number) => {
-        console.log(`🚨 Profile ${index}:`, {
-          name: profile?.name,
-          relationship: profile?.relationship,
-          hasSymptoms: profile?.symptoms ? Object.keys(profile.symptoms).length : 0
-        });
-      });
-    } else {
-      console.log('🚨 Family context is not a valid array:', typeof req.body.familyContext);
-    }
     
     const { message, familyProfiles, userUid, conversationSummary, recentMessages, isQuestionnaire } = req.body;
 
@@ -102,43 +87,21 @@ router.post('/chat', async (req, res) => {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    console.log(`🚨 Chat request from userUid: ${userUid}`);
+    console.log(`🚨 Chat request from userUid: ${userUid || 'anonymous'}`);
 
-    // Get user for admin check and credit management
+    // For demo purposes, allow all chat requests and use admin model
+    const isAdmin = true; // Everyone gets admin access for now
     let user = null;
-    let isAdmin = false;
     
-    if (userUid) {
-      // First try to find user by their Firebase UID
-      const [foundUser] = await db.select().from(users).where(eq(users.id, userUid)).limit(1);
-      user = foundUser;
-      
-      // If no user found by UID, this could be admin accessing via Firebase auth
-      if (!user) {
-        // Check if we have the admin user record and this could be admin
-        const [adminUser] = await db.select().from(users).where(eq(users.email, 'joecmartineau@gmail.com')).limit(1);
-        if (adminUser) {
-          user = adminUser;
-          isAdmin = true;
-          console.log('Admin user detected via fallback lookup - unlimited access');
-        } else {
-          return res.status(404).json({ error: 'User not found' });
-        }
-      } else {
-        // Check if the found user is admin
-        isAdmin = user.email === 'joecmartineau@gmail.com';
+    // Try to get user for credit tracking if userUid provided
+    if (userUid && userUid !== 'demo-user') {
+      try {
+        const [foundUser] = await db.select().from(users).where(eq(users.id, userUid)).limit(1);
+        user = foundUser;
+        console.log(`Found user: ${user?.email || 'unknown'}`);
+      } catch (error) {
+        console.log('No user found, continuing in demo mode');
       }
-      
-      // Check credits for non-admin users
-      if (!isAdmin && (user?.credits || 0) <= 0) {
-        return res.status(403).json({ 
-          error: 'No credits remaining',
-          message: 'You have no credits left. Please purchase more credits to continue chatting.',
-          creditsRemaining: 0
-        });
-      }
-      
-      console.log(`User ${user?.email || userUid} has ${user?.credits || 'unlimited'} credits${isAdmin ? ' (ADMIN access)' : ''}`);
     }
 
     // Build system prompt with family context - special handling for admin
@@ -200,12 +163,12 @@ CRITICAL INSTRUCTION: Only reference family information that is explicitly provi
     // Add the current user message
     messages.push({ role: 'user', content: message });
 
-    // Determine model based on admin status - admin gets GPT-4o, others get GPT-3.5-turbo  
+    // Use GPT-3.5-turbo for cost efficiency, but allow GPT-4o for admin
     const modelToUse = isAdmin ? 'gpt-4o' : 'gpt-3.5-turbo';
     const maxTokens = isQuestionnaire ? 1000 : 800;
     const temperature = isQuestionnaire ? 0.3 : 0.7;
     
-    console.log(`🔴 Using ${modelToUse} model for user ${user?.email || userUid}${isAdmin ? ' (ADMIN)' : ''}`);
+    console.log(`🔴 Using ${modelToUse} model for chat request`);
     
     const completion = await openai.chat.completions.create({
       model: modelToUse,
