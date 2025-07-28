@@ -43,7 +43,6 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [familyProfiles, setFamilyProfiles] = useState<any[]>([]);
-  const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
   const [conversationSummary, setConversationSummary] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -116,10 +115,9 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
       console.error('Error loading family profiles:', error);
     }
 
-    // Load initial credit count using new subscription endpoint
-    const loadCredits = async () => {
+    // Ensure user exists in database
+    const initializeUser = async () => {
       try {
-        // First ensure user exists in database
         await fetch('/api/auth/firebase-signin', {
           method: 'POST',
           headers: {
@@ -132,19 +130,12 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
             photoURL: user.photoURL
           })
         });
-        
-        // Get subscription status and credits
-        const response = await fetch(`/api/subscriptions/status/${user.uid}`);
-        if (response.ok) {
-          const data = await response.json();
-          setCreditsRemaining(data.credits);
-        }
       } catch (error) {
-        console.error('Error loading credits:', error);
+        console.error('Error initializing user:', error);
       }
     };
 
-    loadCredits();
+    initializeUser();
   }, [user]);
 
   useEffect(() => {
@@ -256,25 +247,21 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
           saveSummaryToStorage(data.updatedSummary);
         }
         
-        // Update credits if provided
-        if (typeof data.creditsRemaining === 'number') {
-          setCreditsRemaining(data.creditsRemaining);
-        }
+        // Chat response received successfully
       } else if (response.status === 403) {
-        // Handle no credits error
+        // Handle API rate limiting or other errors
         const errorData = await response.json();
         console.log('🔴 403 Error data:', errorData);
         
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
-          content: "You've used all your credits! To continue our conversation, you can subscribe for $7.99/month to get 1,000 credits, or purchase additional credits. Click the 'Subscription' button above to see your options.",
+          content: "I'm temporarily unable to respond. Please try again in a moment.",
           role: 'assistant',
           timestamp: new Date()
         };
         const finalMessages = [...updatedMessages, errorMessage];
         setMessages(finalMessages);
         saveMessagesToStorage(finalMessages);
-        setCreditsRemaining(0);
       } else {
         const errorText = await response.text();
         console.log('🔴 HTTP Error Response:', errorText);
@@ -332,13 +319,11 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
                 </p>
               </div>
             </div>
-            {creditsRemaining !== null && (
-              <div className="px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
-                <span className="text-green-300 text-xs font-medium">
-                  {creditsRemaining} credits
-                </span>
-              </div>
-            )}
+            <div className="px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
+              <span className="text-green-300 text-xs font-medium">
+                Free & Unlimited
+              </span>
+            </div>
           </div>
           
           {/* Bottom row - Action buttons */}
@@ -368,10 +353,10 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
               onClick={onManageSubscription}
               variant="outline"
               size="sm"
-              className="bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border-yellow-500/50 text-yellow-300 hover:from-yellow-500/30 hover:to-yellow-600/30 text-xs whitespace-nowrap flex-shrink-0 px-2 py-1 h-7"
+              className="bg-gradient-to-r from-green-500/20 to-green-600/20 border-green-500/50 text-green-300 hover:from-green-500/30 hover:to-green-600/30 text-xs whitespace-nowrap flex-shrink-0 px-2 py-1 h-7"
             >
-              <Crown className="w-3 h-3 mr-1" />
-              Subscription
+              <MessageCircle className="w-3 h-3 mr-1" />
+              Free
             </Button>
             <Button
               onClick={onSignOut}
@@ -512,25 +497,7 @@ export default function ChatInterface({ user, onSignOut, onManageProfiles, onMan
             </Button>
           </div>
           
-          {creditsRemaining !== null && creditsRemaining <= 10 && (
-            <div className="mt-3 text-center">
-              <p className="text-yellow-400 text-sm">
-                ⚠️ {creditsRemaining} credits remaining
-              </p>
-              {creditsRemaining === 0 && (
-                <div className="mt-2">
-                  <Button
-                    onClick={onManageSubscription}
-                    size="sm"
-                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-medium"
-                  >
-                    <Crown className="w-4 h-4 mr-2" />
-                    Get More Credits
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
+
         </div>
       </div>
     </div>

@@ -129,15 +129,7 @@ router.post('/chat', async (req, res) => {
         isAdmin = user.email === 'joecmartineau@gmail.com';
       }
       
-      // Only check credits for non-admin users
-      if (!isAdmin && user.credits <= 0) {
-        return res.status(403).json({ 
-          error: 'No credits remaining',
-          message: 'You have no credits left. Please upgrade to continue chatting.' 
-        });
-      }
-      
-      console.log(`User ${user?.email || userUid} has ${user?.credits || 'unlimited'} credits before chat${isAdmin ? ' (ADMIN - unlimited access)' : ''}`);
+      console.log(`User ${user?.email || userUid} authenticated${isAdmin ? ' (ADMIN access)' : ''}`);
     }
 
     // Build system prompt with family context - special handling for admin
@@ -199,12 +191,12 @@ CRITICAL INSTRUCTION: Only reference family information that is explicitly provi
     // Add the current user message
     messages.push({ role: 'user', content: message });
 
-    // Handle questionnaire analysis differently
-    const modelToUse = isQuestionnaire ? 'gpt-4o' : (isAdmin ? 'gpt-4o' : 'gpt-3.5-turbo');
-    const maxTokens = isQuestionnaire ? 1000 : (isAdmin ? 1000 : 500);
-    const temperature = isQuestionnaire ? 0.3 : (isAdmin ? 0.8 : 0.7);
+    // Use GPT-4o for all users - app is now completely free
+    const modelToUse = 'gpt-4o';
+    const maxTokens = isQuestionnaire ? 1000 : 800;
+    const temperature = isQuestionnaire ? 0.3 : 0.7;
     
-    // Use GPT-4o for questionnaire analysis and admin, GPT-3.5-turbo for regular users
+    // Use GPT-4o for all users
     const completion = await openai.chat.completions.create({
       model: modelToUse,
       messages: messages,
@@ -254,31 +246,11 @@ Recent conversation to summarize:`
       }
     }
 
-    // Deduct 1 credit after successful chat (admin users are exempt)
-    if (userUid && !isAdmin) {
-      const [updatedUser] = await db.update(users)
-        .set({ 
-          credits: Math.max(0, (await db.select().from(users).where(eq(users.id, userUid)).limit(1))[0]?.credits - 1 || 0),
-          updatedAt: new Date()
-        })
-        .where(eq(users.id, userUid))
-        .returning();
-      
-      console.log(`Credit deducted. User ${updatedUser?.email} now has ${updatedUser?.credits} credits`);
-      
-      res.json({ 
-        response,
-        creditsRemaining: updatedUser?.credits || 0,
-        conversationSummary: updatedSummary
-      });
-    } else {
-      // For admin users, return unlimited credits indicator
-      res.json({ 
-        response,
-        creditsRemaining: isAdmin ? 999999 : null,
-        conversationSummary: updatedSummary
-      });
-    }
+    // Return chat response - app is now completely free
+    res.json({ 
+      response,
+      conversationSummary: updatedSummary
+    });
   } catch (error) {
     console.error('🚨 DETAILED Chat API error:', error);
     console.error('🚨 Error type:', typeof error);
