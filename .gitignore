@@ -4,3 +4,7 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Firebase configuration files (contain API keys)
+android/app/google-services.json
+ios/App/GoogleService-Info.plist
