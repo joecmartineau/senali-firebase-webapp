@@ -1,18 +1,31 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import cors from 'cors';
-import OpenAI from 'openai';
+import OpenAI from 'openai'; // KEEP this import - it's the correct one
+import { defineSecret } from 'firebase-functions/params';
+import { onInit } from 'firebase-functions/v1'; // This line is correct
 
-// Initialize Firebase Admin
+// Initialize Firebase Admin SDK - This should be done once globally
 admin.initializeApp();
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: functions.config().openai?.key || process.env.OPENAI_API_KEY,
+// Define the secret for your OpenAI API Key
+const OPENAI_API_KEY = defineSecret('OPENAI_API_KEY');
+
+// Declare your OpenAI client instance globally, but DO NOT initialize it yet
+let openai: OpenAI;
+
+// Initialize the OpenAI client securely within the onInit hook.
+// This ensures it's only called when the function instance starts up on Firebase's servers,
+// avoiding the "missing API key" error during the local deployment analysis.
+onInit(() => {
+    openai = new OpenAI({ apiKey: OPENAI_API_KEY.value() });
+    console.log('OpenAI client initialized securely.');
 });
 
-// CORS configuration
+// CORS configuration - common for HTTP functions
 const corsHandler = cors({ origin: true });
+
+// --- YOUR CLOUD FUNCTIONS START HERE ---
 
 // Get all family profiles for user
 export const getFamilyProfiles = functions.https.onRequest((req, res) => {
@@ -196,7 +209,7 @@ Key guidelines:
 
 Respond naturally and conversationally to help this parent feel heard and supported.`;
 
-      // Call OpenAI
+      // Call OpenAI - This now correctly uses the 'openai' instance initialized in onInit()
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: [
@@ -248,7 +261,6 @@ export const firebaseSignin = functions.https.onRequest((req, res) => {
           .set({
             email,
             displayName: displayName || email.split('@')[0],
-            photoURL: photoURL || null,
             credits: 25,
             subscription: 'free',
             subscriptionStatus: 'inactive',

@@ -1,0 +1,45 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" rx="4" fill="url(#backgroundGradient)"/>
+  
+  <defs>
+    <!-- Background gradient -->
+    <radialGradient id="backgroundGradient" cx="50%" cy="50%">
+      <stop offset="0%" stopColor="#4a9aa8" />
+      <stop offset="30%" stopColor="#3a7f8f" />
+      <stop offset="70%" stopColor="#2d6a7a" />
+      <stop offset="100%" stopColor="#1a4d5c" />
+    </radialGradient>
+    
+    <!-- Main infinity gradient -->
+    <linearGradient id="infinityGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#4ade80" />
+      <stop offset="30%" stopColor="#22c55e" />
+      <stop offset="70%" stopColor="#16a34a" />
+      <stop offset="100%" stopColor="#15803d" />
+    </linearGradient>
+    
+    <!-- Inner highlight gradient -->
+    <linearGradient id="innerHighlight" x1="20%" y1="20%" x2="80%" y2="80%">
+      <stop offset="0%" stopColor="#86efac" opacity="0.9" />
+      <stop offset="50%" stopColor="#4ade80" opacity="0.7" />
+      <stop offset="100%" stopColor="#22c55e" opacity="0.5" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Small infinity symbol for favicon -->
+  <g transform="translate(6, 12) scale(0.1, 0.1)">
+    <!-- Main infinity shape -->
+    <path
+      d="M100 50 C100 22.5, 72.5 5, 50 22.5 C27.5 5, 0 22.5, 0 50 
+         C0 77.5, 27.5 95, 50 77.5 C72.5 95, 100 77.5, 100 50 
+         C100 77.5, 127.5 95, 150 77.5 C172.5 95, 200 77.5, 200 50 
+         C200 22.5, 172.5 5, 150 22.5 C127.5 5, 100 22.5, 100 50 Z"
+      fill="url(#infinityGradient)"
+      stroke="url(#innerHighlight)"
+      strokeWidth="8"
+    />
+    
+    <!-- Center highlight -->
+    <ellipse cx="100" cy="50" rx="8" ry="16" fill="url(#innerHighlight)" opacity="0.8"/>
+  </g>
+</svg>

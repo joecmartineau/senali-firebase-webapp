@@ -8,20 +8,11 @@
     "runtime": "nodejs18"
   },
   "hosting": {
-    "public": "public",
+    "site": "senali-235fb",
+    "public": "dist/public",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
-  },
-  "storage": {
-    "rules": "storage.rules"
-  }
-}
+    "r
