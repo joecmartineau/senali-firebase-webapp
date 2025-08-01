@@ -5,7 +5,11 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
+<<<<<<< HEAD
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+=======
+    "build": "vite build",
+>>>>>>> 9eea3ad49b88d2fe5ddeae1d1b8917e1f0dc0524
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push"
@@ -16,8 +20,11 @@
     "@capacitor/cli": "^7.4.2",
     "@capacitor/core": "^7.4.2",
     "@capacitor/ios": "^7.4.2",
+<<<<<<< HEAD
     "@genkit-ai/ai": "^1.15.5",
     "@genkit-ai/core": "^1.15.5",
+=======
+>>>>>>> 9eea3ad49b88d2fe5ddeae1d1b8917e1f0dc0524
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@neondatabase/serverless": "^0.10.4",
@@ -68,14 +75,21 @@
     "firebase-admin": "^13.4.0",
     "firebase-functions": "^6.4.0",
     "framer-motion": "^11.13.1",
+<<<<<<< HEAD
     "genkitx-openai": "^0.23.0",
+=======
+>>>>>>> 9eea3ad49b88d2fe5ddeae1d1b8917e1f0dc0524
     "input-otp": "^1.4.2",
     "lucide-react": "^0.453.0",
     "memoizee": "^0.4.17",
     "memorystore": "^1.6.7",
     "nanoid": "^5.1.5",
     "next-themes": "^0.4.6",
+<<<<<<< HEAD
     "openai": "^5.11.0",
+=======
+    "openai": "^5.10.2",
+>>>>>>> 9eea3ad49b88d2fe5ddeae1d1b8917e1f0dc0524
     "openid-client": "^6.6.2",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
@@ -114,7 +128,10 @@
     "autoprefixer": "^10.4.20",
     "drizzle-kit": "^0.30.4",
     "esbuild": "^0.25.0",
+<<<<<<< HEAD
     "next": "^15.4.5",
+=======
+>>>>>>> 9eea3ad49b88d2fe5ddeae1d1b8917e1f0dc0524
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",

@@ -1,7 +1,12 @@
 {
   "projects": {
+<<<<<<< HEAD
     "default": "senali-8ietp"
   },
   "targets": {},
   "etags": {}
+=======
+    "default": "senali-235fb"
+  }
+>>>>>>> 9eea3ad49b88d2fe5ddeae1d1b8917e1f0dc0524
 }
